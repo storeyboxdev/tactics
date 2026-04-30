@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { Unit } from '../battle/Unit';
-import { BattleMap } from '../battle/Map';
 import { MapRenderer } from '../render/MapRenderer';
 import { UnitRenderer } from '../render/UnitRenderer';
 import { Cursor } from '../render/Cursor';
@@ -37,7 +36,6 @@ export class InputController {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly camera: THREE.Camera,
-    private readonly map: BattleMap,
     private readonly mapRenderer: MapRenderer,
     private readonly unitRenderer: UnitRenderer,
     private readonly cursor: Cursor,

@@ -5,7 +5,7 @@ import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
 import { meleeAttackTargets, potionTargets, abilityTargets, unitAt } from './battle/Targeting';
 import {
-  resolveAttack, resolvePotion, resolveSpell, applyBreak, facingTowards,
+  AttackOutcome, resolveAttack, resolvePotion, resolveSpell, applyBreak, facingTowards,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import { ABILITIES, Ability } from './data/abilities';
@@ -16,6 +16,7 @@ import { CameraController } from './render/CameraController';
 import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry } from './render/Hud';
 import { InputController } from './input/InputController';
+import { AssetLoader } from './core/AssetLoader';
 import grasslandJson from './data/maps/grassland.json';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,7 +89,6 @@ const hud = new Hud();
 const input = new InputController(
   renderer.domElement,
   cam.camera,
-  map,
   mapRenderer,
   unitRenderer,
   cursor,
@@ -103,6 +103,7 @@ const COLOR_MOVE   = 0x4f9fff;
 const COLOR_ATTACK = 0xff5b5b;
 const COLOR_HEAL   = 0x6fdc8c;
 const COLOR_MAGIC  = 0xb86fff;
+const COLOR_FACING = 0xffe14a;
 
 const ai: EnemyController = new HeuristicAi();
 
@@ -224,6 +225,7 @@ function beginAttack() {
       unit.facing = facingTowards(unit.x, unit.z, target.x, target.z);
       const out = resolveAttack(unit, target, map);
       logAttack(out);
+      playAttackVisual(out);
       hasActed = true;
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
@@ -293,6 +295,7 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
     // Instant magic isn't currently used (all spells are charged) but handle for completeness.
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
+    playSpellHitVisual(target);
   }
 }
 
@@ -314,9 +317,10 @@ function resolveScheduledSpell(spell: PendingSpell) {
     `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg` +
     (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
   );
+  playSpellHitVisual(target);
 }
 
-function logAttack(out: ReturnType<typeof resolveAttack>) {
+function logAttack(out: AttackOutcome) {
   hud.log(
     `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg ` +
     `(${out.facing}, h${out.heightDiff >= 0 ? '+' : ''}${out.heightDiff})` +
@@ -332,15 +336,85 @@ function logAttack(out: ReturnType<typeof resolveAttack>) {
   }
 }
 
+/**
+ * Plays the attacker's swing, then on impact triggers hurt/KO on the target.
+ * If a counter occurred, schedules the counter-swing after the original swing.
+ * Game state is already mutated by `resolveAttack` — this is purely cosmetic.
+ */
+function playAttackVisual(out: AttackOutcome) {
+  unitRenderer.playAttack(out.attacker, () => {
+    if (out.target.hp <= 0) unitRenderer.playKO(out.target);
+    else unitRenderer.playHurt(out.target);
+  });
+  if (out.counter) {
+    const c = out.counter;
+    setTimeout(() => {
+      unitRenderer.playAttack(c.counterer, () => {
+        if (c.victim.hp <= 0) unitRenderer.playKO(c.victim);
+        else unitRenderer.playHurt(c.victim);
+      });
+    }, 420);
+  }
+}
+
+function playSpellHitVisual(target: Unit) {
+  if (target.hp <= 0) unitRenderer.playKO(target);
+  else unitRenderer.playHurt(target);
+}
+
 function autoEndIfDone(): boolean {
-  if (hasMoved && hasActed) { endTurn(); return true; }
+  if (!currentActor) return false;
+  if (!currentActor.isAlive || (hasMoved && hasActed)) {
+    endTurn();
+    return true;
+  }
   return false;
 }
 
 function endTurn() {
   if (!currentActor) return;
-  turns.endTurn(currentActor, { moved: hasMoved, acted: hasActed });
-  activateNext();
+  const actor = currentActor;
+  const moved = hasMoved;
+  const acted = hasActed;
+
+  const finalize = () => {
+    turns.endTurn(actor, { moved, acted });
+    activateNext();
+  };
+
+  // Skip the facing prompt if the unit died on its own turn (e.g. counter KO'd
+  // them mid-attack) — there's no one to choose for.
+  if (!actor.isAlive) { finalize(); return; }
+
+  promptFacing(actor, finalize);
+}
+
+/**
+ * FFT-style end-of-turn facing pick. Highlights the 4 in-bounds neighbors;
+ * the player clicks one to face that way, or right-clicks to keep the
+ * current facing.
+ */
+function promptFacing(unit: Unit, onDone: () => void) {
+  const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const tiles: { x: number; z: number }[] = [];
+  for (const [dx, dz] of dirs) {
+    const x = unit.x + dx;
+    const z = unit.z + dz;
+    if (map.inBounds(x, z)) tiles.push({ x, z });
+  }
+  if (tiles.length === 0) { onDone(); return; }
+
+  hud.clearActionMenu();
+  hud.setStatus(`${unit.name}: click an adjacent tile to set facing — right-click to keep current`);
+  input.beginPick({
+    tiles,
+    color: COLOR_FACING,
+    onPick: (x, z) => {
+      unit.facing = facingTowards(unit.x, unit.z, x, z);
+      onDone();
+    },
+    onCancel: () => onDone(),
+  });
 }
 
 function enemyAutoTurn(actor: Unit) {
@@ -353,6 +427,7 @@ function enemyAutoTurn(actor: Unit) {
         actor.facing = facingTowards(actor.x, actor.z, target.x, target.z);
         const out = resolveAttack(actor, target, map);
         logAttack(out);
+        playAttackVisual(out);
       }
     }
     turns.endTurn(actor, {
@@ -408,4 +483,15 @@ function frame(now: number) {
 }
 requestAnimationFrame(frame);
 
-activateNext();
+// Load sprite sheets and tile textures, then start the battle. The render loop
+// is already running with placeholder materials so the user sees something
+// during the (typically brief) load.
+hud.setStatus('Loading assets...');
+(async () => {
+  const loader = new AssetLoader();
+  await Promise.all([
+    mapRenderer.applyTextures(loader),
+    unitRenderer.applyTextures(loader),
+  ]);
+  activateNext();
+})();

@@ -1,32 +1,44 @@
 import * as THREE from 'three';
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from '../battle/Unit';
 import { BattleMap } from '../battle/Map';
+import { AssetLoader } from '../core/AssetLoader';
+import { AnimationState } from './AnimationState';
+import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME } from '../data/sprites';
 
+// Camera quadrant 0..3 corresponds to camera position roughly: 0=SE, 1=SW, 2=NW, 3=NE.
+// The cardinal world side of the unit most facing the camera is then S, W, N, E.
 const QUADRANT_TO_CAMERA_SIDE: Record<number, number> = { 0: 2, 1: 3, 2: 0, 3: 1 };
 
-const FRAME_FRONT = 0;
-const FRAME_RIGHT = 1;
-const FRAME_BACK  = 2;
-const FRAME_LEFT  = 3;
-
-const SPRITE_W = 32;
-const SPRITE_H = 48;
+const SPRITE_W = SHEET_LAYOUT.cellW; // 32
+const SPRITE_H = SHEET_LAYOUT.cellH; // 48
 const WORLD_W = 1.0;
 const WORLD_H = 1.5;
 
 const STEP_TIME = 0.22; // seconds per tile during movement animation
 
+// UV cell sizes for sub-region sampling on a loaded sheet.
+const CELL_U = 1 / SHEET_LAYOUT.cols;
+const CELL_V = 1 / SHEET_LAYOUT.rows;
+
+const JOB_LABEL: Record<string, string> = {
+  squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M',
+};
+
 interface MoveState {
   path: { x: number; z: number }[];
-  idx: number;     // index of the path tile the unit is currently AT (or just left, mid-step)
-  t: number;       // 0..STEP_TIME progress from path[idx] toward path[idx+1]
+  idx: number;
+  t: number;
   onDone: () => void;
 }
 
 interface Entry {
   unit: Unit;
   sprite: THREE.Sprite;
-  frames: THREE.Texture[];
+  anim: AnimationState;
+  /** When non-null, this sprite is animated from a loaded sheet. */
+  sheetTexture: THREE.Texture | null;
+  /** Fallback static frames keyed by relative view 0..3. */
+  placeholderFrames: THREE.Texture[] | null;
   move: MoveState | null;
 }
 
@@ -36,43 +48,73 @@ export class UnitRenderer {
 
   constructor(units: Unit[], private readonly map: BattleMap) {
     for (const unit of units) {
-      const frames = makeUnitFrames(unit);
-      const material = new THREE.SpriteMaterial({ map: frames[FRAME_FRONT], transparent: true });
+      const placeholderFrames = makePlaceholderFrames(unit);
+      const material = new THREE.SpriteMaterial({ map: placeholderFrames[0], transparent: true });
       const sprite = new THREE.Sprite(material);
       sprite.scale.set(WORLD_W, WORLD_H, 1);
       sprite.userData = { unitId: unit.id };
       this.group.add(sprite);
-
-      const entry: Entry = { unit, sprite, frames, move: null };
-      this.entries.push(entry);
+      this.entries.push({
+        unit, sprite,
+        anim: new AnimationState(),
+        sheetTexture: null,
+        placeholderFrames,
+        move: null,
+      });
     }
+  }
+
+  /** Try to swap each unit's placeholder for a loaded sheet PNG. */
+  async applyTextures(loader: AssetLoader): Promise<void> {
+    await Promise.all(this.entries.map(async e => {
+      const url = `/sprites/units/${e.unit.jobId}_${e.unit.team}.png`;
+      const tex = await loader.load(url);
+      if (!tex) return; // keep placeholder
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      e.sheetTexture = tex;
+      e.sprite.material.map = tex;
+      e.sprite.material.needsUpdate = true;
+      e.placeholderFrames?.forEach(t => t.dispose());
+      e.placeholderFrames = null;
+    }));
   }
 
   startMove(unit: Unit, path: { x: number; z: number }[], onDone: () => void) {
-    if (path.length < 2) {
-      onDone();
-      return;
-    }
+    if (path.length < 2) { onDone(); return; }
     const e = this.entries.find(en => en.unit === unit);
-    if (!e) {
-      onDone();
-      return;
-    }
+    if (!e) { onDone(); return; }
     e.move = { path, idx: 0, t: 0, onDone };
     unit.facing = facingTowards(path[0].x, path[0].z, path[1].x, path[1].z);
+    if (e.sheetTexture) e.anim.play('walk');
   }
 
-  isAnimating(): boolean {
-    return this.entries.some(e => e.move !== null);
+  isAnimating(): boolean { return this.entries.some(e => e.move !== null); }
+
+  /** One-shot attack swing. `onImpact` fires at the hit frame so callers can sync FX. */
+  playAttack(unit: Unit, onImpact?: () => void): void {
+    const e = this.entries.find(en => en.unit === unit);
+    if (!e || !e.sheetTexture) { onImpact?.(); return; }
+    e.anim.play('attack', { onImpact, impactFrame: ATTACK_IMPACT_FRAME });
+  }
+
+  playHurt(unit: Unit): void {
+    const e = this.entries.find(en => en.unit === unit);
+    if (!e || !e.sheetTexture) return;
+    e.anim.play('hurt');
+  }
+
+  playKO(unit: Unit): void {
+    const e = this.entries.find(en => en.unit === unit);
+    if (!e || !e.sheetTexture) return;
+    e.anim.play('ko');
   }
 
   update(dt: number, cameraQuadrant: number) {
     const cameraSide = QUADRANT_TO_CAMERA_SIDE[cameraQuadrant] ?? 2;
 
     for (const e of this.entries) {
-      // Advance any in-progress move animation. Each step elapses STEP_TIME and snaps
-      // the logical unit position to the next tile; the sprite is then positioned by
-      // interpolating between the current and next tile during the partial step.
+      // Advance any in-progress move animation.
       if (e.move) {
         const m = e.move;
         m.t += dt;
@@ -89,21 +131,32 @@ export class UnitRenderer {
         if (m.idx >= m.path.length - 1) {
           const onDone = m.onDone;
           e.move = null;
+          if (e.sheetTexture && e.anim.current === 'walk') e.anim.play('idle');
           onDone();
         }
       }
 
-      // Position sprite (animated mid-step or static on tile)
+      // Tick animation (only meaningful when a sheet is loaded).
+      if (e.sheetTexture) e.anim.tick(dt);
+
+      // Position sprite (animated mid-step or static on tile).
       const pos = this.spriteWorldPos(e);
       e.sprite.position.copy(pos);
-      e.sprite.visible = e.unit.isAlive;
+      // KO sprites stay visible (lying down); other dead units hide.
+      e.sprite.visible = e.unit.isAlive || e.anim.current === 'ko';
 
-      // Pick directional frame
-      const rv = (cameraSide - e.unit.facing + 4) % 4;
-      const tex = e.frames[rv];
-      if (e.sprite.material.map !== tex) {
-        e.sprite.material.map = tex;
-        e.sprite.material.needsUpdate = true;
+      // Pick UV cell (sheet) or placeholder texture (fallback).
+      const relView = (cameraSide - e.unit.facing + 4) % 4;
+      if (e.sheetTexture) {
+        const col = e.anim.currentColumn();
+        e.sheetTexture.offset.set(col * CELL_U, 1 - (relView + 1) * CELL_V);
+        e.sheetTexture.repeat.set(CELL_U, CELL_V);
+      } else {
+        const tex = e.placeholderFrames?.[relView];
+        if (tex && e.sprite.material.map !== tex) {
+          e.sprite.material.map = tex;
+          e.sprite.material.needsUpdate = true;
+        }
       }
     }
   }
@@ -133,18 +186,16 @@ function facingTowards(fx: number, fz: number, tx: number, tz: number): Facing {
   return dz >= 0 ? FACING_S : FACING_N;
 }
 
-const JOB_LABEL: Record<string, string> = {
-  squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M',
-};
+// ─── Placeholder canvas frames (fallback if no PNG sheet present) ───────────
 
-function makeUnitFrames(unit: Unit): THREE.Texture[] {
+function makePlaceholderFrames(unit: Unit): THREE.Texture[] {
   const teamColor = unit.team === 'player' ? '#5b8def' : '#d96363';
   const jobLetter = JOB_LABEL[unit.jobId] ?? '?';
   return [
-    makeFrameTexture(teamColor, FRAME_FRONT, jobLetter),
-    makeFrameTexture(teamColor, FRAME_RIGHT, jobLetter),
-    makeFrameTexture(teamColor, FRAME_BACK,  jobLetter),
-    makeFrameTexture(teamColor, FRAME_LEFT,  jobLetter),
+    makeFrameTexture(teamColor, 0, jobLetter),
+    makeFrameTexture(teamColor, 1, jobLetter),
+    makeFrameTexture(teamColor, 2, jobLetter),
+    makeFrameTexture(teamColor, 3, jobLetter),
   ];
 }
 
@@ -162,26 +213,12 @@ function makeFrameTexture(bodyColor: string, view: number, jobLetter: string): T
 
   ctx.fillStyle = '#222';
   switch (view) {
-    case FRAME_FRONT:
-      ctx.fillRect(13, 9, 2, 2);
-      ctx.fillRect(17, 9, 2, 2);
-      break;
-    case FRAME_RIGHT:
-      ctx.fillRect(17, 9, 2, 2);
-      ctx.fillStyle = bodyColor;
-      ctx.fillRect(SPRITE_W - 10, 18, 2, 14);
-      break;
-    case FRAME_BACK:
-      ctx.fillRect(11, 6, 10, 2);
-      break;
-    case FRAME_LEFT:
-      ctx.fillRect(13, 9, 2, 2);
-      ctx.fillStyle = bodyColor;
-      ctx.fillRect(8, 18, 2, 14);
-      break;
+    case 0: ctx.fillRect(13, 9, 2, 2); ctx.fillRect(17, 9, 2, 2); break;
+    case 1: ctx.fillRect(17, 9, 2, 2); ctx.fillStyle = bodyColor; ctx.fillRect(SPRITE_W - 10, 18, 2, 14); break;
+    case 2: ctx.fillRect(11, 6, 10, 2); break;
+    case 3: ctx.fillRect(13, 9, 2, 2); ctx.fillStyle = bodyColor; ctx.fillRect(8, 18, 2, 14); break;
   }
 
-  // Job initial centered on the chest, in white, for at-a-glance identification.
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 10px monospace';
   ctx.textAlign = 'center';

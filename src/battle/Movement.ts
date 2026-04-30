@@ -72,13 +72,15 @@ export class MovePlan {
 
   /** Returns origin → destination tile sequence; empty if unreachable. */
   pathTo(x: number, z: number): { x: number; z: number }[] {
-    let k: string | null = key(x, z);
-    if (!this.nodes.has(k)) return [];
+    const startKey = key(x, z);
+    if (!this.nodes.has(startKey)) return [];
     const out: { x: number; z: number }[] = [];
-    while (k) {
-      const n = this.nodes.get(k)!;
-      out.unshift({ x: n.x, z: n.z });
-      k = n.parent;
+    let cursor: string | null = startKey;
+    while (cursor !== null) {
+      const node: Node | undefined = this.nodes.get(cursor);
+      if (!node) break;
+      out.unshift({ x: node.x, z: node.z });
+      cursor = node.parent;
     }
     return out;
   }
