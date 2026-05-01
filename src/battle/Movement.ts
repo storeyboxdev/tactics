@@ -40,9 +40,10 @@ export class MovePlan {
     this.nodes.set(key(start.x, start.z), start);
 
     const queue: Node[] = [start];
+    const moveBudget = unit.effectiveMove;
     while (queue.length) {
       const cur = queue.shift()!;
-      if (cur.cost === unit.move) continue;
+      if (cur.cost === moveBudget) continue;
       const curTile = map.getTile(cur.x, cur.z);
       for (const [dx, dz] of DIRS) {
         const nx = cur.x + dx;

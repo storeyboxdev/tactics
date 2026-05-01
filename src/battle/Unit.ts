@@ -1,4 +1,5 @@
 import { StatusId, STATUS_DEFS } from '../data/statuses';
+import { ABILITIES } from '../data/abilities';
 
 export type Team = 'player' | 'enemy';
 
@@ -30,6 +31,12 @@ export interface UnitDef {
   jobId: string;
   level: number;
   stats: UnitStats;
+  /** ability id slotted as a Reaction (e.g. 'counter', 'auto_potion'). */
+  reaction?: string | null;
+  /** ability id slotted as a Support (e.g. 'mp_recovery'). */
+  support?: string | null;
+  /** ability id slotted as a Movement (e.g. 'move_plus_1', 'move_hp_up'). */
+  movement?: string | null;
 }
 
 export interface StatusInstance {
@@ -64,6 +71,11 @@ export class Unit {
   ct = 0;
   statuses: StatusInstance[] = [];
 
+  /** Equipped ability slots — null when nothing in that slot. */
+  reaction: string | null;
+  support: string | null;
+  movement: string | null;
+
   constructor(def: UnitDef, x: number, z: number, facing: Facing) {
     this.id = def.id;
     this.name = def.name;
@@ -83,9 +95,21 @@ export class Unit {
     this.jump = def.stats.jump;
     this.faith = def.stats.faith;
     this.bravery = def.stats.bravery;
+
+    this.reaction = def.reaction ?? null;
+    this.support = def.support ?? null;
+    this.movement = def.movement ?? null;
   }
 
   get isAlive(): boolean { return this.hp > 0; }
+
+  /** `move` stat plus any movement-ability bonus (e.g. Move +1). */
+  get effectiveMove(): number {
+    if (!this.movement) return this.move;
+    const ab = ABILITIES[this.movement];
+    if (ab?.effect.kind === 'movement-move-plus') return this.move + ab.effect.amount;
+    return this.move;
+  }
 
   hasStatus(id: StatusId): boolean {
     return this.statuses.some(s => s.id === id);

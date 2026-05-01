@@ -49,12 +49,27 @@ scene.add(mapRenderer.group);
 
 interface UnitSeed { id: string; name: string; team: Team; jobId: string; x: number; z: number; }
 
+/**
+ * Default reaction/support/movement loadout per job. Swappable per unit later;
+ * for now this stands in for the equip-screen UI.
+ */
+const JOB_DEFAULT_LOADOUT: Record<string, { reaction: string | null; support: string | null; movement: string | null }> = {
+  knight:     { reaction: 'counter',     support: null,          movement: 'move_plus_1' },
+  squire:     { reaction: 'counter',     support: null,          movement: 'move_plus_1' },
+  chemist:    { reaction: 'auto_potion', support: 'mp_recovery', movement: null },
+  black_mage: { reaction: null,          support: 'mp_recovery', movement: 'move_hp_up' },
+  time_mage:  { reaction: null,          support: 'mp_recovery', movement: 'move_hp_up' },
+  oracle:     { reaction: 'auto_potion', support: 'mp_recovery', movement: null },
+};
+
 function buildUnit(seed: UnitSeed): Unit {
   const job = JOB_DEFS[seed.jobId];
   if (!job) throw new Error(`unknown jobId: ${seed.jobId}`);
+  const loadout = JOB_DEFAULT_LOADOUT[seed.jobId] ?? { reaction: null, support: null, movement: null };
   const def: UnitDef = {
     id: seed.id, name: seed.name, team: seed.team,
     jobId: seed.jobId, level: 1, stats: { ...job.baseStats } as UnitStats,
+    reaction: loadout.reaction, support: loadout.support, movement: loadout.movement,
   };
   const facing = seed.team === 'player' ? FACING_E : FACING_W;
   return new Unit(def, seed.x, seed.z, facing);
@@ -230,6 +245,7 @@ function beginMove() {
       unitRenderer.startMove(unit, path, () => {
         input.setAnimating(false);
         hasMoved = true;
+        applyMovementEndHook(unit);
         refreshHud();
         if (!autoEndIfDone()) showActionMenu();
       });
@@ -368,6 +384,33 @@ function logAttack(out: AttackOutcome) {
       (c.victim.hp <= 0 ? ` — ${c.victim.name} KO'd by counter` : ''),
     );
   }
+  if (out.autoPotion && out.autoPotion.amount > 0) {
+    hud.log(`  ↳ ${out.autoPotion.user.name} Auto-Potion +${out.autoPotion.amount}`);
+  }
+}
+
+/** Called after the unit's turn cost is applied. Triggers passive support effects. */
+function applySupportTurnEnd(actor: Unit) {
+  if (!actor.support) return;
+  const ab = ABILITIES[actor.support];
+  if (!ab) return;
+  if (ab.effect.kind === 'support-mp-recovery') {
+    const before = actor.mp;
+    actor.mp = Math.min(actor.mpMax, actor.mp + ab.effect.amount);
+    if (actor.mp > before) hud.log(`${actor.name}: MP Recovery +${actor.mp - before}`);
+  }
+}
+
+/** Called after a move animation completes. Triggers passive movement effects. */
+function applyMovementEndHook(unit: Unit) {
+  if (!unit.movement) return;
+  const ab = ABILITIES[unit.movement];
+  if (!ab) return;
+  if (ab.effect.kind === 'movement-hp-up') {
+    const before = unit.hp;
+    unit.hp = Math.min(unit.hpMax, unit.hp + ab.effect.amount);
+    if (unit.hp > before) hud.log(`${unit.name}: Move HP Up +${unit.hp - before}`);
+  }
 }
 
 /**
@@ -413,6 +456,7 @@ function endTurn() {
 
   const finalize = () => {
     turns.endTurn(actor, { moved, acted });
+    applySupportTurnEnd(actor);
     activateNext();
   };
 
@@ -486,6 +530,7 @@ function enemyAutoTurn(actor: Unit) {
       moved: decision.movePath.length >= 2,
       acted: !!decision.action,
     });
+    applySupportTurnEnd(actor);
     refreshHud();
     activateNext();
   };
@@ -494,6 +539,7 @@ function enemyAutoTurn(actor: Unit) {
     input.setAnimating(true);
     unitRenderer.startMove(actor, decision.movePath, () => {
       input.setAnimating(false);
+      applyMovementEndHook(actor);
       setTimeout(finishTurn, 180);
     });
   } else {

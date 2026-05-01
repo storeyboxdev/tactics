@@ -51,11 +51,11 @@ describe('Faith-scaled magic damage', () => {
 });
 
 describe('Counter reaction', () => {
-  it('a high-bravery target counters when struck in melee and survives', () => {
+  it('a target equipped with Counter at high bravery counters and damages attacker', () => {
     const map = new BattleMap(flatMap(5, 5));
     const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { hp: 50, pa: 5 });
     const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 50, pa: 5, bravery: 100 });
-    // bravery 100 → always counters.
+    target.reaction = 'counter';
     const out = resolveAttack(attacker, target, map, rngHalf);
     expect(out.counter).toBeDefined();
     expect(out.counter!.counterer).toBe(target);
@@ -67,6 +67,7 @@ describe('Counter reaction', () => {
     const map = new BattleMap(flatMap(5, 5));
     const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { hp: 50 });
     const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 50, bravery: 0 });
+    target.reaction = 'counter';
     const out = resolveAttack(attacker, target, map, rngHalf);
     expect(out.counter).toBeUndefined();
     expect(attacker.hp).toBe(50);
@@ -76,6 +77,7 @@ describe('Counter reaction', () => {
     const map = new BattleMap(flatMap(5, 5));
     const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { pa: 50 });
     const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 5, bravery: 100 });
+    target.reaction = 'counter';
     const out = resolveAttack(attacker, target, map, rngHalf);
     expect(target.isAlive).toBe(false);
     expect(out.counter).toBeUndefined();
@@ -88,9 +90,21 @@ describe('Counter reaction', () => {
     const map = new BattleMap(flatMap(5, 5));
     const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { hp: 50, pa: 5, bravery: 100 });
     const target   = makeUnit('t', 'enemy',  3, 2, FACING_W, { hp: 50, pa: 5, bravery: 100 });
+    attacker.reaction = 'counter';
+    target.reaction = 'counter';
     resolveAttack(attacker, target, map, rngHalf);
     expect(target.hp).toBe(30);
     expect(attacker.hp).toBe(30);
+  });
+
+  it('does not counter when no Counter ability is equipped', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { hp: 50 });
+    const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 50, bravery: 100 });
+    // High bravery but no Counter equipped → no counter fires.
+    const out = resolveAttack(attacker, target, map, rngHalf);
+    expect(out.counter).toBeUndefined();
+    expect(attacker.hp).toBe(50);
   });
 });
 

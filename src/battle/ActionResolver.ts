@@ -1,5 +1,6 @@
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
+import { ABILITIES } from '../data/abilities';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
 
@@ -11,6 +12,7 @@ export interface AttackOutcome {
   facing: RelativeFacing;
   hit: boolean;
   counter?: CounterOutcome;
+  autoPotion?: AutoPotionOutcome;
 }
 
 export interface CounterOutcome {
@@ -21,10 +23,16 @@ export interface CounterOutcome {
   heightDiff: number;
 }
 
+export interface AutoPotionOutcome {
+  user: Unit;
+  amount: number;
+}
+
 export interface SpellOutcome {
   caster: Unit;
   target: Unit;
   damage: number;
+  autoPotion?: AutoPotionOutcome;
 }
 
 export interface PotionOutcome {
@@ -148,19 +156,37 @@ export function resolveAttack(
   // Damage breaks Sleep — same as FFT.
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  if (allowCounter && target.isAlive && isMeleeAdjacent(attacker, target) && rng() < target.bravery / 100) {
-    target.facing = facingTowards(target.x, target.z, attacker.x, attacker.z);
-    const counter = resolveAttack(target, attacker, map, rng, false);
-    out.counter = {
-      counterer: target,
-      victim: attacker,
-      damage: counter.damage,
-      facing: counter.facing,
-      heightDiff: counter.heightDiff,
-    };
+  if (allowCounter && target.isAlive && target.reaction) {
+    triggerReaction(target, attacker, target.reaction, out, map, rng);
   }
 
   return out;
+}
+
+/** Dispatches a target's equipped reaction. Mutates `out` to record any reaction outcome. */
+function triggerReaction(
+  target: Unit, attacker: Unit, reactionId: string,
+  out: AttackOutcome, map: BattleMap, rng: Rng,
+): void {
+  const ab = ABILITIES[reactionId];
+  if (!ab) return;
+  const eff = ab.effect;
+  if (eff.kind === 'reaction-counter') {
+    // Counter requires melee adjacency and a bravery roll, doesn't chain.
+    if (!isMeleeAdjacent(attacker, target)) return;
+    if (rng() >= target.bravery / 100) return;
+    target.facing = facingTowards(target.x, target.z, attacker.x, attacker.z);
+    const counter = resolveAttack(target, attacker, map, rng, false);
+    out.counter = {
+      counterer: target, victim: attacker,
+      damage: counter.damage, facing: counter.facing, heightDiff: counter.heightDiff,
+    };
+  } else if (eff.kind === 'reaction-auto-potion') {
+    // Auto-Potion fires reliably (no bravery roll); heals up to hpMax.
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + eff.amount);
+    out.autoPotion = { user: target, amount: target.hp - before };
+  }
 }
 
 function isMeleeAdjacent(a: Unit, b: Unit): boolean {
@@ -212,7 +238,19 @@ export function resolveSpell(
   });
   target.hp = Math.max(0, target.hp - damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
-  return { caster, target, damage };
+
+  const out: SpellOutcome = { caster, target, damage };
+  // Auto-Potion is the only reaction that fires on magic damage in our MVP set
+  // (Counter is melee-only).
+  if (target.isAlive && target.reaction) {
+    const ab = ABILITIES[target.reaction];
+    if (ab && ab.effect.kind === 'reaction-auto-potion') {
+      const before = target.hp;
+      target.hp = Math.min(target.hpMax, target.hp + ab.effect.amount);
+      out.autoPotion = { user: target, amount: target.hp - before };
+    }
+  }
+  return out;
 }
 
 // ─── Other ──────────────────────────────────────────────────────────────────

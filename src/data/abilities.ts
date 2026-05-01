@@ -12,14 +12,24 @@ import { StatusId } from './statuses';
 export type AbilityEffect =
   | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
-  | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any' };
+  | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any' }
+  // Passive: reactions trigger when the unit is hit.
+  | { kind: 'reaction-counter' }
+  | { kind: 'reaction-auto-potion'; amount: number }
+  // Passive: supports modify the unit between events.
+  | { kind: 'support-mp-recovery'; amount: number }
+  // Passive: movements modify movement / fire when moving.
+  | { kind: 'movement-move-plus'; amount: number }
+  | { kind: 'movement-hp-up'; amount: number };
+
+export type AbilityKind = 'physical' | 'magical' | 'reaction' | 'support' | 'movement';
 
 export interface Ability {
   id: string;
   name: string;
   jpCost: number;        // unused until JP/job progression lands
-  type: 'physical' | 'magical';
-  range: number;         // Manhattan tiles
+  type: AbilityKind;
+  range: number;         // Manhattan tiles (0 for passive)
   chargeTime: number;    // 0 = instant; >0 = ticks to wait before resolving
   mpCost: number;
   effect: AbilityEffect;
@@ -104,6 +114,37 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'poison_spell', name: 'Poison',
     jpCost: 200, type: 'magical', range: 3, chargeTime: 2, mpCost: 6,
     effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy' },
+  },
+
+  // ─── Reactions ────────────────────────────────────────────────────────────
+  counter: {
+    id: 'counter', name: 'Counter',
+    jpCost: 500, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-counter' },
+  },
+  auto_potion: {
+    id: 'auto_potion', name: 'Auto-Potion',
+    jpCost: 350, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-auto-potion', amount: 30 },
+  },
+
+  // ─── Support ──────────────────────────────────────────────────────────────
+  mp_recovery: {
+    id: 'mp_recovery', name: 'MP Recovery',
+    jpCost: 400, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-mp-recovery', amount: 5 },
+  },
+
+  // ─── Movement ─────────────────────────────────────────────────────────────
+  move_plus_1: {
+    id: 'move_plus_1', name: 'Move +1',
+    jpCost: 200, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-move-plus', amount: 1 },
+  },
+  move_hp_up: {
+    id: 'move_hp_up', name: 'Move HP Up',
+    jpCost: 300, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-hp-up', amount: 5 },
   },
 };
 
