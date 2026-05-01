@@ -14,6 +14,12 @@ export interface PickMode {
   color: number;
   onPick: (x: number, z: number) => void;
   onCancel?: () => void;
+  /**
+   * Called when the mouse enters/leaves a tile in the allowed set. (null, null)
+   * when the cursor is over a tile not in the set, or off the map. Lets the
+   * orchestrator render a live preview (e.g. facing rotation).
+   */
+  onHover?: (x: number | null, z: number | null) => void;
 }
 
 /**
@@ -99,9 +105,14 @@ export class InputController {
     const tile = this.resolveTile(ev);
     if (!tile) {
       this.cursor.setHover(null, null);
+      this.mode?.onHover?.(null, null);
       return;
     }
     this.cursor.setHover(tile.x, tile.z);
+    if (this.mode?.onHover) {
+      const inSet = this.allowedKeys?.has(`${tile.x},${tile.z}`) ?? false;
+      this.mode.onHover(inSet ? tile.x : null, inSet ? tile.z : null);
+    }
   };
 
   private onClick = (ev: MouseEvent) => {

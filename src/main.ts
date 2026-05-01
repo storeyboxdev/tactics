@@ -470,7 +470,8 @@ function endTurn() {
 /**
  * FFT-style end-of-turn facing pick. Highlights the 4 in-bounds neighbors;
  * the player clicks one to face that way, or right-clicks to keep the
- * current facing.
+ * current facing. Hovering a valid tile rotates the sprite live so the
+ * player can preview the facing before committing.
  */
 function promptFacing(unit: Unit, onDone: () => void) {
   const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -482,6 +483,8 @@ function promptFacing(unit: Unit, onDone: () => void) {
   }
   if (tiles.length === 0) { onDone(); return; }
 
+  const originalFacing = unit.facing;
+
   hud.clearActionMenu();
   hud.setStatus(`${unit.name}: click an adjacent tile to set facing — right-click to keep current`);
   input.beginPick({
@@ -491,7 +494,17 @@ function promptFacing(unit: Unit, onDone: () => void) {
       unit.facing = facingTowards(unit.x, unit.z, x, z);
       onDone();
     },
-    onCancel: () => onDone(),
+    onCancel: () => {
+      unit.facing = originalFacing;
+      onDone();
+    },
+    onHover: (x, z) => {
+      if (x === null || z === null) {
+        unit.facing = originalFacing;
+      } else {
+        unit.facing = facingTowards(unit.x, unit.z, x, z);
+      }
+    },
   });
 }
 
