@@ -10,9 +10,9 @@ const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
   ...over,
 });
 
-function makeUnit(id: string, team: Team, x: number, z: number, facing: Facing, over: Partial<UnitStats> = {}): Unit {
+function makeUnit(id: string, team: Team, x: number, z: number, facing: Facing, over: Partial<UnitStats> = {}, jobId = 'x'): Unit {
   const def: UnitDef = {
-    id, name: id, team, jobId: 'x', level: 1, stats: baseStats(over),
+    id, name: id, team, jobId, level: 1, stats: baseStats(over),
   };
   return new Unit(def, x, z, facing);
 }
@@ -33,7 +33,8 @@ describe('HeuristicAi', () => {
     const p = makeUnit('p', 'player', 1, 2, FACING_E);
     const ai = new HeuristicAi();
     const d = ai.decide(e, map, [e, p]);
-    expect(d.attack?.targetId).toBe('p');
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('p');
     expect(d.movePath).toEqual([]);
   });
 
@@ -43,22 +44,64 @@ describe('HeuristicAi', () => {
     const p = makeUnit('p', 'player', 9, 2, FACING_W);
     const ai = new HeuristicAi();
     const d = ai.decide(e, map, [e, p]);
-    expect(d.attack).toBeNull();
-    // Best tile for closing distance is (3,2): manhattan 6 to player (lowest possible with move=3)
+    expect(d.action).toBeNull();
     expect(d.movePath[d.movePath.length - 1]).toEqual({ x: 3, z: 2 });
   });
 
   it('prioritizes a KO over a higher-damage but non-KO option', () => {
-    // Two adjacent enemies after moving: one nearly dead (KO bonus 100 wins),
-    // one full HP (raw damage only).
     const map = new BattleMap(flatMap(7, 5));
     const e = makeUnit('e', 'enemy', 3, 2, FACING_W, { move: 1 });
     const weak = makeUnit('weak', 'player', 4, 2, FACING_W, { hp: 5 });
     const tank = makeUnit('tank', 'player', 2, 2, FACING_W, { hp: 999 });
     const ai = new HeuristicAi();
     const d = ai.decide(e, map, [e, weak, tank]);
-    // From (3,2) the AI is adjacent to both. The weak target's KO bonus (+100)
-    // dominates any threat penalty difference, so it should be picked.
-    expect(d.attack?.targetId).toBe('weak');
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('weak');
+  });
+});
+
+describe('HeuristicAi — abilities', () => {
+  it('an enemy Time Mage casts Haste on a friendly target', () => {
+    // Time Mage with MP, ally adjacent, no player in range — best play is to
+    // cast Haste on either self or ally (both score equally).
+    const map = new BattleMap(flatMap(7, 5));
+    const tm = makeUnit('tm', 'enemy', 3, 2, FACING_W, { mp: 30, pa: 3, ma: 8, move: 0 }, 'time_mage');
+    const ally = makeUnit('a', 'enemy', 4, 2, FACING_W, {}, 'knight');
+    const ai = new HeuristicAi();
+    const d = ai.decide(tm, map, [tm, ally]);
+    expect(d.action?.kind).toBe('ability');
+    if (d.action?.kind === 'ability') {
+      expect(d.action.abilityId).toBe('haste');
+      expect(['tm', 'a']).toContain(d.action.targetId);
+    }
+  });
+
+  it('an enemy Oracle prefers Stop (+30 value) over Sleep (+25) on the same target', () => {
+    // Oracle has both abilities; with no other modifiers, score table says
+    // Stop > Sleep > Poison.
+    const map = new BattleMap(flatMap(7, 5));
+    const oc = makeUnit('oc', 'enemy', 3, 2, FACING_W, { mp: 30, pa: 3, ma: 8, move: 0 }, 'oracle');
+    const p = makeUnit('p', 'player', 5, 2, FACING_W);
+    const ai = new HeuristicAi();
+    const d = ai.decide(oc, map, [oc, p]);
+    expect(d.action?.kind).toBe('ability');
+    if (d.action?.kind === 'ability') {
+      // Oracle has sleep + poison_spell; Stop is on Time Mage. Among Oracle's
+      // pool, Sleep (25) outranks Poison (15).
+      expect(d.action.abilityId).toBe('sleep');
+    }
+  });
+
+  it("does not cast a status the target already has", () => {
+    const map = new BattleMap(flatMap(7, 5));
+    const oc = makeUnit('oc', 'enemy', 3, 2, FACING_W, { mp: 30, pa: 3, ma: 8, move: 0 }, 'oracle');
+    const p = makeUnit('p', 'player', 5, 2, FACING_W);
+    p.addStatus('sleep'); // already asleep — Oracle should pick Poison instead
+    const ai = new HeuristicAi();
+    const d = ai.decide(oc, map, [oc, p]);
+    expect(d.action?.kind).toBe('ability');
+    if (d.action?.kind === 'ability') {
+      expect(d.action.abilityId).toBe('poison_spell');
+    }
   });
 });

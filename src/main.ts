@@ -62,8 +62,8 @@ function buildUnit(seed: UnitSeed): Unit {
 
 const playerSpawns = map.spawns.player;
 const enemySpawns  = map.spawns.enemy;
-const playerJobs   = ['knight', 'squire', 'time_mage', 'black_mage', 'oracle'];
-const enemyJobs    = ['knight', 'knight', 'knight',    'knight',     'knight'];
+const playerJobs   = ['knight', 'squire',    'time_mage', 'black_mage', 'oracle'];
+const enemyJobs    = ['knight', 'knight',    'knight',    'time_mage',  'oracle'];
 
 const units: Unit[] = [];
 playerSpawns.forEach(([x, z], i) => units.push(buildUnit({
@@ -455,18 +455,36 @@ function enemyAutoTurn(actor: Unit) {
   const decision = ai.decide(actor, map, units);
 
   const finishTurn = () => {
-    if (decision.attack) {
-      const target = units.find(u => u.id === decision.attack!.targetId);
+    if (decision.action?.kind === 'attack') {
+      const target = units.find(u => u.id === decision.action!.targetId);
       if (target && target.isAlive) {
         actor.facing = facingTowards(actor.x, actor.z, target.x, target.z);
         const out = resolveAttack(actor, target, map);
         logAttack(out);
         playAttackVisual(out);
       }
+    } else if (decision.action?.kind === 'ability') {
+      const target = units.find(u => u.id === decision.action!.targetId);
+      const ab = ABILITIES[decision.action.abilityId];
+      if (target && ab && actor.mp >= ab.mpCost) {
+        actor.facing = facingTowards(actor.x, actor.z, target.x, target.z);
+        actor.mp = Math.max(0, actor.mp - ab.mpCost);
+        if (ab.chargeTime > 0) {
+          turns.schedule({
+            caster: actor,
+            abilityId: ab.id,
+            target: { x: target.x, z: target.z },
+            resolveTick: turns.tick + ab.chargeTime,
+          });
+          hud.log(`${actor.name} begins casting ${ab.name} on ${target.name} (resolves in ${ab.chargeTime} ticks)`);
+        } else {
+          applyInstantAbility(actor, ab, target);
+        }
+      }
     }
     turns.endTurn(actor, {
       moved: decision.movePath.length >= 2,
-      acted: !!decision.attack,
+      acted: !!decision.action,
     });
     refreshHud();
     activateNext();

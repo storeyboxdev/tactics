@@ -38,8 +38,14 @@ export function potionTargets(actor: Unit, map: BattleMap, units: readonly Unit[
  * the given ability. Targeting rules per effect kind:
  *   - debuff / magic-damage:        enemies only
  *   - inflict-status (targetTeam):  enemies, allies, or any (incl. self for ally/any)
+ *
+ * `from` overrides the origin point — used by AI scoring to evaluate a target
+ * set as if the actor had moved to a candidate tile.
  */
-export function abilityTargets(actor: Unit, ability: Ability, map: BattleMap, units: readonly Unit[]): { x: number; z: number }[] {
+export function abilityTargets(
+  actor: Unit, ability: Ability, map: BattleMap, units: readonly Unit[],
+  from?: { x: number; z: number },
+): { x: number; z: number }[] {
   let allowEnemy = false, allowAlly = false, allowSelf = false;
   if (ability.effect.kind === 'inflict-status') {
     const t = ability.effect.targetTeam;
@@ -50,14 +56,17 @@ export function abilityTargets(actor: Unit, ability: Ability, map: BattleMap, un
     allowEnemy = true;
   }
 
+  const ox = from?.x ?? actor.x;
+  const oz = from?.z ?? actor.z;
+
   const out: { x: number; z: number }[] = [];
   for (let dx = -ability.range; dx <= ability.range; dx++) {
     for (let dz = -ability.range; dz <= ability.range; dz++) {
       const m = Math.abs(dx) + Math.abs(dz);
       if (m > ability.range) continue;
       if (m === 0 && !allowSelf) continue;
-      const x = actor.x + dx;
-      const z = actor.z + dz;
+      const x = ox + dx;
+      const z = oz + dz;
       if (!map.inBounds(x, z)) continue;
       const u = unitAt(units, x, z);
       if (!u) continue;
