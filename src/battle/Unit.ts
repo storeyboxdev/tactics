@@ -1,3 +1,5 @@
+import { StatusId, STATUS_DEFS } from '../data/statuses';
+
 export type Team = 'player' | 'enemy';
 
 // Cardinal facing in world coordinates.
@@ -30,6 +32,12 @@ export interface UnitDef {
   stats: UnitStats;
 }
 
+export interface StatusInstance {
+  id: StatusId;
+  /** Remaining ticks for duration-based statuses; -1 for permanent / conditional. */
+  remainingTicks: number;
+}
+
 export class Unit {
   readonly id: string;
   name: string;
@@ -54,6 +62,7 @@ export class Unit {
   bravery: number;
 
   ct = 0;
+  statuses: StatusInstance[] = [];
 
   constructor(def: UnitDef, x: number, z: number, facing: Facing) {
     this.id = def.id;
@@ -77,4 +86,31 @@ export class Unit {
   }
 
   get isAlive(): boolean { return this.hp > 0; }
+
+  hasStatus(id: StatusId): boolean {
+    return this.statuses.some(s => s.id === id);
+  }
+
+  /**
+   * Apply a status. If the status belongs to a mutual-exclusion group, any
+   * existing same-group status is removed first. Re-applying the same status
+   * refreshes its duration.
+   */
+  addStatus(id: StatusId): void {
+    const def = STATUS_DEFS[id];
+    if (def.group) {
+      this.statuses = this.statuses.filter(s => STATUS_DEFS[s.id].group !== def.group);
+    } else {
+      // de-dup
+      this.statuses = this.statuses.filter(s => s.id !== id);
+    }
+    const remainingTicks = def.expiry.kind === 'duration' ? def.expiry.ticks : -1;
+    this.statuses.push({ id, remainingTicks });
+  }
+
+  removeStatus(id: StatusId): boolean {
+    const before = this.statuses.length;
+    this.statuses = this.statuses.filter(s => s.id !== id);
+    return this.statuses.length < before;
+  }
 }

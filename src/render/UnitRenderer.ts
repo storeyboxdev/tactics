@@ -22,6 +22,7 @@ const CELL_V = 1 / SHEET_LAYOUT.rows;
 
 const JOB_LABEL: Record<string, string> = {
   squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M',
+  time_mage: 'T', oracle: 'O',
 };
 
 interface MoveState {

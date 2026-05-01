@@ -7,9 +7,12 @@
  * land, this table grows but its consumers shouldn't need to change much.
  */
 
+import { StatusId } from './statuses';
+
 export type AbilityEffect =
   | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' }
-  | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number };
+  | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
+  | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any' };
 
 export interface Ability {
   id: string;
@@ -72,6 +75,35 @@ export const ABILITIES: Record<string, Ability> = {
     chargeTime: 3,
     mpCost: 6,
     effect: { kind: 'magic-damage', spellPower: 12, element: 'ice' },
+  },
+
+  // ─── Time Mage ────────────────────────────────────────────────────────────
+  haste: {
+    id: 'haste', name: 'Haste',
+    jpCost: 300, type: 'magical', range: 3, chargeTime: 2, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally' },
+  },
+  slow: {
+    id: 'slow', name: 'Slow',
+    jpCost: 400, type: 'magical', range: 3, chargeTime: 3, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'slow', targetTeam: 'enemy' },
+  },
+  stop: {
+    id: 'stop', name: 'Stop',
+    jpCost: 600, type: 'magical', range: 3, chargeTime: 4, mpCost: 14,
+    effect: { kind: 'inflict-status', statusId: 'stop', targetTeam: 'enemy' },
+  },
+
+  // ─── Oracle ───────────────────────────────────────────────────────────────
+  sleep: {
+    id: 'sleep', name: 'Sleep',
+    jpCost: 300, type: 'magical', range: 3, chargeTime: 2, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'sleep', targetTeam: 'enemy' },
+  },
+  poison_spell: {
+    id: 'poison_spell', name: 'Poison',
+    jpCost: 200, type: 'magical', range: 3, chargeTime: 2, mpCost: 6,
+    effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy' },
   },
 };
 

@@ -10,6 +10,7 @@ import {
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
+import { STATUS_DEFS } from './data/statuses';
 import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
 import { CameraController } from './render/CameraController';
@@ -61,8 +62,8 @@ function buildUnit(seed: UnitSeed): Unit {
 
 const playerSpawns = map.spawns.player;
 const enemySpawns  = map.spawns.enemy;
-const playerJobs   = ['knight', 'squire', 'chemist', 'black_mage', 'squire'];
-const enemyJobs    = ['knight', 'knight', 'knight',  'knight',     'knight'];
+const playerJobs   = ['knight', 'squire', 'time_mage', 'black_mage', 'oracle'];
+const enemyJobs    = ['knight', 'knight', 'knight',    'knight',     'knight'];
 
 const units: Unit[] = [];
 playerSpawns.forEach(([x, z], i) => units.push(buildUnit({
@@ -85,6 +86,20 @@ const cam = new CameraController(
 
 const turns = new TurnSystem(units);
 const hud = new Hud();
+
+// Per-tick status events come from TurnSystem. Mirror them in the action log
+// and trigger the KO animation if poison drops a unit to 0.
+turns.setTickListener((ev) => {
+  const def = STATUS_DEFS[ev.statusId];
+  if (ev.kind === 'status-damage') {
+    hud.log(`${ev.unit.name} takes ${ev.amount} ${def.name} damage` + (ev.ko ? ` — ${ev.unit.name} KO'd` : ''));
+    if (ev.ko) unitRenderer.playKO(ev.unit);
+  } else if (ev.kind === 'status-heal') {
+    hud.log(`${ev.unit.name} regenerates ${ev.amount} HP from ${def.name}`);
+  } else {
+    hud.log(`${ev.unit.name}'s ${def.name} wears off`);
+  }
+});
 
 const input = new InputController(
   renderer.domElement,
@@ -143,6 +158,16 @@ function activateNext() {
     return;
   }
   const actor = event.unit;
+
+  // Blocked-turn statuses (Sleep, Stop) skip the actor's turn entirely.
+  const blocking = actor.statuses.find(s => STATUS_DEFS[s.id].blocksTurn);
+  if (blocking) {
+    hud.log(`${actor.name} is ${STATUS_DEFS[blocking.id].name} — turn skipped`);
+    turns.endTurn(actor, { moved: false, acted: false });
+    activateNext();
+    return;
+  }
+
   currentActor = actor;
   hasMoved = false;
   hasActed = false;
@@ -292,10 +317,13 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
     const statLabel = out.stat.toUpperCase();
     hud.log(`${actor.name} ${ab.name} on ${target.name}: ${statLabel} -${out.amount}`);
   } else if (eff.kind === 'magic-damage') {
-    // Instant magic isn't currently used (all spells are charged) but handle for completeness.
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     playSpellHitVisual(target);
+  } else if (eff.kind === 'inflict-status') {
+    target.addStatus(eff.statusId);
+    const def = STATUS_DEFS[eff.statusId];
+    hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
   }
 }
 
@@ -311,13 +339,19 @@ function resolveScheduledSpell(spell: PendingSpell) {
     hud.log(`${ab.name} hits empty ground at (${spell.target.x},${spell.target.z}).`);
     return;
   }
-  if (ab.effect.kind !== 'magic-damage') return;
-  const out = resolveSpell(spell.caster, target, ab.effect.spellPower);
-  hud.log(
-    `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg` +
-    (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
-  );
-  playSpellHitVisual(target);
+  const eff = ab.effect;
+  if (eff.kind === 'magic-damage') {
+    const out = resolveSpell(spell.caster, target, eff.spellPower);
+    hud.log(
+      `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg` +
+      (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
+    );
+    playSpellHitVisual(target);
+  } else if (eff.kind === 'inflict-status') {
+    target.addStatus(eff.statusId);
+    const def = STATUS_DEFS[eff.statusId];
+    hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
+  }
 }
 
 function logAttack(out: AttackOutcome) {

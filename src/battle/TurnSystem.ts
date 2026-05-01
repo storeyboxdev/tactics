@@ -1,4 +1,5 @@
 import { Unit } from './Unit';
+import { STATUS_DEFS, StatusId, ctMultiplierFromStatuses } from '../data/statuses';
 
 /**
  * FFT-style Charge Time turn system.
@@ -27,11 +28,22 @@ export type AdvanceResult =
   | { kind: 'turn'; unit: Unit }
   | { kind: 'spell'; spell: PendingSpell };
 
+export type TickEvent =
+  | { kind: 'status-damage'; unit: Unit; statusId: StatusId; amount: number; ko: boolean }
+  | { kind: 'status-heal';   unit: Unit; statusId: StatusId; amount: number }
+  | { kind: 'status-expire'; unit: Unit; statusId: StatusId };
+
 export class TurnSystem {
   private currentTick = 0;
   private readonly pending: PendingSpell[] = [];
+  private onTickEvent: ((ev: TickEvent) => void) | null = null;
 
   constructor(private readonly units: readonly Unit[]) {}
+
+  /** Subscribe to per-tick status events (damage/heal/expire). Last subscriber wins. */
+  setTickListener(fn: ((ev: TickEvent) => void) | null): void {
+    this.onTickEvent = fn;
+  }
 
   get tick(): number { return this.currentTick; }
   get pendingSpells(): readonly PendingSpell[] { return this.pending; }
@@ -44,8 +56,46 @@ export class TurnSystem {
       const ready = this.peekReady();
       if (ready) return { kind: 'turn', unit: ready };
       this.currentTick++;
+      // Per-tick status hooks happen BEFORE CT growth so a unit who dies from
+      // poison this tick stops gaining CT this tick.
       for (const u of this.units) {
-        if (u.isAlive) u.ct += u.speed;
+        if (!u.isAlive) continue;
+        this.applyTickHooks(u);
+      }
+      for (const u of this.units) {
+        if (!u.isAlive) continue;
+        const mul = ctMultiplierFromStatuses(u.statuses.map(s => s.id));
+        u.ct += u.speed * mul;
+      }
+    }
+  }
+
+  private applyTickHooks(u: Unit): void {
+    // Process in a copy so we can mutate `u.statuses` while iterating.
+    for (const s of [...u.statuses]) {
+      const def = STATUS_DEFS[s.id];
+      if (def.hpPerTick) {
+        if (def.hpPerTick > 0) {
+          const before = u.hp;
+          u.hp = Math.max(0, u.hp - def.hpPerTick);
+          const dealt = before - u.hp;
+          this.onTickEvent?.({ kind: 'status-damage', unit: u, statusId: s.id, amount: dealt, ko: u.hp <= 0 });
+          if (u.hp <= 0) return; // dead — no further ticks this turn
+        } else {
+          const before = u.hp;
+          u.hp = Math.min(u.hpMax, u.hp - def.hpPerTick);
+          const healed = u.hp - before;
+          if (healed > 0) {
+            this.onTickEvent?.({ kind: 'status-heal', unit: u, statusId: s.id, amount: healed });
+          }
+        }
+      }
+      if (s.remainingTicks > 0) {
+        s.remainingTicks--;
+        if (s.remainingTicks === 0) {
+          u.statuses = u.statuses.filter(x => x !== s);
+          this.onTickEvent?.({ kind: 'status-expire', unit: u, statusId: s.id });
+        }
       }
     }
   }

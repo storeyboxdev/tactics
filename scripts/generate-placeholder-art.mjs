@@ -40,7 +40,7 @@ const HAIR  = [50, 38, 34, 255];
 const EYE   = [16, 16, 26, 255];
 const WHITE = [255, 255, 255, 255];
 
-const JOB_LETTER = { squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M' };
+const JOB_LETTER = { squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M', time_mage: 'T', oracle: 'O' };
 const JOBS  = Object.keys(JOB_LETTER);
 const TEAMS = ['player', 'enemy'];
 
@@ -77,6 +77,8 @@ const FONT = {
   C: ['01110','10000','10000','10000','01110'],
   K: ['10010','10100','11000','10100','10010'],
   M: ['10001','11011','10101','10001','10001'],
+  T: ['11111','00100','00100','00100','00100'],
+  O: ['01110','10001','10001','10001','01110'],
 };
 
 function drawLetter(buf, x, y, letter, color) {

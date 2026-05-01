@@ -145,6 +145,9 @@ export function resolveAttack(
 
   const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true };
 
+  // Damage breaks Sleep — same as FFT.
+  if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
+
   if (allowCounter && target.isAlive && isMeleeAdjacent(attacker, target) && rng() < target.bravery / 100) {
     target.facing = facingTowards(target.x, target.z, attacker.x, attacker.z);
     const counter = resolveAttack(target, attacker, map, rng, false);
@@ -208,6 +211,7 @@ export function resolveSpell(
     randomMul: 0.85 + rng() * 0.30,
   });
   target.hp = Math.max(0, target.hp - damage);
+  if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
   return { caster, target, damage };
 }
 

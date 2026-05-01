@@ -1,8 +1,14 @@
 import { Unit } from '../battle/Unit';
+import { STATUS_DEFS } from '../data/statuses';
 
 const JOB_LABEL: Record<string, string> = {
   squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M',
+  time_mage: 'T', oracle: 'O',
 };
+
+function hexToCss(c: number): string {
+  return '#' + c.toString(16).padStart(6, '0');
+}
 
 export interface ActionMenuOpts {
   canMove: boolean;
@@ -75,6 +81,29 @@ export class Hud {
       sub.textContent = `${u.hp}hp ${u.mp}mp`;
       cell.appendChild(name);
       cell.appendChild(sub);
+
+      if (u.statuses.length > 0) {
+        const badges = document.createElement('div');
+        badges.style.cssText = 'display: flex; gap: 2px; justify-content: center; margin-top: 2px;';
+        for (const s of u.statuses) {
+          const def = STATUS_DEFS[s.id];
+          const chip = document.createElement('div');
+          chip.style.cssText = `
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 3px;
+            background: ${hexToCss(def.color)};
+            color: #fff;
+            border-radius: 2px;
+            line-height: 1;
+          `;
+          chip.textContent = def.short;
+          chip.title = def.name + (s.remainingTicks > 0 ? ` (${s.remainingTicks})` : '');
+          badges.appendChild(chip);
+        }
+        cell.appendChild(badges);
+      }
+
       this.turnStripEl.appendChild(cell);
     });
   }

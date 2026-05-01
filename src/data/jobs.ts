@@ -106,13 +106,15 @@ export const JOB_DEFS: Record<string, JobDef> = {
     id: 'time_mage', name: 'Time Mage',
     prereqs: [{ jobId: 'black_mage', level: 2 }, { jobId: 'white_mage', level: 2 }],
     baseStats: stat({ hp: 40, mp: 28, pa: 3, ma: 8, move: 3, faith: 70 }),
-    ...noAbilities,
+    learnableActives: ['haste', 'slow', 'stop'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   oracle: {
     id: 'oracle', name: 'Oracle',
     prereqs: [{ jobId: 'white_mage', level: 4 }],
     baseStats: stat({ hp: 42, mp: 26, pa: 3, ma: 8, speed: 9, move: 3, faith: 65 }),
-    ...noAbilities,
+    learnableActives: ['sleep', 'poison_spell'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
   // ─── Tier 3: physical specialists ─────────────────────────────────────────
