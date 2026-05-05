@@ -1,5 +1,7 @@
 import { StatusId, STATUS_DEFS } from '../data/statuses';
 import { ABILITIES } from '../data/abilities';
+import { UnitProgression } from './Progression';
+import { computeDisplayStats } from './Stats';
 
 export type Team = 'player' | 'enemy';
 
@@ -37,6 +39,15 @@ export interface UnitDef {
   support?: string | null;
   /** ability id slotted as a Movement (e.g. 'move_plus_1', 'move_hp_up'). */
   movement?: string | null;
+  /**
+   * Optional progression record. Player units carry one; enemies do not (they
+   * read stats directly from `def.stats`, copied from the job baseline). When
+   * present, `refreshStatsFromProgression()` is the source of truth for
+   * display stats and supersedes `def.stats`.
+   */
+  progression?: UnitProgression;
+  /** Reserved — Secondary Command UI deferred. */
+  secondaryJobId?: string | null;
 }
 
 export interface StatusInstance {
@@ -76,6 +87,11 @@ export class Unit {
   support: string | null;
   movement: string | null;
 
+  /** Player units carry a progression record; enemies have null. */
+  progression: UnitProgression | null;
+  /** Reserved — Secondary Command UI deferred. */
+  secondaryJobId: string | null;
+
   constructor(def: UnitDef, x: number, z: number, facing: Facing) {
     this.id = def.id;
     this.name = def.name;
@@ -99,6 +115,14 @@ export class Unit {
     this.reaction = def.reaction ?? null;
     this.support = def.support ?? null;
     this.movement = def.movement ?? null;
+
+    this.progression = def.progression ?? null;
+    this.secondaryJobId = def.secondaryJobId ?? null;
+
+    if (this.progression) {
+      this.level = this.progression.totalLevel;
+      this.refreshStatsFromProgression();
+    }
   }
 
   get isAlive(): boolean { return this.hp > 0; }
@@ -136,5 +160,30 @@ export class Unit {
     const before = this.statuses.length;
     this.statuses = this.statuses.filter(s => s.id !== id);
     return this.statuses.length < before;
+  }
+
+  /**
+   * For progression-backed units: recompute hp/mp/pa/ma/speed from raw × mult,
+   * pull move/jump/faith/bravery from job + progression, and fully restore
+   * hp/mp. Also clobbers any lingering `applyBreak` decrements (those are
+   * battle-duration only, applied directly to the live fields).
+   *
+   * No-op for enemy units (`progression === null`).
+   */
+  refreshStatsFromProgression(): void {
+    if (!this.progression) return;
+    const s = computeDisplayStats(this.progression, this.jobId);
+    this.hpMax = s.hp;
+    this.mpMax = s.mp;
+    this.hp = s.hp;
+    this.mp = s.mp;
+    this.pa = s.pa;
+    this.ma = s.ma;
+    this.speed = s.speed;
+    this.move = s.move;
+    this.jump = s.jump;
+    this.faith = s.faith;
+    this.bravery = s.bravery;
+    this.level = this.progression.totalLevel;
   }
 }

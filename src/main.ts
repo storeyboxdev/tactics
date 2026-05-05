@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BattleMap, MapData } from './battle/Map';
-import { Unit, UnitDef, UnitStats, FACING_E, FACING_W, Team } from './battle/Unit';
+import { Unit, UnitDef, UnitStats, FACING_E, FACING_W } from './battle/Unit';
 import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
 import { meleeAttackTargets, potionTargets, abilityTargets, unitAt } from './battle/Targeting';
@@ -8,6 +8,10 @@ import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, applyBreak, facingTowards,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
+import {
+  awardExp, awardJp, learnedActivesInJob, jobLevelFor,
+} from './battle/Progression';
+import { computeDisplayStats } from './battle/Stats';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
 import { STATUS_DEFS } from './data/statuses';
@@ -18,6 +22,9 @@ import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
+import { loadSave, SavedUnit } from './core/Save';
+import { defaultRoster } from './core/Bootstrap';
+import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,11 +54,14 @@ scene.add(mapRenderer.group);
 // Unit setup — stats and learnable abilities come from JOB_DEFS (src/data/jobs.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface UnitSeed { id: string; name: string; team: Team; jobId: string; x: number; z: number; }
+interface EnemySeed { id: string; name: string; jobId: string; x: number; z: number; }
 
 /**
- * Default reaction/support/movement loadout per job. Swappable per unit later;
- * for now this stands in for the equip-screen UI.
+ * Default reaction/support/movement loadout per job — used to flesh out
+ * enemies and to seed the *first-ever* player roster (`defaultRoster`-built
+ * units start with no equipped passives, which would feel barren in the very
+ * first battle). Once a player unit's save exists, their saved equip slots
+ * win.
  */
 const JOB_DEFAULT_LOADOUT: Record<string, { reaction: string | null; support: string | null; movement: string | null }> = {
   knight:     { reaction: 'counter',     support: null,          movement: 'move_plus_1' },
@@ -62,30 +72,58 @@ const JOB_DEFAULT_LOADOUT: Record<string, { reaction: string | null; support: st
   oracle:     { reaction: 'auto_potion', support: 'mp_recovery', movement: null },
 };
 
-function buildUnit(seed: UnitSeed): Unit {
+function buildEnemy(seed: EnemySeed): Unit {
   const job = JOB_DEFS[seed.jobId];
   if (!job) throw new Error(`unknown jobId: ${seed.jobId}`);
   const loadout = JOB_DEFAULT_LOADOUT[seed.jobId] ?? { reaction: null, support: null, movement: null };
   const def: UnitDef = {
-    id: seed.id, name: seed.name, team: seed.team,
+    id: seed.id, name: seed.name, team: 'enemy',
     jobId: seed.jobId, level: 1, stats: { ...job.baseStats } as UnitStats,
     reaction: loadout.reaction, support: loadout.support, movement: loadout.movement,
   };
-  const facing = seed.team === 'player' ? FACING_E : FACING_W;
-  return new Unit(def, seed.x, seed.z, facing);
+  return new Unit(def, seed.x, seed.z, FACING_W);
+}
+
+function buildPlayerUnit(saved: SavedUnit, x: number, z: number): Unit {
+  const job = JOB_DEFS[saved.jobId];
+  if (!job) throw new Error(`buildPlayerUnit: unknown jobId ${saved.jobId}`);
+  const fallback = JOB_DEFAULT_LOADOUT[saved.jobId] ?? { reaction: null, support: null, movement: null };
+  const def: UnitDef = {
+    id: saved.id, name: saved.name, team: 'player',
+    jobId: saved.jobId, level: saved.progression.totalLevel,
+    // `stats` will be overwritten by refreshStatsFromProgression() inside the
+    // Unit ctor (because progression is set), but the type requires a full
+    // UnitStats — `job.baseStats` is the natural placeholder.
+    stats: { ...job.baseStats } as UnitStats,
+    // Saved slots win when set; otherwise fall back to job defaults so the
+    // very first battle isn't barren.
+    reaction: saved.reaction ?? fallback.reaction,
+    support:  saved.support  ?? fallback.support,
+    movement: saved.movement ?? fallback.movement,
+    progression: saved.progression,
+    secondaryJobId: saved.secondaryJobId,
+  };
+  return new Unit(def, x, z, FACING_E);
 }
 
 const playerSpawns = map.spawns.player;
 const enemySpawns  = map.spawns.enemy;
-const playerJobs   = ['knight', 'squire',    'time_mage', 'black_mage', 'oracle'];
-const enemyJobs    = ['knight', 'knight',    'knight',    'time_mage',  'oracle'];
+// Mirror-matching the Squire starter roster — keeps battle 1 winnable while
+// the player has zero learned actives. Crank this up (or vary jobs) once the
+// roster has spent a few battles' worth of JP.
+const enemyJobs    = ['squire', 'squire', 'squire', 'squire', 'squire'];
+
+const save = loadSave();
+const roster: SavedUnit[] = save?.roster ?? defaultRoster();
 
 const units: Unit[] = [];
-playerSpawns.forEach(([x, z], i) => units.push(buildUnit({
-  id: `p${i + 1}`, name: `P${i + 1}`, team: 'player', jobId: playerJobs[i], x, z,
-})));
-enemySpawns.forEach(([x, z], i) => units.push(buildUnit({
-  id: `e${i + 1}`, name: `E${i + 1}`, team: 'enemy', jobId: enemyJobs[i], x, z,
+playerSpawns.forEach(([x, z], i) => {
+  const saved = roster[i];
+  if (!saved) return; // roster smaller than spawn count — leave the slot empty
+  units.push(buildPlayerUnit(saved, x, z));
+});
+enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
+  id: `e${i + 1}`, name: `E${i + 1}`, jobId: enemyJobs[i], x, z,
 })));
 
 const unitRenderer = new UnitRenderer(units, map);
@@ -161,7 +199,7 @@ function activateNext() {
     cursor.clearActiveTile();
     refreshHud();
     hud.setStatus(winner === 'player' ? 'Victory!' : 'Defeat.');
-    hud.showResult(winner);
+    hud.showResult(winner, () => showRosterScreen(units));
     return;
   }
   const event = turns.advance();
@@ -211,7 +249,13 @@ function showActionMenu() {
 }
 
 function jobAbilitiesFor(actor: Unit): SkillEntry[] {
-  const ids = JOB_DEFS[actor.jobId]?.learnableActives ?? [];
+  // Player units only show abilities they've LEARNED inside their current
+  // job — JP spent earns the menu entry. Enemies (no progression) keep the
+  // legacy "all learnable" path so they remain a credible threat without a
+  // training history.
+  const ids = actor.progression
+    ? learnedActivesInJob(actor.progression, actor.jobId)
+    : (JOB_DEFS[actor.jobId]?.learnableActives ?? []);
   return ids.map(id => {
     const ab = ABILITIES[id];
     return {
@@ -267,6 +311,7 @@ function beginAttack() {
       const out = resolveAttack(unit, target, map);
       logAttack(out);
       playAttackVisual(out);
+      awardForAttack(out);
       hasActed = true;
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
@@ -285,6 +330,9 @@ function beginItem() {
       if (!target) return;
       const out = resolvePotion(unit, target);
       hud.log(`${unit.name} uses Potion on ${target.name}: +${out.amount} HP`);
+      // Items always pay JP to the actor's job; healing self/ally is not an
+      // enemy-affecting action so no EXP.
+      awardForAction(unit, false);
       hasActed = true;
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
@@ -332,14 +380,17 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
     const out = applyBreak(actor, target, eff.stat, eff.amount);
     const statLabel = out.stat.toUpperCase();
     hud.log(`${actor.name} ${ab.name} on ${target.name}: ${statLabel} -${out.amount}`);
+    awardForAction(actor, target.team === 'enemy' && out.amount > 0);
   } else if (eff.kind === 'magic-damage') {
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     playSpellHitVisual(target);
+    awardForAction(actor, target.team === 'enemy' && out.damage > 0);
   } else if (eff.kind === 'inflict-status') {
     target.addStatus(eff.statusId);
     const def = STATUS_DEFS[eff.statusId];
     hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
+    awardForAction(actor, target.team === 'enemy');
   }
 }
 
@@ -363,10 +414,72 @@ function resolveScheduledSpell(spell: PendingSpell) {
       (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
     );
     playSpellHitVisual(target);
+    awardForAction(spell.caster, target.team === 'enemy' && out.damage > 0);
   } else if (eff.kind === 'inflict-status') {
     target.addStatus(eff.statusId);
     const def = STATUS_DEFS[eff.statusId];
     hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
+    awardForAction(spell.caster, target.team === 'enemy');
+  }
+}
+
+// ─── EXP / JP awards ────────────────────────────────────────────────────────
+
+const EXP_PER_ACTION = 10;
+const JP_PER_ACTION  = 10;
+
+/**
+ * Centralised award rule for player actions: always pay JP to the actor's
+ * current job; pay EXP only when the action affected an enemy. No-op for
+ * enemy units (they don't progress).
+ *
+ * Mid-battle level-ups bump `hpMax`/`mpMax` and slide current `hp`/`mp` up
+ * by the delta — no full heal. Other display stats (pa/ma/speed) only refresh
+ * between battles via `refreshStatsFromProgression()`, so a Speed Break
+ * applied earlier this battle stays in effect through a level-up.
+ */
+function awardForAction(actor: Unit, affectedEnemy: boolean): void {
+  if (actor.team !== 'player' || !actor.progression) return;
+  const lines: string[] = [];
+
+  const jpRes = awardJp(actor.progression, actor.jobId, JP_PER_ACTION);
+  lines.push(`+${JP_PER_ACTION} JP`);
+
+  if (affectedEnemy) {
+    const expRes = awardExp(actor.progression, actor.jobId, EXP_PER_ACTION);
+    lines.push(`+${EXP_PER_ACTION} EXP`);
+    if (expRes.leveledUp) {
+      lines.push(`Level Up! Lv ${expRes.to}`);
+      const stats = computeDisplayStats(actor.progression, actor.jobId);
+      const hpDelta = stats.hp - actor.hpMax;
+      const mpDelta = stats.mp - actor.mpMax;
+      actor.hpMax = stats.hp;
+      actor.mpMax = stats.mp;
+      actor.hp = Math.min(actor.hpMax, actor.hp + Math.max(0, hpDelta));
+      actor.mp = Math.min(actor.mpMax, actor.mp + Math.max(0, mpDelta));
+      actor.level = actor.progression.totalLevel;
+    }
+  }
+
+  if (jpRes.jobLevelGained) {
+    lines.push(`Job Lv ${jobLevelFor(jpRes.jpTo)}!`);
+  }
+  for (const id of jpRes.newlyUnlocked) {
+    lines.push(`${JOB_DEFS[id]?.name ?? id} unlocked!`);
+  }
+
+  hud.showFloatingAward(actor, lines);
+}
+
+/**
+ * Awards for a melee attack. Original attacker earns from hitting an enemy;
+ * a counter, if it fires, earns separately for the counter-er.
+ */
+function awardForAttack(out: AttackOutcome): void {
+  awardForAction(out.attacker, out.target.team === 'enemy' && out.damage > 0);
+  if (out.counter) {
+    const c = out.counter;
+    awardForAction(c.counterer, c.victim.team === 'enemy' && c.damage > 0);
   }
 }
 
@@ -519,6 +632,9 @@ function enemyAutoTurn(actor: Unit) {
         const out = resolveAttack(actor, target, map);
         logAttack(out);
         playAttackVisual(out);
+        // Player counter on enemy still earns; awardForAttack short-circuits
+        // for the enemy attacker.
+        awardForAttack(out);
       }
     } else if (decision.action?.kind === 'ability') {
       const target = units.find(u => u.id === decision.action!.targetId);

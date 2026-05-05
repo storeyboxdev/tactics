@@ -31,6 +31,7 @@ export class Hud {
   private readonly turnStripEl: HTMLDivElement;
   private readonly statusEl: HTMLDivElement;
   private readonly logEl: HTMLDivElement;
+  private readonly awardsEl: HTMLDivElement;
   private actionMenuEl: HTMLDivElement | null = null;
 
   constructor() {
@@ -54,6 +55,28 @@ export class Hud {
       display: 'flex', flexDirection: 'column', gap: '2px',
     });
     root.appendChild(this.logEl);
+
+    this.awardsEl = document.createElement('div');
+    Object.assign(this.awardsEl.style, {
+      position: 'absolute',
+      top: '90px', left: '50%', transform: 'translateX(-50%)',
+      display: 'flex', flexDirection: 'column', gap: '4px',
+      alignItems: 'center', pointerEvents: 'none',
+    });
+    root.appendChild(this.awardsEl);
+
+    if (!document.getElementById('hud-award-anim')) {
+      const sty = document.createElement('style');
+      sty.id = 'hud-award-anim';
+      sty.textContent = `
+        @keyframes hudAwardRise {
+          0%   { opacity: 0; transform: translateY(8px); }
+          15%  { opacity: 1; transform: translateY(0); }
+          80%  { opacity: 1; transform: translateY(-4px); }
+          100% { opacity: 0; transform: translateY(-12px); }
+        }`;
+      document.head.appendChild(sty);
+    }
   }
 
   setTurnOrder(upcoming: Unit[], currentId: string | null): void {
@@ -155,7 +178,40 @@ export class Hud {
     }
   }
 
-  showResult(winner: 'player' | 'enemy'): void {
+  /**
+   * Stacks one or more floating "+10 JP / +10 EXP / Level Up!" lines anchored
+   * over the action area for ~2.2s, then auto-fades. The unit is included so a
+   * future iteration can anchor to the unit's projected screen position; for
+   * now lines are center-stacked above the action menu.
+   */
+  showFloatingAward(unit: Unit, lines: string[]): void {
+    if (lines.length === 0) return;
+    const block = document.createElement('div');
+    Object.assign(block.style, {
+      padding: '4px 8px',
+      background: 'rgba(10, 10, 20, 0.78)',
+      border: '1px solid rgba(255, 225, 74, 0.55)',
+      borderRadius: '4px',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontSize: '12px',
+      color: '#ffe14a',
+      textAlign: 'center',
+      animation: 'hudAwardRise 2.2s ease-out forwards',
+    });
+    const head = document.createElement('div');
+    head.textContent = unit.name;
+    head.style.cssText = 'font-weight: 700; font-size: 11px; color: #fff; opacity: 0.85;';
+    block.appendChild(head);
+    for (const line of lines) {
+      const row = document.createElement('div');
+      row.textContent = line;
+      block.appendChild(row);
+    }
+    this.awardsEl.appendChild(block);
+    setTimeout(() => block.remove(), 2300);
+  }
+
+  showResult(winner: 'player' | 'enemy', onContinue: () => void): void {
     const root = document.getElementById('hud')!;
     const overlay = document.createElement('div');
     Object.assign(overlay.style, {
@@ -189,9 +245,9 @@ export class Hud {
     sub.style.fontSize = '16px';
     overlay.appendChild(sub);
 
-    const reload = document.createElement('button');
-    reload.textContent = 'New battle';
-    Object.assign(reload.style, {
+    const cont = document.createElement('button');
+    cont.textContent = 'Continue';
+    Object.assign(cont.style, {
       padding: '10px 18px',
       fontSize: '14px',
       color: '#fff',
@@ -201,8 +257,11 @@ export class Hud {
       cursor: 'pointer',
       fontFamily: 'inherit',
     });
-    reload.addEventListener('click', () => location.reload());
-    overlay.appendChild(reload);
+    cont.addEventListener('click', () => {
+      overlay.remove();
+      onContinue();
+    });
+    overlay.appendChild(cont);
 
     root.appendChild(overlay);
   }
