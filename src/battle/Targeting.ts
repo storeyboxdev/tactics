@@ -48,6 +48,7 @@ export function abilityTargets(
   from?: { x: number; z: number },
 ): { x: number; z: number }[] {
   let allowEnemy = false, allowAlly = false, allowSelf = false;
+  const isRevive = ability.effect.kind === 'revive';
   if (ability.effect.kind === 'inflict-status') {
     const t = ability.effect.targetTeam;
     allowEnemy = t === 'enemy' || t === 'any';
@@ -56,6 +57,9 @@ export function abilityTargets(
   } else if (ability.effect.kind === 'magic-heal') {
     allowAlly = true;
     allowSelf = true;
+  } else if (isRevive) {
+    // KO'd allies only — self can't revive itself even at allowSelf=true.
+    allowAlly = true;
   } else {
     allowEnemy = true;
   }
@@ -72,8 +76,10 @@ export function abilityTargets(
       const x = ox + dx;
       const z = oz + dz;
       if (!map.inBounds(x, z)) continue;
-      const u = unitAt(units, x, z);
+      const u = isRevive ? unitAtAny(units, x, z) : unitAt(units, x, z);
       if (!u) continue;
+      // Revive needs a KO'd target; everything else needs a living one.
+      if (isRevive && u.isAlive) continue;
       if (u === actor) {
         if (!allowSelf) continue;
       } else if (u.team === actor.team) {
@@ -89,6 +95,14 @@ export function abilityTargets(
 
 export function unitAt(units: readonly Unit[], x: number, z: number): Unit | undefined {
   return units.find(u => u.isAlive && u.x === x && u.z === z);
+}
+
+/**
+ * Includes KO'd units. Used by revive targeting and any future inspector that
+ * wants to find a unit standing on a tile regardless of state.
+ */
+export function unitAtAny(units: readonly Unit[], x: number, z: number): Unit | undefined {
+  return units.find(u => u.x === x && u.z === z);
 }
 
 /**
@@ -128,6 +142,7 @@ export function affectedUnits(
 
   // Mirror the per-effect targeting logic from abilityTargets.
   let allowEnemy = false, allowAlly = false, allowSelf = false;
+  const isRevive = eff.kind === 'revive';
   if (eff.kind === 'inflict-status') {
     const t = eff.targetTeam;
     allowEnemy = t === 'enemy' || t === 'any';
@@ -136,14 +151,17 @@ export function affectedUnits(
   } else if (eff.kind === 'magic-heal') {
     allowAlly = true;
     allowSelf = true;
+  } else if (isRevive) {
+    allowAlly = true;
   } else {
     allowEnemy = true;
   }
 
   const out: Unit[] = [];
   for (const t of tiles) {
-    const u = unitAt(units, t.x, t.z);
+    const u = isRevive ? unitAtAny(units, t.x, t.z) : unitAt(units, t.x, t.z);
     if (!u) continue;
+    if (isRevive && u.isAlive) continue;
     if (u === caster) {
       if (allowSelf) out.push(u);
     } else if (u.team === caster.team) {

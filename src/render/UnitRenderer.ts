@@ -118,6 +118,13 @@ export class UnitRenderer {
     e.anim.play('ko');
   }
 
+  /** Switch a KO'd unit's sprite back to idle (for Raise / Phoenix Down). */
+  revive(unit: Unit): void {
+    const e = this.entries.find(en => en.unit === unit);
+    if (!e || !e.sheetTexture) return;
+    e.anim.play('idle');
+  }
+
   update(dt: number, cameraQuadrant: number) {
     const cameraSide = QUADRANT_TO_CAMERA_SIDE[cameraQuadrant] ?? 2;
 

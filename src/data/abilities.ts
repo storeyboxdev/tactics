@@ -13,6 +13,12 @@ export type AbilityEffect =
   | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
   | { kind: 'magic-heal'; spellPower: number }
   | { kind: 'physical-ranged-damage'; weaponPower: number }
+  /**
+   * Restore a KO'd ally to `hpPercent`% of their hpMax (floor, min 1). The
+   * targeting layer surfaces only KO'd allies for this effect; resolution
+   * also flips the renderer back to idle.
+   */
+  | { kind: 'revive'; hpPercent: number }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -163,6 +169,11 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'cura', name: 'Cura',
     jpCost: 250, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
     effect: { kind: 'magic-heal', spellPower: 18 },
+  },
+  raise: {
+    id: 'raise', name: 'Raise',
+    jpCost: 350, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
+    effect: { kind: 'revive', hpPercent: 50 },
   },
 
   // ─── Squire ───────────────────────────────────────────────────────────────

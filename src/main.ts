@@ -4,12 +4,12 @@ import { Unit, UnitDef, UnitStats, FACING_E, FACING_W } from './battle/Unit';
 import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
 import {
-  meleeAttackTargets, potionTargets, abilityTargets, unitAt,
+  meleeAttackTargets, potionTargets, abilityTargets, unitAt, unitAtAny,
   affectedUnits, aoeTiles,
 } from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
-  applyBreak, facingTowards,
+  resolveRevive, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -451,6 +451,11 @@ function applyInstantAbility(actor: Unit, ab: Ability, cx: number, cz: number) {
 
 function collectAbilityTargets(actor: Unit, ab: Ability, cx: number, cz: number): Unit[] {
   if (ab.area) return affectedUnits(actor, ab, cx, cz, map, units);
+  // Revive walks past `isAlive`; everything else needs a living target.
+  if (ab.effect.kind === 'revive') {
+    const t = unitAtAny(units, cx, cz);
+    return t && !t.isAlive && t.team === actor.team ? [t] : [];
+  }
   const t = unitAt(units, cx, cz);
   return t ? [t] : [];
 }
@@ -486,6 +491,15 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     const out = resolveHeal(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
     return false; // heals never grant EXP
+  }
+  if (eff.kind === 'revive') {
+    const out = resolveRevive(actor, target, eff.hpPercent);
+    if (out.amount > 0) {
+      hud.log(`${ab.name}: ${actor.name} revives ${target.name} (${out.amount} HP)`);
+      unitRenderer.revive(target);
+      hud.showFloatingAward(target, ['REVIVED']);
+    }
+    return false;
   }
   if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
@@ -575,7 +589,10 @@ function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | 
     return aoePreviewLine(actor, ab, targets);
   }
 
-  const target = unitAt(units, x, z);
+  // Revive needs to find KO'd allies; everything else lives-only.
+  const target = ab.effect.kind === 'revive'
+    ? unitAtAny(units, x, z)
+    : unitAt(units, x, z);
   if (!target) return null;
   return singleTargetPreview(actor, ab, target);
 }
@@ -596,6 +613,10 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
       const pred = predictHeal(actor, target, eff.spellPower);
       const filled = Math.min(pred.amount, target.hpMax - target.hp);
       return `${target.name}: +${filled} HP`;
+    }
+    case 'revive': {
+      const restored = Math.max(1, Math.floor(target.hpMax * eff.hpPercent / 100));
+      return `${target.name}: REVIVE → ${restored} HP`;
     }
     case 'debuff': {
       const facing = relativeFacing(actor, target);

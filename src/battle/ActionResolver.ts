@@ -449,6 +449,28 @@ export function resolveHeal(
   return { caster, target, amount: target.hp - before };
 }
 
+// ─── Revive (Raise / Phoenix Down) ──────────────────────────────────────────
+
+export interface ReviveOutcome {
+  caster: Unit;
+  target: Unit;
+  amount: number;   // hp restored
+}
+
+/**
+ * Bring a KO'd ally back at `hpPercent` of their hpMax. Calling this on a
+ * unit that's still alive is treated as a no-op (caller should have filtered
+ * targets via the revive-aware targeting path). All statuses cleared on
+ * revive — FFT canon: a fresh unit, not a damaged one.
+ */
+export function resolveRevive(caster: Unit, target: Unit, hpPercent: number): ReviveOutcome {
+  if (target.isAlive) return { caster, target, amount: 0 };
+  const heal = Math.max(1, Math.floor(target.hpMax * hpPercent / 100));
+  target.hp = heal;
+  target.statuses = [];   // clear any KO-time status leftovers
+  return { caster, target, amount: heal };
+}
+
 // ─── Other ──────────────────────────────────────────────────────────────────
 
 export function resolvePotion(user: Unit, target: Unit): PotionOutcome {
