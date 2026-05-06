@@ -225,7 +225,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 65, mp: 12, pa: 7, ma: 5, move: 3, bravery: 70, evasion: 5 }),
     mult:   { hp: 130, mp: 120, pa: 140, ma: 100, speed: 100 },
     growth: { hp:   8, mp:   4, pa:   7, ma:   5, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['asura', 'koutetsu', 'murasame', 'kiyomori', 'chirijiraden'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   ninja: {
     // Throw is a thin slice of the FFT Ninja kit — just one thrown weapon, no

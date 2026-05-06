@@ -3,7 +3,7 @@ import { BattleMap, MapData } from '../../src/battle/Map';
 import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
-import { aoeTiles, affectedUnits } from '../../src/battle/Targeting';
+import { aoeTiles, affectedUnits, abilityTargets } from '../../src/battle/Targeting';
 import { ABILITIES } from '../../src/data/abilities';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
@@ -88,5 +88,25 @@ describe('affectedUnits', () => {
     const eB = makeUnit('e2', 'enemy', 3, 4, FACING_W);
     const hit = affectedUnits(caster, ABILITIES.fire, 3, 3, map, [caster, eA, eB]);
     expect(hit.map(u => u.id)).toEqual(['e1']);
+  });
+});
+
+describe('Self-centered AoE — Draw Out katanas', () => {
+  it('Asura (range 0, AoE r1, magic-damage) lets the samurai pick their own tile', () => {
+    const map = new BattleMap(flatMap(7, 7));
+    const sam = makeUnit('s', 'player', 3, 3, FACING_E);
+    const enemyAdj = makeUnit('e', 'enemy', 4, 3, FACING_W);
+    const tiles = abilityTargets(sam, ABILITIES.asura, map, [sam, enemyAdj]);
+    expect(tiles.map(t => `${t.x},${t.z}`)).toContain('3,3');
+  });
+
+  it('Asura\'s AoE catches adjacent enemies but never the samurai themselves', () => {
+    const map = new BattleMap(flatMap(7, 7));
+    const sam = makeUnit('s', 'player', 3, 3, FACING_E);
+    const enemy = makeUnit('e', 'enemy', 4, 3, FACING_W);
+    const ally  = makeUnit('al', 'player', 3, 4, FACING_W);
+    const hit = affectedUnits(sam, ABILITIES.asura, 3, 3, map, [sam, enemy, ally]);
+    const ids = hit.map(u => u.id).sort();
+    expect(ids).toEqual(['e']);   // ally + self filtered out by the magic-damage team rule
   });
 });

@@ -72,7 +72,9 @@ export function abilityTargets(
     for (let dz = -ability.range; dz <= ability.range; dz++) {
       const m = Math.abs(dx) + Math.abs(dz);
       if (m > ability.range) continue;
-      if (m === 0 && !allowSelf) continue;
+      // Self-centered AoE (Draw Out katanas, Cheer Song): the caster's tile
+      // is a valid origin even when the effect itself doesn't target self.
+      if (m === 0 && !allowSelf && !ability.area) continue;
       const x = ox + dx;
       const z = oz + dz;
       if (!map.inBounds(x, z)) continue;
@@ -82,7 +84,11 @@ export function abilityTargets(
       // else needs a living one.
       if (isRevive && (u.isAlive || u.crystallized)) continue;
       if (u === actor) {
-        if (!allowSelf) continue;
+        // Self-centered AoE (Draw Out katanas, Cheer Song): the caster's
+        // tile is a valid origin even for damage effects that wouldn't
+        // normally target self — affectedUnits filters out the caster
+        // by the team rule, so no friendly fire.
+        if (!allowSelf && !ability.area) continue;
       } else if (u.team === actor.team) {
         if (!allowAlly) continue;
       } else {

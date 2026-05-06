@@ -220,6 +220,45 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 7 },
   },
 
+  // ─── Samurai (Draw Out) ───────────────────────────────────────────────────
+  // FFT canon: drawing a katana releases its spirit in a sweeping AoE around
+  // the samurai. We don't have an item-break system, so the cost shows up
+  // in JP (these are pricey to learn) rather than consumed katanas. All are
+  // range 0 (self-centered) — the AoE catches everyone in radius regardless
+  // of effect type.
+  asura: {
+    id: 'asura', name: 'Asura',
+    jpCost: 200, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 14, element: 'fire' },
+    area: { radius: 1 },
+  },
+  koutetsu: {
+    id: 'koutetsu', name: 'Koutetsu',
+    jpCost: 350, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 16 },
+    area: { radius: 2 },
+  },
+  murasame: {
+    id: 'murasame', name: 'Murasame',
+    jpCost: 300, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-heal', spellPower: 14 },
+    area: { radius: 1 },
+  },
+  kiyomori: {
+    id: 'kiyomori', name: 'Kiyomori',
+    jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally', baseAccuracy: 200 },
+    area: { radius: 2 },
+  },
+  chirijiraden: {
+    // The big finisher — long charge, wide AoE, strong magic-damage. Saved
+    // for end-of-battle "screw it, end this" moments.
+    id: 'chirijiraden', name: 'Chirijiraden',
+    jpCost: 700, type: 'magical', range: 0, chargeTime: 2, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 22 },
+    area: { radius: 2 },
+  },
+
   // ─── Lancer ───────────────────────────────────────────────────────────────
   jump: {
     // FFT canon: the Lancer leaps off the field, becomes untargetable, and
