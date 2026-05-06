@@ -263,6 +263,29 @@ export interface RangedAttackOutcome {
   facing: RelativeFacing;
 }
 
+export interface RangedAttackPrediction {
+  damage: number;
+  facing: RelativeFacing;
+  heightDiff: number;
+}
+
+export function predictRangedAttack(
+  attacker: Unit, target: Unit, weaponPower: number, map: BattleMap,
+): RangedAttackPrediction {
+  const aH = map.getTile(attacker.x, attacker.z).h;
+  const tH = map.getTile(target.x, target.z).h;
+  const facing = relativeFacing(attacker, target);
+  return {
+    damage: computeAttackDamage({
+      pa: attacker.pa, weaponPower,
+      attackerH: aH, targetH: tH,
+      facing, randomMul: 1.0,
+    }),
+    facing,
+    heightDiff: aH - tH,
+  };
+}
+
 /**
  * A ranged physical attack — same `pa × weaponPower × facing × height`
  * formula as melee, but: (a) no melee-adjacency check, (b) does not trigger

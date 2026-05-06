@@ -7,6 +7,7 @@ import { meleeAttackTargets, potionTargets, abilityTargets, unitAt } from './bat
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   applyBreak, facingTowards,
+  predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import {
@@ -327,6 +328,8 @@ function beginAttack() {
   const unit = currentActor;
   const tiles = meleeAttackTargets(unit, map, units);
   if (tiles.length === 0) { hud.log(`${unit.name}: no melee targets`); return; }
+  const basePrompt = `${unit.name}: pick an attack target — right-click to cancel`;
+  hud.setStatus(basePrompt);
   input.beginPick({
     tiles, color: COLOR_ATTACK,
     onPick: (x, z) => {
@@ -341,6 +344,9 @@ function beginAttack() {
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
     },
+    onHover: (x, z) => {
+      hud.setStatus(previewWith(basePrompt, hoverPreview(unit, x, z)));
+    },
   });
 }
 
@@ -348,6 +354,8 @@ function beginItem() {
   if (!currentActor || hasActed) return;
   const unit = currentActor;
   const tiles = potionTargets(unit, map, units);
+  const basePrompt = `${unit.name}: pick a Potion target`;
+  hud.setStatus(basePrompt);
   input.beginPick({
     tiles, color: COLOR_HEAL,
     onPick: (x, z) => {
@@ -361,6 +369,9 @@ function beginItem() {
       hasActed = true;
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
+    },
+    onHover: (x, z) => {
+      hud.setStatus(previewWith(basePrompt, potionPreview(unit, x, z)));
     },
   });
 }
@@ -379,6 +390,8 @@ function beginSkill(abilityId: string) {
     ab.effect.kind === 'magic-heal' ? COLOR_HEAL :
     ab.type === 'magical'           ? COLOR_MAGIC :
                                       COLOR_ATTACK;
+  const basePrompt = `${unit.name}: pick a target for ${ab.name}`;
+  hud.setStatus(basePrompt);
   input.beginPick({
     tiles, color,
     onPick: (x, z) => {
@@ -398,6 +411,9 @@ function beginSkill(abilityId: string) {
       hasActed = true;
       refreshHud();
       if (!autoEndIfDone()) showActionMenu();
+    },
+    onHover: (x, z) => {
+      hud.setStatus(previewWith(basePrompt, abilityPreview(unit, ab, x, z)));
     },
   });
 }
@@ -470,6 +486,75 @@ function resolveScheduledSpell(spell: PendingSpell) {
     hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
     awardForAction(spell.caster, target.team === 'enemy');
   }
+}
+
+// ─── Hover-preview helpers ─────────────────────────────────────────────────
+//
+// During target-pick, the orchestrator's `onHover` callback runs each time the
+// cursor moves on/off a valid tile. We pipe the predicted outcome back into
+// the status bar so the player can see "23 dmg → KO" / "+30 HP / +0 HP (full)"
+// before committing. All predictions use randomMul=1.0 (the deterministic
+// midpoint of the 0.85–1.15 range) so the displayed number is the *expected*
+// damage, not a worst- or best-case figure.
+
+const HP_FULL = 'HP full';
+
+function previewWith(base: string, preview: string | null): string {
+  return preview ? `${base} — ${preview}` : base;
+}
+
+function hoverPreview(actor: Unit, x: number | null, z: number | null): string | null {
+  if (x === null || z === null) return null;
+  const target = unitAt(units, x, z);
+  if (!target) return null;
+  const pred = predictAttackDamage(actor, target, map);
+  return formatDamageLine(target, pred.damage, pred.facing);
+}
+
+function potionPreview(_actor: Unit, x: number | null, z: number | null): string | null {
+  if (x === null || z === null) return null;
+  const target = unitAt(units, x, z);
+  if (!target) return null;
+  if (target.hp >= target.hpMax) return `${target.name}: ${HP_FULL}`;
+  const heal = Math.min(target.hpMax - target.hp, 30);
+  return `${target.name}: +${heal} HP`;
+}
+
+function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | null): string | null {
+  if (x === null || z === null) return null;
+  const target = unitAt(units, x, z);
+  if (!target) return null;
+  const eff = ab.effect;
+  switch (eff.kind) {
+    case 'magic-damage': {
+      const pred = predictSpellDamage(actor, target, eff.spellPower);
+      return formatDamageLine(target, pred.damage, null);
+    }
+    case 'physical-ranged-damage': {
+      const pred = predictRangedAttack(actor, target, eff.weaponPower, map);
+      return formatDamageLine(target, pred.damage, pred.facing);
+    }
+    case 'magic-heal': {
+      if (target.hp >= target.hpMax) return `${target.name}: ${HP_FULL}`;
+      const pred = predictHeal(actor, target, eff.spellPower);
+      const filled = Math.min(pred.amount, target.hpMax - target.hp);
+      return `${target.name}: +${filled} HP`;
+    }
+    case 'debuff':
+      return `${target.name}: ${eff.stat.toUpperCase()} -${eff.amount}`;
+    case 'inflict-status':
+      return target.hasStatus(eff.statusId)
+        ? `${target.name}: already ${STATUS_DEFS[eff.statusId].name}`
+        : `${target.name}: → ${STATUS_DEFS[eff.statusId].name}`;
+    default:
+      return null;
+  }
+}
+
+function formatDamageLine(target: Unit, damage: number, facing: string | null): string {
+  const koTag = damage >= target.hp ? ' → KO' : '';
+  const facingTag = facing ? ` (${facing})` : '';
+  return `${target.name}: ${damage} dmg${facingTag}${koTag}`;
 }
 
 // ─── EXP / JP awards ────────────────────────────────────────────────────────

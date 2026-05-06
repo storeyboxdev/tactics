@@ -4,7 +4,7 @@ import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import {
-  resolveRangedAttack, resolveHeal, computeHealAmount, predictHeal,
+  resolveRangedAttack, resolveHeal, computeHealAmount, predictHeal, predictRangedAttack,
 } from '../../src/battle/ActionResolver';
 import { abilityTargets } from '../../src/battle/Targeting';
 import { ABILITIES } from '../../src/data/abilities';
@@ -70,6 +70,18 @@ describe('resolveRangedAttack', () => {
     expect(t.hasStatus('sleep')).toBe(true);
     resolveRangedAttack(a, t, 6, map, rngHalf);
     expect(t.hasStatus('sleep')).toBe(false);
+  });
+});
+
+describe('predictRangedAttack', () => {
+  it('matches the deterministic damage of resolveRangedAttack at randomMul=1.0', () => {
+    const map = new BattleMap(flatMap(8, 8));
+    const a = makeUnit('a', 'player', 0, 0, FACING_E, { pa: 5 });
+    const t = makeUnit('t', 'enemy',  3, 0, FACING_W, { hp: 100 });
+    const pred = predictRangedAttack(a, t, 6, map);
+    expect(pred.damage).toBe(30);
+    expect(pred.facing).toBe('front');
+    expect(pred.heightDiff).toBe(0);
   });
 });
 
