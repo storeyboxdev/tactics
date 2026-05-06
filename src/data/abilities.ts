@@ -199,6 +199,31 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
   },
 
+  // ─── Bard ─────────────────────────────────────────────────────────────────
+  cheer_song: {
+    // Self-centered party haste. The Bard clicks themselves (the only valid
+    // target at range 0 for an ally-status), and the AoE catches every ally
+    // within Manhattan 2 — including the Bard themselves.
+    id: 'cheer_song', name: 'Cheer Song',
+    jpCost: 300, type: 'magical', range: 0, chargeTime: 3, mpCost: 12,
+    effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally', baseAccuracy: 200 },
+    area: { radius: 2 },
+  },
+
+  // ─── Dancer ───────────────────────────────────────────────────────────────
+  slow_dance: {
+    id: 'slow_dance', name: 'Slow Dance',
+    jpCost: 300, type: 'magical', range: 4, chargeTime: 3, mpCost: 12,
+    effect: { kind: 'inflict-status', statusId: 'slow', targetTeam: 'enemy', baseAccuracy: 120 },
+    area: { radius: 2 },
+  },
+  polka_polka: {
+    id: 'polka_polka', name: 'Polka Polka',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 3, mpCost: 10,
+    effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy', baseAccuracy: 140 },
+    area: { radius: 2 },
+  },
+
   // ─── Reactions ────────────────────────────────────────────────────────────
   counter: {
     id: 'counter', name: 'Counter',
