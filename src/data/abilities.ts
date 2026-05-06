@@ -176,6 +176,17 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'revive', hpPercent: 50 },
   },
 
+  // ─── Chemist ──────────────────────────────────────────────────────────────
+  phoenix_down: {
+    // FFT-canonical Chemist identity: an instant, free, melee-range revive
+    // at a lower percentage than the White Mage's Raise. The hospital
+    // counterpart of Cure — short-range, no charge, no MP, but the unit
+    // comes back at 25% instead of 50%.
+    id: 'phoenix_down', name: 'Phoenix Down',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'revive', hpPercent: 25 },
+  },
+
   // ─── Squire ───────────────────────────────────────────────────────────────
   throw_stone: {
     // The Squire's signature low-power ranged option — cheap to learn, free
