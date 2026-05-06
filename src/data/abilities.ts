@@ -102,6 +102,28 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'magic-damage', spellPower: 12, element: 'ice' },
   },
 
+  // Tier-2 elemental spells — same range / element as their tier-1, but
+  // bigger spellpower, longer charge, and a Manhattan radius-1 AoE. Roughly
+  // FFT-canonical scaling.
+  fire_2: {
+    id: 'fire_2', name: 'Fire 2',
+    jpCost: 400, type: 'magical', range: 4, chargeTime: 5, mpCost: 12,
+    effect: { kind: 'magic-damage', spellPower: 20, element: 'fire' },
+    area: { radius: 1 },
+  },
+  bolt_2: {
+    id: 'bolt_2', name: 'Bolt 2',
+    jpCost: 400, type: 'magical', range: 4, chargeTime: 6, mpCost: 12,
+    effect: { kind: 'magic-damage', spellPower: 22, element: 'bolt' },
+    area: { radius: 1 },
+  },
+  ice_2: {
+    id: 'ice_2', name: 'Ice 2',
+    jpCost: 400, type: 'magical', range: 4, chargeTime: 4, mpCost: 12,
+    effect: { kind: 'magic-damage', spellPower: 18, element: 'ice' },
+    area: { radius: 1 },
+  },
+
   // ─── Time Mage ────────────────────────────────────────────────────────────
   haste: {
     id: 'haste', name: 'Haste',

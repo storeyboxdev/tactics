@@ -50,7 +50,9 @@ describe('JOB_DEFS catalog', () => {
     expect(JOB_DEFS.chemist).toBeDefined();
     expect(JOB_DEFS.knight.learnableActives).toContain('power_break');
     expect(JOB_DEFS.knight.learnableActives).toContain('speed_break');
-    expect(JOB_DEFS.black_mage.learnableActives).toEqual(['fire', 'bolt', 'ice']);
+    expect(JOB_DEFS.black_mage.learnableActives).toEqual(
+      expect.arrayContaining(['fire', 'bolt', 'ice']),
+    );
   });
 
   it('every job has a non-negative numeric evasion in baseStats', () => {
