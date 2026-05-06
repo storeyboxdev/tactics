@@ -165,6 +165,17 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'magic-heal', spellPower: 18 },
   },
 
+  // ─── Squire ───────────────────────────────────────────────────────────────
+  throw_stone: {
+    // The Squire's signature low-power ranged option — cheap to learn, free
+    // to cast, and the only actual skill a default-roster Squire ships with.
+    // Range 3 keeps it noticeably shorter than Archer's Charge / Ninja's
+    // Throw, and weaponPower 3 puts a typical hit at ~15-20 dmg.
+    id: 'throw_stone', name: 'Throw Stone',
+    jpCost: 100, type: 'physical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 3 },
+  },
+
   // ─── Archer ───────────────────────────────────────────────────────────────
   charge_2: {
     id: 'charge_2', name: 'Charge+2',

@@ -83,7 +83,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 55, pa: 5, ma: 4, bravery: 60, evasion: 5 }),
     mult:   { hp: 110, mp: 100, pa: 100, ma:  80, speed: 100 },
     growth: { hp:   6, mp:   3, pa:   5, ma:   4, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['throw_stone'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   chemist: {
     id: 'chemist', name: 'Chemist',
