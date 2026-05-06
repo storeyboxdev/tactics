@@ -24,6 +24,7 @@ import { STATUS_DEFS } from './data/statuses';
 import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
 import { UnitOverlays } from './render/UnitOverlays';
+import { ProjectileRenderer } from './render/ProjectileRenderer';
 import { CameraController } from './render/CameraController';
 import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry, SkillGroup } from './render/Hud';
@@ -137,6 +138,9 @@ const unitRenderer = new UnitRenderer(units, map);
 scene.add(unitRenderer.group);
 
 const unitOverlays = new UnitOverlays(units, map);
+
+const projectiles = new ProjectileRenderer(map);
+scene.add(projectiles.group);
 
 const cursor = new Cursor(map);
 scene.add(cursor.group);
@@ -520,16 +524,19 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   }
   if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
+    // Damage was applied synchronously in the resolver. The projectile is
+    // a visual delay — when it lands, the per-target hurt anim and any
+    // crit/miss toast fire so the timing reads as "shot → impact".
     if (out.hit) {
       const critTag = out.crit ? ' ★CRIT' : '';
       hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
-      // The attacker's swing animation is fired once per cast by the
-      // orchestrator; we just trigger the per-target hurt/KO here.
-      playSpellHitVisual(target);
-      if (out.crit) hud.showFloatingCrit(target);
+      projectiles.fire(actor, target, () => {
+        playSpellHitVisual(target);
+        if (out.crit) hud.showFloatingCrit(target);
+      });
     } else {
       hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
-      hud.showFloatingMiss(target);
+      projectiles.fire(actor, target, () => hud.showFloatingMiss(target));
     }
     return target.team === 'enemy' && out.hit;
   }
@@ -1021,6 +1028,7 @@ function frame(now: number) {
   cam.update(dt);
   unitRenderer.update(dt, cam.quadrant);
   unitOverlays.update(cam.camera);
+  projectiles.update(dt);
   if (currentActor && currentActor.isAlive && !battleOver) {
     cursor.setActiveTile(currentActor.x, currentActor.z);
   }
