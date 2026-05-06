@@ -1,13 +1,13 @@
 import { Unit } from './Unit';
 import { BattleMap } from './Map';
 import { MovePlan } from './Movement';
-import { unitAt, abilityTargets } from './Targeting';
+import { unitAt, abilityTargets, affectedUnits } from './Targeting';
 import {
   predictAttackDamage, predictSpellDamage, predictHeal, predictRangedAttack,
   physicalHitChance, magicStatusHitChance, relativeFacing,
   PLACEHOLDER_WEAPON_POWER,
 } from './ActionResolver';
-import { ABILITIES } from '../data/abilities';
+import { ABILITIES, Ability } from '../data/abilities';
 import { JOB_DEFS } from '../data/jobs';
 import { StatusId } from '../data/statuses';
 
@@ -146,8 +146,22 @@ function scoreAbility(
   map: BattleMap,
 ): number {
   const ab = ABILITIES[action.abilityId];
-  const target = units.find(u => u.id === action.targetId);
-  if (!target) return 0;
+  const center = units.find(u => u.id === action.targetId);
+  if (!center) return 0;
+
+  // For AoE, score the SUM across every affected unit. For single-target, the
+  // list collapses to [center] (with the same per-unit logic).
+  const targets = ab.area
+    ? affectedUnits(actor, ab, center.x, center.z, map, units)
+    : [center];
+  if (targets.length === 0) return 0;
+
+  let total = 0;
+  for (const t of targets) total += scoreSingleTarget(ab, t, actor, map);
+  return total;
+}
+
+function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMap): number {
   switch (ab.effect.kind) {
     case 'inflict-status': {
       const base = STATUS_VALUE[ab.effect.statusId] ?? 0;
@@ -156,7 +170,6 @@ function scoreAbility(
     }
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
-      // Damage spells are hit-chance 100 — no discount.
       return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
     }
     case 'physical-ranged-damage': {
@@ -165,12 +178,10 @@ function scoreAbility(
       return pred.damage * p + (target.hp - pred.damage <= 0 ? 100 * p : 0);
     }
     case 'magic-heal': {
-      // Only score the portion of healing that actually fills the gap.
       const pred = predictHeal(actor, target, ab.effect.spellPower);
       return Math.min(pred.amount, target.hpMax - target.hp);
     }
     case 'debuff': {
-      // Slightly worth — keeps AI from bricking on Power/Speed Break.
       const facing = relativeFacing(actor, target);
       const p = physicalHitChance(target, facing) / 100;
       return 6 * p;

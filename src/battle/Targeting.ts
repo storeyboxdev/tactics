@@ -90,3 +90,67 @@ export function abilityTargets(
 export function unitAt(units: readonly Unit[], x: number, z: number): Unit | undefined {
   return units.find(u => u.isAlive && u.x === x && u.z === z);
 }
+
+/**
+ * Manhattan-radius cross around (cx, cz), clamped to map bounds. The center
+ * tile is included. Used both for visual AoE highlight and for collecting
+ * affected units in the resolver. `radius = 0` returns just the center tile.
+ */
+export function aoeTiles(
+  cx: number, cz: number, radius: number, map: BattleMap,
+): { x: number; z: number }[] {
+  const out: { x: number; z: number }[] = [];
+  for (let dx = -radius; dx <= radius; dx++) {
+    for (let dz = -radius; dz <= radius; dz++) {
+      if (Math.abs(dx) + Math.abs(dz) > radius) continue;
+      const x = cx + dx;
+      const z = cz + dz;
+      if (!map.inBounds(x, z)) continue;
+      out.push({ x, z });
+    }
+  }
+  return out;
+}
+
+/**
+ * The list of units that an ability cast on (cx, cz) would actually affect,
+ * filtered by the ability's per-effect targeting rule (enemy / ally / any).
+ * For non-AoE abilities, this is at most one unit (the unit standing on the
+ * center tile). The center unit may or may not pass the team filter.
+ */
+export function affectedUnits(
+  caster: Unit, ability: Ability, cx: number, cz: number,
+  map: BattleMap, units: readonly Unit[],
+): Unit[] {
+  const radius = ability.area?.radius ?? 0;
+  const tiles = aoeTiles(cx, cz, radius, map);
+  const eff = ability.effect;
+
+  // Mirror the per-effect targeting logic from abilityTargets.
+  let allowEnemy = false, allowAlly = false, allowSelf = false;
+  if (eff.kind === 'inflict-status') {
+    const t = eff.targetTeam;
+    allowEnemy = t === 'enemy' || t === 'any';
+    allowAlly  = t === 'ally'  || t === 'any';
+    allowSelf  = t === 'ally'  || t === 'any';
+  } else if (eff.kind === 'magic-heal') {
+    allowAlly = true;
+    allowSelf = true;
+  } else {
+    allowEnemy = true;
+  }
+
+  const out: Unit[] = [];
+  for (const t of tiles) {
+    const u = unitAt(units, t.x, t.z);
+    if (!u) continue;
+    if (u === caster) {
+      if (allowSelf) out.push(u);
+    } else if (u.team === caster.team) {
+      if (allowAlly) out.push(u);
+    } else {
+      if (allowEnemy) out.push(u);
+    }
+  }
+  return out;
+}

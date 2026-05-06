@@ -40,6 +40,14 @@ export interface Ability {
   chargeTime: number;    // 0 = instant; >0 = ticks to wait before resolving
   mpCost: number;
   effect: AbilityEffect;
+  /**
+   * Area-of-effect pattern around the target tile. Omitted = single-target.
+   * The cross-radius pattern is FFT-canonical: every tile within Manhattan
+   * distance ≤ radius (including the center). Each affected unit rolls hit
+   * and damage independently — a Fire2 cluster can land on three units and
+   * crit one, miss one, and softball the third.
+   */
+  area?: { radius: number };
 }
 
 export const ABILITIES: Record<string, Ability> = {
@@ -159,6 +167,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'pebble_blast', name: 'Pebble Blast',
     jpCost: 150, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
     effect: { kind: 'magic-damage', spellPower: 8, element: 'earth' },
+    area: { radius: 1 },  // 5-tile cross around the target
   },
 
   // ─── Ninja ────────────────────────────────────────────────────────────────

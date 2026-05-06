@@ -3,7 +3,10 @@ import { BattleMap, MapData } from './battle/Map';
 import { Unit, UnitDef, UnitStats, FACING_E, FACING_W } from './battle/Unit';
 import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
-import { meleeAttackTargets, potionTargets, abilityTargets, unitAt } from './battle/Targeting';
+import {
+  meleeAttackTargets, potionTargets, abilityTargets, unitAt,
+  affectedUnits, aoeTiles,
+} from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   applyBreak, facingTowards,
@@ -406,7 +409,7 @@ function beginSkill(abilityId: string) {
         turns.schedule({ caster: unit, abilityId: ab.id, target: { x, z }, resolveTick });
         hud.log(`${unit.name} begins casting ${ab.name} on ${target.name} (resolves in ${ab.chargeTime} ticks)`);
       } else {
-        applyInstantAbility(unit, ab, target);
+        applyInstantAbility(unit, ab, x, z);
       }
 
       hasActed = true;
@@ -419,7 +422,48 @@ function beginSkill(abilityId: string) {
   });
 }
 
-function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
+/**
+ * Apply an instant (non-charged) ability cast on tile (cx, cz). For AoE
+ * abilities, every unit in the radius matching the effect's targeting rule
+ * takes its own independent hit / damage roll. EXP/JP is awarded once for
+ * the cast (not per affected unit) — `affectedEnemy` is true if at least
+ * one enemy was actually impacted.
+ */
+function applyInstantAbility(actor: Unit, ab: Ability, cx: number, cz: number) {
+  const targets = collectAbilityTargets(actor, ab, cx, cz);
+  if (targets.length === 0) {
+    hud.log(`${ab.name}: no valid targets`);
+    return;
+  }
+  // Ranged-physical AoE plays the attacker's bow animation once for the
+  // cast; per-target sprite reactions still fire from applyEffectToTarget.
+  let rangedAnimPlayed = false;
+  let affectedEnemy = false;
+  for (const target of targets) {
+    if (ab.effect.kind === 'physical-ranged-damage' && !rangedAnimPlayed) {
+      unitRenderer.playRangedAttack(actor);
+      rangedAnimPlayed = true;
+    }
+    if (applyEffectToTarget(actor, ab, target)) affectedEnemy = true;
+  }
+  awardForAction(actor, affectedEnemy);
+}
+
+function collectAbilityTargets(actor: Unit, ab: Ability, cx: number, cz: number): Unit[] {
+  if (ab.area) return affectedUnits(actor, ab, cx, cz, map, units);
+  const t = unitAt(units, cx, cz);
+  return t ? [t] : [];
+}
+
+/**
+ * Apply one ability's effect to a single target. Returns `true` iff the
+ * target was an enemy AND the effect actually landed (used for EXP gating).
+ *
+ * No award is issued here — `applyInstantAbility` aggregates one award per
+ * cast, so an AoE Pebble Blast catching three enemies still only credits
+ * the caster once. Animations / log lines fire per affected target.
+ */
+function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   const eff = ab.effect;
   if (eff.kind === 'debuff') {
     const out = applyBreak(actor, target, eff.stat, eff.amount);
@@ -430,40 +474,45 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
       hud.log(`${actor.name} ${ab.name} on ${target.name}: missed`);
       hud.showFloatingMiss(target);
     }
-    awardForAction(actor, target.team === 'enemy' && out.hit);
-  } else if (eff.kind === 'magic-damage') {
+    return target.team === 'enemy' && out.hit;
+  }
+  if (eff.kind === 'magic-damage') {
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     playSpellHitVisual(target);
-    awardForAction(actor, target.team === 'enemy' && out.damage > 0);
-  } else if (eff.kind === 'magic-heal') {
+    return target.team === 'enemy' && out.damage > 0;
+  }
+  if (eff.kind === 'magic-heal') {
     const out = resolveHeal(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
-    awardForAction(actor, false);
-  } else if (eff.kind === 'physical-ranged-damage') {
+    return false; // heals never grant EXP
+  }
+  if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
     if (out.hit) {
       hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg (${out.facing})`);
-      unitRenderer.playRangedAttack(actor, () => playSpellHitVisual(target));
+      // The attacker's swing animation is fired once per cast by the
+      // orchestrator; we just trigger the per-target hurt/KO here.
+      playSpellHitVisual(target);
     } else {
       hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
-      unitRenderer.playRangedAttack(actor);
       hud.showFloatingMiss(target);
     }
-    awardForAction(actor, target.team === 'enemy' && out.hit);
-  } else if (eff.kind === 'inflict-status') {
+    return target.team === 'enemy' && out.hit;
+  }
+  if (eff.kind === 'inflict-status') {
     const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
     if (rollHit(chance, Math.random)) {
       target.addStatus(eff.statusId);
       const def = STATUS_DEFS[eff.statusId];
       hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
-      awardForAction(actor, target.team === 'enemy');
-    } else {
-      hud.log(`${ab.name}: ${target.name} resists`);
-      hud.showFloatingMiss(target);
-      awardForAction(actor, false);
+      return target.team === 'enemy';
     }
+    hud.log(`${ab.name}: ${target.name} resists`);
+    hud.showFloatingMiss(target);
+    return false;
   }
+  return false;
 }
 
 function resolveScheduledSpell(spell: PendingSpell) {
@@ -473,51 +522,10 @@ function resolveScheduledSpell(spell: PendingSpell) {
     hud.log(`${ab.name} fizzles — caster fell.`);
     return;
   }
-  const target = unitAt(units, spell.target.x, spell.target.z);
-  if (!target) {
-    hud.log(`${ab.name} hits empty ground at (${spell.target.x},${spell.target.z}).`);
-    return;
-  }
-  const eff = ab.effect;
-  if (eff.kind === 'magic-damage') {
-    const out = resolveSpell(spell.caster, target, eff.spellPower);
-    hud.log(
-      `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg` +
-      (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
-    );
-    playSpellHitVisual(target);
-    awardForAction(spell.caster, target.team === 'enemy' && out.damage > 0);
-  } else if (eff.kind === 'magic-heal') {
-    const out = resolveHeal(spell.caster, target, eff.spellPower);
-    hud.log(`${ab.name}: ${spell.caster.name} → ${target.name} for +${out.amount} HP`);
-    awardForAction(spell.caster, false);
-  } else if (eff.kind === 'physical-ranged-damage') {
-    const out = resolveRangedAttack(spell.caster, target, eff.weaponPower, map);
-    if (out.hit) {
-      hud.log(
-        `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg (${out.facing})` +
-        (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
-      );
-      unitRenderer.playRangedAttack(spell.caster, () => playSpellHitVisual(target));
-    } else {
-      hud.log(`${ab.name}: ${spell.caster.name} misses ${target.name}`);
-      unitRenderer.playRangedAttack(spell.caster);
-      hud.showFloatingMiss(target);
-    }
-    awardForAction(spell.caster, target.team === 'enemy' && out.hit);
-  } else if (eff.kind === 'inflict-status') {
-    const chance = magicStatusHitChance(spell.caster, target, eff.baseAccuracy);
-    if (rollHit(chance, Math.random)) {
-      target.addStatus(eff.statusId);
-      const def = STATUS_DEFS[eff.statusId];
-      hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
-      awardForAction(spell.caster, target.team === 'enemy');
-    } else {
-      hud.log(`${ab.name}: ${target.name} resists`);
-      hud.showFloatingMiss(target);
-      awardForAction(spell.caster, false);
-    }
-  }
+  // Charged AoE: just route through the same pipeline. For non-AoE charged
+  // spells, applyInstantAbility's empty-targets fallback covers the
+  // "target moved away, hits empty ground" case.
+  applyInstantAbility(spell.caster, ab, spell.target.x, spell.target.z);
 }
 
 // ─── Hover-preview helpers ─────────────────────────────────────────────────
@@ -554,8 +562,23 @@ function potionPreview(_actor: Unit, x: number | null, z: number | null): string
 
 function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | null): string | null {
   if (x === null || z === null) return null;
+
+  // AoE preview: aggregate per affected unit. Single-target stays exact.
+  if (ab.area) {
+    const targets = affectedUnits(actor, ab, x, z, map, units);
+    if (targets.length === 0) {
+      const tiles = aoeTiles(x, z, ab.area.radius, map).length;
+      return `${tiles} tile${tiles === 1 ? '' : 's'} (no targets)`;
+    }
+    return aoePreviewLine(actor, ab, targets);
+  }
+
   const target = unitAt(units, x, z);
   if (!target) return null;
+  return singleTargetPreview(actor, ab, target);
+}
+
+function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | null {
   const eff = ab.effect;
   switch (eff.kind) {
     case 'magic-damage': {
@@ -587,6 +610,46 @@ function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | 
     default:
       return null;
   }
+}
+
+/**
+ * Compose a one-line preview for an AoE: which units are caught and an
+ * aggregate damage / heal estimate. Per-unit hit chances are summarised by
+ * "all expected to hit" when ≥ 95%, otherwise a "(some may miss)" warning.
+ */
+function aoePreviewLine(actor: Unit, ab: Ability, targets: Unit[]): string {
+  const eff = ab.effect;
+  const names = targets.map(t => t.name).join(', ');
+  if (eff.kind === 'magic-damage') {
+    let total = 0;
+    for (const t of targets) total += predictSpellDamage(actor, t, eff.spellPower).damage;
+    return `${targets.length} hit (${names}): ~${total} dmg total`;
+  }
+  if (eff.kind === 'magic-heal') {
+    let total = 0;
+    for (const t of targets) {
+      const p = predictHeal(actor, t, eff.spellPower);
+      total += Math.min(p.amount, t.hpMax - t.hp);
+    }
+    return `${targets.length} healed (${names}): ~+${total} HP total`;
+  }
+  if (eff.kind === 'physical-ranged-damage') {
+    let total = 0; let anyMiss = false;
+    for (const t of targets) {
+      const p = predictRangedAttack(actor, t, eff.weaponPower, map);
+      total += p.damage;
+      if (p.hitChance < 95) anyMiss = true;
+    }
+    const tag = anyMiss ? ' (some may miss)' : '';
+    return `${targets.length} hit (${names}): ~${total} dmg${tag}`;
+  }
+  if (eff.kind === 'inflict-status') {
+    return `${targets.length} target${targets.length === 1 ? '' : 's'} (${names}): → ${STATUS_DEFS[eff.statusId].name}`;
+  }
+  if (eff.kind === 'debuff') {
+    return `${targets.length} target${targets.length === 1 ? '' : 's'} (${names}): ${eff.stat.toUpperCase()} -${eff.amount}`;
+  }
+  return `${targets.length} target${targets.length === 1 ? '' : 's'}`;
 }
 
 function formatDamageLine(
@@ -832,7 +895,7 @@ function enemyAutoTurn(actor: Unit) {
           });
           hud.log(`${actor.name} begins casting ${ab.name} on ${target.name} (resolves in ${ab.chargeTime} ticks)`);
         } else {
-          applyInstantAbility(actor, ab, target);
+          applyInstantAbility(actor, ab, target.x, target.z);
         }
       }
     }
