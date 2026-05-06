@@ -11,6 +11,7 @@ export interface AttackOutcome {
   heightDiff: number;
   facing: RelativeFacing;
   hit: boolean;
+  crit: boolean;
   counter?: CounterOutcome;
   autoPotion?: AutoPotionOutcome;
 }
@@ -21,6 +22,7 @@ export interface CounterOutcome {
   damage: number;
   facing: RelativeFacing;
   heightDiff: number;
+  crit: boolean;
 }
 
 export interface AutoPotionOutcome {
@@ -63,6 +65,19 @@ const FACING_HIT_BONUS: Record<RelativeFacing, number> = {
 export const PLACEHOLDER_WEAPON_POWER = 4;
 /** Placeholder weapon-accuracy until the equip system lands. */
 export const WEAPON_ACCURACY = 95;
+
+/**
+ * Per-facing crit chance for physical hits. Mirrors the FFT-style "back
+ * attack is dangerous" pattern already in `FACING_DAMAGE_MOD`. Magic does
+ * not crit (canon: spells only "land" or don't, no random burst above).
+ */
+export const CRIT_CHANCE_BY_FACING: Record<RelativeFacing, number> = {
+  front:  5,
+  side:  10,
+  back:  15,
+};
+export const CRIT_MULTIPLIER = 1.5;
+
 const POTION_HEAL = 30;
 
 // ─── Hit-chance helpers ─────────────────────────────────────────────────────
@@ -87,6 +102,14 @@ export function magicStatusHitChance(caster: Unit, target: Unit, baseAccuracy: n
 
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
 export function rollHit(chance: number, rng: Rng): boolean {
+  if (chance >= 100) return true;
+  if (chance <= 0)   return false;
+  return rng() * 100 < chance;
+}
+
+/** Rolls a crit using the per-facing chance table. Same short-circuit shape as rollHit. */
+export function rollCrit(facing: RelativeFacing, rng: Rng): boolean {
+  const chance = CRIT_CHANCE_BY_FACING[facing];
   if (chance >= 100) return true;
   if (chance <= 0)   return false;
   return rng() * 100 < chance;
@@ -142,6 +165,7 @@ export interface AttackPrediction {
   facing: RelativeFacing;
   heightDiff: number;
   hitChance: number;
+  critChance: number;
 }
 
 export function predictAttackDamage(
@@ -163,6 +187,7 @@ export function predictAttackDamage(
     facing,
     heightDiff: aH - tH,
     hitChance: physicalHitChance(target, facing),
+    critChance: CRIT_CHANCE_BY_FACING[facing],
   };
 }
 
@@ -183,25 +208,29 @@ export function resolveAttack(
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacing(attacker, target);
 
-  // Roll hit BEFORE damage. The damage random multiplier still consumes a
-  // second rng() so the deterministic test rngs (`() => 0.5`) keep producing
-  // the same damage numbers they always did.
+  // Roll hit, crit, and damage-randomness. The deterministic test rngs
+  // (`() => 0.5`) all return the same value, so all three rolls produce the
+  // same outcome they did before crits were a thing — hit at 50<chance,
+  // crit at 50<5..15 = false, randomMul = 1.0. Existing damage assertions
+  // stay valid.
   const hit = rollHit(physicalHitChance(target, facing), rng);
+  const crit = hit && rollCrit(facing, rng);
   const randomMul = 0.85 + rng() * 0.30;
 
   if (!hit) {
-    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false };
+    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false, crit: false };
   }
 
-  const damage = computeAttackDamage({
+  const baseDamage = computeAttackDamage({
     pa: attacker.pa,
     weaponPower: PLACEHOLDER_WEAPON_POWER,
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });
+  const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   target.hp = Math.max(0, target.hp - damage);
 
-  const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true };
+  const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
 
   // Damage breaks Sleep — same as FFT.
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
@@ -230,6 +259,7 @@ function triggerReaction(
     out.counter = {
       counterer: target, victim: attacker,
       damage: counter.damage, facing: counter.facing, heightDiff: counter.heightDiff,
+      crit: counter.crit,
     };
   } else if (eff.kind === 'reaction-auto-potion') {
     // Auto-Potion fires reliably (no bravery roll); heals up to hpMax.
@@ -315,6 +345,7 @@ export interface RangedAttackOutcome {
   heightDiff: number;
   facing: RelativeFacing;
   hit: boolean;
+  crit: boolean;
 }
 
 export interface RangedAttackPrediction {
@@ -322,6 +353,7 @@ export interface RangedAttackPrediction {
   facing: RelativeFacing;
   heightDiff: number;
   hitChance: number;
+  critChance: number;
 }
 
 export function predictRangedAttack(
@@ -339,6 +371,7 @@ export function predictRangedAttack(
     facing,
     heightDiff: aH - tH,
     hitChance: physicalHitChance(target, facing),
+    critChance: CRIT_CHANCE_BY_FACING[facing],
   };
 }
 
@@ -356,20 +389,22 @@ export function resolveRangedAttack(
   const facing = relativeFacing(attacker, target);
 
   const hit = rollHit(physicalHitChance(target, facing), rng);
+  const crit = hit && rollCrit(facing, rng);
   const randomMul = 0.85 + rng() * 0.30;
 
   if (!hit) {
-    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false };
+    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false, crit: false };
   }
 
-  const damage = computeAttackDamage({
+  const baseDamage = computeAttackDamage({
     pa: attacker.pa, weaponPower,
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });
+  const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   target.hp = Math.max(0, target.hp - damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
-  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true };
+  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
 }
 
 // ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────

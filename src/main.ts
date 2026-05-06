@@ -490,10 +490,12 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
     if (out.hit) {
-      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg (${out.facing})`);
+      const critTag = out.crit ? ' ★CRIT' : '';
+      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
       // The attacker's swing animation is fired once per cast by the
       // orchestrator; we just trigger the per-target hurt/KO here.
       playSpellHitVisual(target);
+      if (out.crit) hud.showFloatingCrit(target);
     } else {
       hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
       hud.showFloatingMiss(target);
@@ -548,7 +550,7 @@ function hoverPreview(actor: Unit, x: number | null, z: number | null): string |
   const target = unitAt(units, x, z);
   if (!target) return null;
   const pred = predictAttackDamage(actor, target, map);
-  return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance);
+  return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance, pred.critChance);
 }
 
 function potionPreview(_actor: Unit, x: number | null, z: number | null): string | null {
@@ -587,7 +589,7 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
     }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, eff.weaponPower, map);
-      return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance);
+      return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance, pred.critChance);
     }
     case 'magic-heal': {
       if (target.hp >= target.hpMax) return `${target.name}: ${HP_FULL}`;
@@ -653,12 +655,13 @@ function aoePreviewLine(actor: Unit, ab: Ability, targets: Unit[]): string {
 }
 
 function formatDamageLine(
-  target: Unit, damage: number, facing: string | null, hitChance?: number,
+  target: Unit, damage: number, facing: string | null, hitChance?: number, critChance?: number,
 ): string {
   const koTag = damage >= target.hp ? ' → KO' : '';
   const facingTag = facing ? ` (${facing})` : '';
   const hitTag = hitChance !== undefined && hitChance < 100 ? ` @ ${hitChance}%` : '';
-  return `${target.name}: ${damage} dmg${facingTag}${hitTag}${koTag}`;
+  const critTag = critChance !== undefined && critChance > 0 ? ` (★${critChance}%)` : '';
+  return `${target.name}: ${damage} dmg${facingTag}${hitTag}${critTag}${koTag}`;
 }
 
 // ─── EXP / JP awards ────────────────────────────────────────────────────────
@@ -727,18 +730,22 @@ function logAttack(out: AttackOutcome) {
     hud.showFloatingMiss(out.target);
     return;
   }
+  const critTag = out.crit ? ' ★CRIT' : '';
   hud.log(
-    `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg ` +
+    `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg${critTag} ` +
     `(${out.facing}, h${out.heightDiff >= 0 ? '+' : ''}${out.heightDiff})` +
     (out.target.hp <= 0 ? ` — ${out.target.name} KO'd` : ''),
   );
+  if (out.crit) hud.showFloatingCrit(out.target);
   if (out.counter) {
     const c = out.counter;
+    const cCrit = c.crit ? ' ★CRIT' : '';
     hud.log(
-      `  ↳ ${c.counterer.name} counters ${c.victim.name} for ${c.damage} ` +
+      `  ↳ ${c.counterer.name} counters ${c.victim.name} for ${c.damage}${cCrit} ` +
       `(${c.facing})` +
       (c.victim.hp <= 0 ? ` — ${c.victim.name} KO'd by counter` : ''),
     );
+    if (c.crit) hud.showFloatingCrit(c.victim);
   }
   if (out.autoPotion && out.autoPotion.amount > 0) {
     hud.log(`  ↳ ${out.autoPotion.user.name} Auto-Potion +${out.autoPotion.amount}`);
