@@ -208,7 +208,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 38, mp: 36, pa: 3, ma: 10, speed: 9, move: 3, faith: 75 }),
     mult:   { hp:  76, mp: 360, pa:  60, ma: 200, speed:  90 },
     growth: { hp:   3, mp:   9, pa:   2, ma:  10, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['summon_ifrit', 'summon_shiva', 'summon_ramuh'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
   // ─── Tier 4: elite ────────────────────────────────────────────────────────

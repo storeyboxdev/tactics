@@ -210,6 +210,29 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
   },
 
+  // ─── Summoner ─────────────────────────────────────────────────────────────
+  // Espers identical in power and shape, differing only by element. The big
+  // radius-2 cross + 24 MP cost is the FFT identity: pricey, slow to charge,
+  // but devastating to a clustered enemy. Friendly fire is a real risk.
+  summon_ifrit: {
+    id: 'summon_ifrit', name: 'Ifrit',
+    jpCost: 500, type: 'magical', range: 4, chargeTime: 4, mpCost: 24,
+    effect: { kind: 'magic-damage', spellPower: 22, element: 'fire' },
+    area: { radius: 2 },
+  },
+  summon_shiva: {
+    id: 'summon_shiva', name: 'Shiva',
+    jpCost: 500, type: 'magical', range: 4, chargeTime: 4, mpCost: 24,
+    effect: { kind: 'magic-damage', spellPower: 22, element: 'ice' },
+    area: { radius: 2 },
+  },
+  summon_ramuh: {
+    id: 'summon_ramuh', name: 'Ramuh',
+    jpCost: 500, type: 'magical', range: 4, chargeTime: 4, mpCost: 24,
+    effect: { kind: 'magic-damage', spellPower: 22, element: 'bolt' },
+    area: { radius: 2 },
+  },
+
   // ─── Bard ─────────────────────────────────────────────────────────────────
   cheer_song: {
     // Self-centered party haste. The Bard clicks themselves (the only valid
