@@ -2,7 +2,10 @@ import { Unit } from './Unit';
 import { BattleMap } from './Map';
 import { MovePlan } from './Movement';
 import { unitAt, abilityTargets } from './Targeting';
-import { predictAttackDamage, PLACEHOLDER_WEAPON_POWER } from './ActionResolver';
+import {
+  predictAttackDamage, predictSpellDamage, predictHeal, computeAttackDamage,
+  PLACEHOLDER_WEAPON_POWER,
+} from './ActionResolver';
 import { ABILITIES } from '../data/abilities';
 import { JOB_DEFS } from '../data/jobs';
 import { StatusId } from '../data/statuses';
@@ -89,6 +92,8 @@ export class HeuristicAi implements EnemyController {
           const target = unitAt(units, ttile.x, ttile.z);
           if (!target) continue;
           if (ab.effect.kind === 'inflict-status' && target.hasStatus(ab.effect.statusId)) continue;
+          // Heals are only worth casting when the ally is missing HP.
+          if (ab.effect.kind === 'magic-heal' && target.hp >= target.hpMax) continue;
           consider(tile, { kind: 'ability', abilityId: abId, targetId: target.id });
         }
       }
@@ -118,7 +123,7 @@ function scoreOption(
       if (target.hp - pred.damage <= 0) s += 100;
     }
   } else {
-    s += scoreAbility(action, units);
+    s += scoreAbility(action, units, actor);
   }
 
   // Threat from adjacent opponents at this end-tile.
@@ -132,15 +137,39 @@ function scoreOption(
   return s;
 }
 
-function scoreAbility(action: { abilityId: string; targetId: string }, units: readonly Unit[]): number {
+function scoreAbility(
+  action: { abilityId: string; targetId: string },
+  units: readonly Unit[],
+  actor: Unit,
+): number {
   const ab = ABILITIES[action.abilityId];
   const target = units.find(u => u.id === action.targetId);
   if (!target) return 0;
-  if (ab.effect.kind === 'inflict-status') {
-    return STATUS_VALUE[ab.effect.statusId] ?? 0;
+  switch (ab.effect.kind) {
+    case 'inflict-status':
+      return STATUS_VALUE[ab.effect.statusId] ?? 0;
+    case 'magic-damage': {
+      const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
+      return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
+    }
+    case 'physical-ranged-damage': {
+      const dmg = computeAttackDamage({
+        pa: actor.pa, weaponPower: ab.effect.weaponPower,
+        attackerH: 0, targetH: 0, facing: 'front', randomMul: 1.0,
+      });
+      return dmg + (target.hp - dmg <= 0 ? 100 : 0);
+    }
+    case 'magic-heal': {
+      // Only score the portion of healing that actually fills the gap.
+      const pred = predictHeal(actor, target, ab.effect.spellPower);
+      return Math.min(pred.amount, target.hpMax - target.hp);
+    }
+    case 'debuff':
+      // Slightly worth — keeps AI from bricking on Power/Speed Break.
+      return 6;
+    default:
+      return 0;
   }
-  // Other ability kinds (debuff / magic-damage) — not used by status-AI yet.
-  return 0;
 }
 
 function manhattan(a: { x: number; z: number }, b: { x: number; z: number }): number {

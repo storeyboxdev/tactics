@@ -10,7 +10,9 @@
 import { StatusId } from './statuses';
 
 export type AbilityEffect =
-  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' }
+  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
+  | { kind: 'magic-heal'; spellPower: number }
+  | { kind: 'physical-ranged-damage'; weaponPower: number }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any' }
   // Passive: reactions trigger when the unit is hit.
@@ -114,6 +116,51 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'poison_spell', name: 'Poison',
     jpCost: 200, type: 'magical', range: 3, chargeTime: 2, mpCost: 6,
     effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy' },
+  },
+
+  // ─── White Mage ───────────────────────────────────────────────────────────
+  cure: {
+    id: 'cure', name: 'Cure',
+    jpCost: 100, type: 'magical', range: 4, chargeTime: 2, mpCost: 6,
+    effect: { kind: 'magic-heal', spellPower: 12 },
+  },
+  cura: {
+    id: 'cura', name: 'Cura',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
+    effect: { kind: 'magic-heal', spellPower: 18 },
+  },
+
+  // ─── Archer ───────────────────────────────────────────────────────────────
+  charge_2: {
+    id: 'charge_2', name: 'Charge+2',
+    jpCost: 200, type: 'physical', range: 4, chargeTime: 2, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 7 },
+  },
+
+  // ─── Monk ─────────────────────────────────────────────────────────────────
+  wave_fist: {
+    id: 'wave_fist', name: 'Wave Fist',
+    jpCost: 150, type: 'physical', range: 2, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 5 },
+  },
+  chakra: {
+    id: 'chakra', name: 'Chakra',
+    jpCost: 500, type: 'magical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-heal', spellPower: 6 },
+  },
+
+  // ─── Geomancer ────────────────────────────────────────────────────────────
+  pebble_blast: {
+    id: 'pebble_blast', name: 'Pebble Blast',
+    jpCost: 150, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 8, element: 'earth' },
+  },
+
+  // ─── Ninja ────────────────────────────────────────────────────────────────
+  throw_shuriken: {
+    id: 'throw_shuriken', name: 'Throw',
+    jpCost: 200, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
   },
 
   // ─── Reactions ────────────────────────────────────────────────────────────

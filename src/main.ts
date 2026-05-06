@@ -5,7 +5,8 @@ import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
 import { meleeAttackTargets, potionTargets, abilityTargets, unitAt } from './battle/Targeting';
 import {
-  AttackOutcome, resolveAttack, resolvePotion, resolveSpell, applyBreak, facingTowards,
+  AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
+  applyBreak, facingTowards,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import {
@@ -350,7 +351,10 @@ function beginSkill(abilityId: string) {
   const tiles = abilityTargets(unit, ab, map, units);
   if (tiles.length === 0) { hud.log(`${unit.name}: no targets in range for ${ab.name}`); return; }
 
-  const color = ab.type === 'magical' ? COLOR_MAGIC : COLOR_ATTACK;
+  const color =
+    ab.effect.kind === 'magic-heal' ? COLOR_HEAL :
+    ab.type === 'magical'           ? COLOR_MAGIC :
+                                      COLOR_ATTACK;
   input.beginPick({
     tiles, color,
     onPick: (x, z) => {
@@ -386,6 +390,15 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     playSpellHitVisual(target);
     awardForAction(actor, target.team === 'enemy' && out.damage > 0);
+  } else if (eff.kind === 'magic-heal') {
+    const out = resolveHeal(actor, target, eff.spellPower);
+    hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
+    awardForAction(actor, false);
+  } else if (eff.kind === 'physical-ranged-damage') {
+    const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
+    hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg (${out.facing})`);
+    playSpellHitVisual(target);
+    awardForAction(actor, target.team === 'enemy' && out.damage > 0);
   } else if (eff.kind === 'inflict-status') {
     target.addStatus(eff.statusId);
     const def = STATUS_DEFS[eff.statusId];
@@ -411,6 +424,18 @@ function resolveScheduledSpell(spell: PendingSpell) {
     const out = resolveSpell(spell.caster, target, eff.spellPower);
     hud.log(
       `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg` +
+      (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
+    );
+    playSpellHitVisual(target);
+    awardForAction(spell.caster, target.team === 'enemy' && out.damage > 0);
+  } else if (eff.kind === 'magic-heal') {
+    const out = resolveHeal(spell.caster, target, eff.spellPower);
+    hud.log(`${ab.name}: ${spell.caster.name} → ${target.name} for +${out.amount} HP`);
+    awardForAction(spell.caster, false);
+  } else if (eff.kind === 'physical-ranged-damage') {
+    const out = resolveRangedAttack(spell.caster, target, eff.weaponPower, map);
+    hud.log(
+      `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg (${out.facing})` +
       (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
     );
     playSpellHitVisual(target);

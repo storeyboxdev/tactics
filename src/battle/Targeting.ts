@@ -36,8 +36,9 @@ export function potionTargets(actor: Unit, map: BattleMap, units: readonly Unit[
 /**
  * Tiles within Manhattan range of the actor that contain a valid target for
  * the given ability. Targeting rules per effect kind:
- *   - debuff / magic-damage:        enemies only
- *   - inflict-status (targetTeam):  enemies, allies, or any (incl. self for ally/any)
+ *   - debuff / magic-damage / physical-ranged-damage:  enemies only
+ *   - magic-heal:                                      allies (incl. self)
+ *   - inflict-status (targetTeam):                     enemies, allies, or any
  *
  * `from` overrides the origin point — used by AI scoring to evaluate a target
  * set as if the actor had moved to a candidate tile.
@@ -52,6 +53,9 @@ export function abilityTargets(
     allowEnemy = t === 'enemy' || t === 'any';
     allowAlly  = t === 'ally'  || t === 'any';
     allowSelf  = t === 'ally'  || t === 'any';
+  } else if (ability.effect.kind === 'magic-heal') {
+    allowAlly = true;
+    allowSelf = true;
   } else {
     allowEnemy = true;
   }

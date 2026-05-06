@@ -253,6 +253,79 @@ export function resolveSpell(
   return out;
 }
 
+// ─── Ranged physical (Charge, Wave Fist, Throw) ─────────────────────────────
+
+export interface RangedAttackOutcome {
+  attacker: Unit;
+  target: Unit;
+  damage: number;
+  heightDiff: number;
+  facing: RelativeFacing;
+}
+
+/**
+ * A ranged physical attack — same `pa × weaponPower × facing × height`
+ * formula as melee, but: (a) no melee-adjacency check, (b) does not trigger
+ * Counter (FFT canon: only basic melee Fight provokes Counter). Auto-Potion
+ * still fires on hit.
+ */
+export function resolveRangedAttack(
+  attacker: Unit, target: Unit, weaponPower: number, map: BattleMap, rng: Rng = Math.random,
+): RangedAttackOutcome {
+  const aH = map.getTile(attacker.x, attacker.z).h;
+  const tH = map.getTile(target.x, target.z).h;
+  const facing = relativeFacing(attacker, target);
+  const damage = computeAttackDamage({
+    pa: attacker.pa, weaponPower,
+    attackerH: aH, targetH: tH,
+    facing, randomMul: 0.85 + rng() * 0.30,
+  });
+  target.hp = Math.max(0, target.hp - damage);
+  if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
+  return { attacker, target, damage, heightDiff: aH - tH, facing };
+}
+
+// ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────
+
+export interface HealOutcome {
+  caster: Unit;
+  target: Unit;
+  amount: number;
+}
+
+/**
+ * Faith-scaled healing. Uses the same FFT formula as `computeSpellDamage`
+ * but applies the result as HP gained, capped at the target's hpMax. Sleep
+ * is NOT broken by healing — only damage breaks Sleep.
+ */
+export function computeHealAmount(p: SpellDamageInputs): number {
+  const raw = p.ma * p.spellPower * (p.casterFaith / 100) * (p.targetFaith / 100) * p.randomMul;
+  return Math.max(1, Math.floor(raw));
+}
+
+export function predictHeal(caster: Unit, target: Unit, spellPower: number): { amount: number } {
+  return {
+    amount: computeHealAmount({
+      ma: caster.ma, spellPower,
+      casterFaith: caster.faith, targetFaith: target.faith,
+      randomMul: 1.0,
+    }),
+  };
+}
+
+export function resolveHeal(
+  caster: Unit, target: Unit, spellPower: number, rng: Rng = Math.random,
+): HealOutcome {
+  const amount = computeHealAmount({
+    ma: caster.ma, spellPower,
+    casterFaith: caster.faith, targetFaith: target.faith,
+    randomMul: 0.85 + rng() * 0.30,
+  });
+  const before = target.hp;
+  target.hp = Math.min(target.hpMax, target.hp + amount);
+  return { caster, target, amount: target.hp - before };
+}
+
 // ─── Other ──────────────────────────────────────────────────────────────────
 
 export function resolvePotion(user: Unit, target: Unit): PotionOutcome {

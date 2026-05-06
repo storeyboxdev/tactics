@@ -107,7 +107,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ pa: 6, ma: 3, speed: 11, jump: 2 }),
     mult:   { hp: 100, mp: 100, pa: 120, ma:  60, speed: 110 },
     growth: { hp:   5, mp:   2, pa:   6, ma:   2, speed:   2 },
-    ...noAbilities,
+    learnableActives: ['charge_2'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
   // ─── Tier 1: from Chemist ─────────────────────────────────────────────────
@@ -117,7 +118,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ mp: 24, pa: 3, ma: 7, speed: 9, move: 3, faith: 70 }),
     mult:   { hp: 100, mp: 240, pa:  60, ma: 140, speed:  90 },
     growth: { hp:   4, mp:   8, pa:   2, ma:   7, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['cure', 'cura'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   black_mage: {
     id: 'black_mage', name: 'Black Mage',
@@ -136,7 +138,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 60, mp: 8, pa: 8, ma: 3, speed: 11, jump: 2 }),
     mult:   { hp: 120, mp:  80, pa: 160, ma:  60, speed: 110 },
     growth: { hp:   9, mp:   2, pa:   9, ma:   2, speed:   2 },
-    ...noAbilities,
+    learnableActives: ['wave_fist', 'chakra'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   thief: {
     id: 'thief', name: 'Thief',
@@ -174,7 +177,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 55, mp: 18, pa: 6, ma: 6, jump: 2 }),
     mult:   { hp: 110, mp: 180, pa: 120, ma: 120, speed: 100 },
     growth: { hp:   6, mp:   5, pa:   5, ma:   5, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['pebble_blast'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   lancer: {
     id: 'lancer', name: 'Lancer',
@@ -216,6 +220,9 @@ export const JOB_DEFS: Record<string, JobDef> = {
     ...noAbilities,
   },
   ninja: {
+    // Throw is a thin slice of the FFT Ninja kit — just one thrown weapon, no
+    // dual-wield. The job's full identity (Throw subtypes, dual-wield support)
+    // arrives later.
     id: 'ninja', name: 'Ninja',
     prereqs: [
       { jobId: 'archer', level: 4 }, { jobId: 'thief', level: 5 },
@@ -224,7 +231,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ pa: 7, ma: 3, speed: 14, move: 5, jump: 3 }),
     mult:   { hp: 100, mp: 100, pa: 140, ma:  60, speed: 140 },
     growth: { hp:   5, mp:   2, pa:   8, ma:   2, speed:   3 },
-    ...noAbilities,
+    learnableActives: ['throw_shuriken'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   calculator: {
     id: 'calculator', name: 'Calculator',
