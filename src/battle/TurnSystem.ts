@@ -65,9 +65,10 @@ export class TurnSystem {
       }
       // CT growth covers KO'd-not-crystallized units too — that's how the
       // crystal countdown advances. Each time a KO'd unit's CT would have
-      // reached 100, koTimer drops by 1.
+      // reached 100, koTimer drops by 1. Airborne units (mid-Jump) are off
+      // the clock entirely.
       for (const u of this.units) {
-        if (u.crystallized) continue;
+        if (u.crystallized || u.airborne) continue;
         const mul = u.isAlive ? ctMultiplierFromStatuses(u.statuses.map(s => s.id)) : 1;
         u.ct += u.speed * mul;
         if (!u.isAlive && u.ct >= 100) {
@@ -113,7 +114,8 @@ export class TurnSystem {
   peekReady(): Unit | null {
     let best: Unit | null = null;
     for (const u of this.units) {
-      if (!u.isAlive || u.ct < 100) continue;
+      // Airborne (mid-Jump) lancers don't act until they land.
+      if (!u.isAlive || u.airborne || u.ct < 100) continue;
       if (best === null || compareReady(u, best) < 0) best = u;
     }
     return best;
@@ -138,7 +140,7 @@ export class TurnSystem {
   predictUpcoming(n: number): Unit[] {
     type Snap = { unit: Unit; ct: number };
     const snaps: Snap[] = this.units
-      .filter(u => u.isAlive)
+      .filter(u => u.isAlive && !u.airborne)
       .map(u => ({ unit: u, ct: u.ct }));
 
     const out: Unit[] = [];

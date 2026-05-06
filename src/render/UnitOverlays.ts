@@ -80,7 +80,7 @@ export class UnitOverlays {
       const hasStatuses = u.statuses.length > 0;
       const showKO = !u.isAlive && !u.crystallized;
 
-      if (u.crystallized || (!hasStatuses && !showKO)) {
+      if (u.crystallized || u.airborne || (!hasStatuses && !showKO)) {
         e.el.style.display = 'none';
         continue;
       }

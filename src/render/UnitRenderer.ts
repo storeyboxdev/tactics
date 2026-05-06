@@ -158,8 +158,9 @@ export class UnitRenderer {
       const pos = this.spriteWorldPos(e);
       e.sprite.position.copy(pos);
       // KO sprites stay visible (lying down). Once crystallized, the corpse
-      // vanishes from the field. Living units always show.
+      // vanishes. Airborne (mid-Jump) units are off the field.
       e.sprite.visible = !e.unit.crystallized
+        && !e.unit.airborne
         && (e.unit.isAlive || e.anim.current === 'ko');
 
       // Pick UV cell (sheet) or placeholder texture (fallback).

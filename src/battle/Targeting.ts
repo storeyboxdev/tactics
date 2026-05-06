@@ -95,7 +95,7 @@ export function abilityTargets(
 }
 
 export function unitAt(units: readonly Unit[], x: number, z: number): Unit | undefined {
-  return units.find(u => u.isAlive && u.x === x && u.z === z);
+  return units.find(u => u.isAlive && !u.airborne && u.x === x && u.z === z);
 }
 
 /**

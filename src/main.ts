@@ -415,6 +415,16 @@ function beginSkill(abilityId: string) {
         const resolveTick = turns.tick + ab.chargeTime;
         turns.schedule({ caster: unit, abilityId: ab.id, target: { x, z }, resolveTick });
         hud.log(`${unit.name} begins casting ${ab.name} on ${target.name} (resolves in ${ab.chargeTime} ticks)`);
+        if (ab.castAirborne) {
+          unit.airborne = true;
+          hud.log(`  ↳ ${unit.name} leaps into the air`);
+          // Jump leaves the lancer off the field — no further movement, no
+          // facing pick. Force-end the turn now.
+          hasActed = true;
+          refreshHud();
+          endTurn();
+          return;
+        }
       } else {
         applyInstantAbility(unit, ab, x, z);
       }
@@ -558,6 +568,13 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
 function resolveScheduledSpell(spell: PendingSpell) {
   const ab = ABILITIES[spell.abilityId];
   if (!ab) return;
+  // Lancer lands BEFORE the resolution check — even a "fizzles, caster fell"
+  // log shouldn't leave them invisible. (For Jump, isAlive is true here:
+  // the lancer is airborne but not dead. The flag lifts and they land.)
+  if (ab.castAirborne) {
+    spell.caster.airborne = false;
+    hud.log(`  ↳ ${spell.caster.name} lands`);
+  }
   if (!spell.caster.isAlive) {
     hud.log(`${ab.name} fizzles — caster fell.`);
     return;
@@ -876,8 +893,8 @@ function endTurn() {
   };
 
   // Skip the facing prompt if the unit died on its own turn (e.g. counter KO'd
-  // them mid-attack) — there's no one to choose for.
-  if (!actor.isAlive) { finalize(); return; }
+  // them mid-attack) — or is mid-Jump (off the field, no facing applies).
+  if (!actor.isAlive || actor.airborne) { finalize(); return; }
 
   promptFacing(actor, finalize);
 }

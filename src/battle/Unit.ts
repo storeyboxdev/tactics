@@ -96,6 +96,13 @@ export class Unit {
   /** Once true, the unit is gone — its tile clears, no revive possible. */
   crystallized: boolean = false;
 
+  /**
+   * True while a Jump-style ability is in flight. The unit is removed from
+   * targeting / movement / turn order and their sprite hides. Flips back to
+   * false when the scheduled action resolves.
+   */
+  airborne: boolean = false;
+
   /** Equipped ability slots — null when nothing in that slot. */
   reaction: string | null;
   support: string | null;

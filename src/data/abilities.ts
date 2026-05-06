@@ -62,6 +62,13 @@ export interface Ability {
    * crit one, miss one, and softball the third.
    */
   area?: { radius: number };
+  /**
+   * For charged abilities (Lancer's Jump): the caster is removed from the
+   * field while the spell is queued. Untargetable, doesn't appear in turn
+   * order, sprite hidden. Flips back when the scheduled action resolves.
+   * No-op on instant abilities.
+   */
+  castAirborne?: boolean;
 }
 
 export const ABILITIES: Record<string, Ability> = {
@@ -211,6 +218,19 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'charge_2', name: 'Charge+2',
     jpCost: 200, type: 'physical', range: 4, chargeTime: 2, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 7 },
+  },
+
+  // ─── Lancer ───────────────────────────────────────────────────────────────
+  jump: {
+    // FFT canon: the Lancer leaps off the field, becomes untargetable, and
+    // crashes down on a target tile some ticks later for double damage.
+    // Range 4 covers most realistic battlefield distances; CT 5 gives the
+    // enemy a window to reposition or focus down the lancer's allies before
+    // the strike lands. The big weaponPower (9) is the "double damage" half.
+    id: 'jump', name: 'Jump',
+    jpCost: 350, type: 'physical', range: 4, chargeTime: 5, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 9 },
+    castAirborne: true,
   },
 
   // ─── Monk ─────────────────────────────────────────────────────────────────
