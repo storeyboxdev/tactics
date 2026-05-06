@@ -25,6 +25,7 @@ import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
 import { UnitOverlays } from './render/UnitOverlays';
 import { ProjectileRenderer } from './render/ProjectileRenderer';
+import { SpellFxRenderer } from './render/SpellFxRenderer';
 import { CameraController } from './render/CameraController';
 import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry, SkillGroup } from './render/Hud';
@@ -141,6 +142,9 @@ const unitOverlays = new UnitOverlays(units, map);
 
 const projectiles = new ProjectileRenderer(map);
 scene.add(projectiles.group);
+
+const spellFx = new SpellFxRenderer(map);
+scene.add(spellFx.group);
 
 const cursor = new Cursor(map);
 scene.add(cursor.group);
@@ -505,12 +509,13 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   if (eff.kind === 'magic-damage') {
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
-    playSpellHitVisual(target);
+    spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'magic-heal') {
     const out = resolveHeal(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
+    spellFx.burst(target, 'heal', () => {});
     return false; // heals never grant EXP
   }
   if (eff.kind === 'revive') {
@@ -1029,6 +1034,7 @@ function frame(now: number) {
   unitRenderer.update(dt, cam.quadrant);
   unitOverlays.update(cam.camera);
   projectiles.update(dt);
+  spellFx.update(dt);
   if (currentActor && currentActor.isAlive && !battleOver) {
     cursor.setActiveTile(currentActor.x, currentActor.z);
   }
