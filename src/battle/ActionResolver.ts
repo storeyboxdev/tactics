@@ -228,7 +228,7 @@ export function resolveAttack(
     facing, randomMul,
   });
   const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
-  target.hp = Math.max(0, target.hp - damage);
+  target.applyDamage(damage);
 
   const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
 
@@ -319,7 +319,7 @@ export function resolveSpell(
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
-  target.hp = Math.max(0, target.hp - damage);
+  target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
   const out: SpellOutcome = { caster, target, damage, hit: true };
@@ -402,7 +402,7 @@ export function resolveRangedAttack(
     facing, randomMul,
   });
   const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
-  target.hp = Math.max(0, target.hp - damage);
+  target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
   return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
 }
@@ -464,10 +464,12 @@ export interface ReviveOutcome {
  * revive — FFT canon: a fresh unit, not a damaged one.
  */
 export function resolveRevive(caster: Unit, target: Unit, hpPercent: number): ReviveOutcome {
-  if (target.isAlive) return { caster, target, amount: 0 };
+  if (target.isAlive || target.crystallized) return { caster, target, amount: 0 };
   const heal = Math.max(1, Math.floor(target.hpMax * hpPercent / 100));
   target.hp = heal;
   target.statuses = [];   // clear any KO-time status leftovers
+  target.koTimer = -1;    // back among the living, countdown reset
+  target.ct = 0;          // FFT canon: revived units enter at 0 CT
   return { caster, target, amount: heal };
 }
 

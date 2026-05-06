@@ -33,7 +33,9 @@ export class MovePlan {
 
     const occupied = new Set<string>();
     for (const u of units) {
-      if (u !== unit && u.isAlive) occupied.add(key(u.x, u.z));
+      // Living units AND KO'd-not-crystallized corpses both occupy their
+      // tile (FFT canon). Crystals — once their countdown hits 0 — clear out.
+      if (u !== unit && !u.crystallized) occupied.add(key(u.x, u.z));
     }
 
     const start: Node = { x: unit.x, z: unit.z, cost: 0, parent: null };

@@ -23,6 +23,7 @@ import { JOB_DEFS } from './data/jobs';
 import { STATUS_DEFS } from './data/statuses';
 import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
+import { UnitOverlays } from './render/UnitOverlays';
 import { CameraController } from './render/CameraController';
 import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry, SkillGroup } from './render/Hud';
@@ -135,6 +136,8 @@ enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
 const unitRenderer = new UnitRenderer(units, map);
 scene.add(unitRenderer.group);
 
+const unitOverlays = new UnitOverlays(units, map);
+
 const cursor = new Cursor(map);
 scene.add(cursor.group);
 
@@ -149,6 +152,10 @@ const hud = new Hud();
 // Per-tick status events come from TurnSystem. Mirror them in the action log
 // and trigger the KO animation if poison drops a unit to 0.
 turns.setTickListener((ev) => {
+  if (ev.kind === 'crystal') {
+    hud.log(`${ev.unit.name} crystallizes — gone for the rest of the battle.`);
+    return;
+  }
   const def = STATUS_DEFS[ev.statusId];
   if (ev.kind === 'status-damage') {
     hud.log(`${ev.unit.name} takes ${ev.amount} ${def.name} damage` + (ev.ko ? ` — ${ev.unit.name} KO'd` : ''));
@@ -454,7 +461,7 @@ function collectAbilityTargets(actor: Unit, ab: Ability, cx: number, cz: number)
   // Revive walks past `isAlive`; everything else needs a living target.
   if (ab.effect.kind === 'revive') {
     const t = unitAtAny(units, cx, cz);
-    return t && !t.isAlive && t.team === actor.team ? [t] : [];
+    return t && !t.isAlive && !t.crystallized && t.team === actor.team ? [t] : [];
   }
   const t = unitAt(units, cx, cz);
   return t ? [t] : [];
@@ -973,6 +980,7 @@ function frame(now: number) {
   last = now;
   cam.update(dt);
   unitRenderer.update(dt, cam.quadrant);
+  unitOverlays.update(cam.camera);
   if (currentActor && currentActor.isAlive && !battleOver) {
     cursor.setActiveTile(currentActor.x, currentActor.z);
   }

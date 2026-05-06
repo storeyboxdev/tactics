@@ -5,6 +5,9 @@ import { computeDisplayStats } from './Stats';
 
 export type Team = 'player' | 'enemy';
 
+/** FFT canon — KO'd units have 3 of their own turns before crystallizing. */
+export const KO_COUNTDOWN_TURNS = 3;
+
 // Cardinal facing in world coordinates.
 //   N = -Z (0), E = +X (1), S = +Z (2), W = -X (3)
 export type Facing = 0 | 1 | 2 | 3;
@@ -83,6 +86,15 @@ export class Unit {
 
   ct = 0;
   statuses: StatusInstance[] = [];
+
+  /**
+   * Turns until a KO'd unit "crystallizes" (permanently lost). FFT canon: the
+   * countdown ticks once each time the KO'd unit's CT would have reached 100.
+   * `-1` while alive; set to `KO_COUNTDOWN_TURNS` (3) the moment hp drops to 0.
+   */
+  koTimer: number = -1;
+  /** Once true, the unit is gone — its tile clears, no revive possible. */
+  crystallized: boolean = false;
 
   /** Equipped ability slots — null when nothing in that slot. */
   reaction: string | null;
@@ -163,6 +175,23 @@ export class Unit {
     const before = this.statuses.length;
     this.statuses = this.statuses.filter(s => s.id !== id);
     return this.statuses.length < before;
+  }
+
+  /**
+   * Single chokepoint for HP loss. Mutates `hp`, clamps at 0, and — on the
+   * transition from alive→KO — starts the crystal countdown. Resolvers should
+   * call this rather than mutating `hp` directly so the KO handshake is
+   * always consistent. Returns the actual amount removed.
+   */
+  applyDamage(amount: number): number {
+    if (amount <= 0) return 0;
+    const before = this.hp;
+    this.hp = Math.max(0, this.hp - amount);
+    const dealt = before - this.hp;
+    if (this.hp === 0 && this.koTimer < 0) {
+      this.koTimer = KO_COUNTDOWN_TURNS;
+    }
+    return dealt;
   }
 
   /**

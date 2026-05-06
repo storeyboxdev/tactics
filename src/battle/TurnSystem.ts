@@ -31,7 +31,8 @@ export type AdvanceResult =
 export type TickEvent =
   | { kind: 'status-damage'; unit: Unit; statusId: StatusId; amount: number; ko: boolean }
   | { kind: 'status-heal';   unit: Unit; statusId: StatusId; amount: number }
-  | { kind: 'status-expire'; unit: Unit; statusId: StatusId };
+  | { kind: 'status-expire'; unit: Unit; statusId: StatusId }
+  | { kind: 'crystal'; unit: Unit };
 
 export class TurnSystem {
   private currentTick = 0;
@@ -62,10 +63,21 @@ export class TurnSystem {
         if (!u.isAlive) continue;
         this.applyTickHooks(u);
       }
+      // CT growth covers KO'd-not-crystallized units too — that's how the
+      // crystal countdown advances. Each time a KO'd unit's CT would have
+      // reached 100, koTimer drops by 1.
       for (const u of this.units) {
-        if (!u.isAlive) continue;
-        const mul = ctMultiplierFromStatuses(u.statuses.map(s => s.id));
+        if (u.crystallized) continue;
+        const mul = u.isAlive ? ctMultiplierFromStatuses(u.statuses.map(s => s.id)) : 1;
         u.ct += u.speed * mul;
+        if (!u.isAlive && u.ct >= 100) {
+          u.ct -= 100;
+          u.koTimer--;
+          if (u.koTimer <= 0) {
+            u.crystallized = true;
+            this.onTickEvent?.({ kind: 'crystal', unit: u });
+          }
+        }
       }
     }
   }
@@ -76,9 +88,7 @@ export class TurnSystem {
       const def = STATUS_DEFS[s.id];
       if (def.hpPerTick) {
         if (def.hpPerTick > 0) {
-          const before = u.hp;
-          u.hp = Math.max(0, u.hp - def.hpPerTick);
-          const dealt = before - u.hp;
+          const dealt = u.applyDamage(def.hpPerTick);
           this.onTickEvent?.({ kind: 'status-damage', unit: u, statusId: s.id, amount: dealt, ko: u.hp <= 0 });
           if (u.hp <= 0) return; // dead — no further ticks this turn
         } else {

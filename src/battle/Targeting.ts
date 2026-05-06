@@ -78,8 +78,9 @@ export function abilityTargets(
       if (!map.inBounds(x, z)) continue;
       const u = isRevive ? unitAtAny(units, x, z) : unitAt(units, x, z);
       if (!u) continue;
-      // Revive needs a KO'd target; everything else needs a living one.
-      if (isRevive && u.isAlive) continue;
+      // Revive needs a KO'd target that hasn't crystallized yet; everything
+      // else needs a living one.
+      if (isRevive && (u.isAlive || u.crystallized)) continue;
       if (u === actor) {
         if (!allowSelf) continue;
       } else if (u.team === actor.team) {
@@ -161,7 +162,7 @@ export function affectedUnits(
   for (const t of tiles) {
     const u = isRevive ? unitAtAny(units, t.x, t.z) : unitAt(units, t.x, t.z);
     if (!u) continue;
-    if (isRevive && u.isAlive) continue;
+    if (isRevive && (u.isAlive || u.crystallized)) continue;
     if (u === caster) {
       if (allowSelf) out.push(u);
     } else if (u.team === caster.team) {

@@ -157,8 +157,10 @@ export class UnitRenderer {
       // Position sprite (animated mid-step or static on tile).
       const pos = this.spriteWorldPos(e);
       e.sprite.position.copy(pos);
-      // KO sprites stay visible (lying down); other dead units hide.
-      e.sprite.visible = e.unit.isAlive || e.anim.current === 'ko';
+      // KO sprites stay visible (lying down). Once crystallized, the corpse
+      // vanishes from the field. Living units always show.
+      e.sprite.visible = !e.unit.crystallized
+        && (e.unit.isAlive || e.anim.current === 'ko');
 
       // Pick UV cell (sheet) or placeholder texture (fallback).
       const relView = (cameraSide - e.unit.facing + 4) % 4;
