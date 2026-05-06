@@ -19,6 +19,14 @@ export type AbilityEffect =
    * also flips the renderer back to idle.
    */
   | { kind: 'revive'; hpPercent: number }
+  /**
+   * Mediator's Talk Skill: shift the target's `faith` or `bravery` by
+   * `amount` (positive = up, negative = down). Result clamps to [1, 100].
+   * Player-unit shifts also sync to UnitProgression so they survive between
+   * battles. Same faith-scaled hit roll as inflict-status.
+   */
+  | { kind: 'stat-shift'; stat: 'faith' | 'bravery'; amount: number;
+      targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -278,6 +286,35 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 250, type: 'magical', range: 4, chargeTime: 3, mpCost: 10,
     effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy', baseAccuracy: 140 },
     area: { radius: 2 },
+  },
+
+  // ─── Mediator (Talk Skill) ────────────────────────────────────────────────
+  // Permanent faith/bravery shifts. Buffs (Praise/Solution) target allies
+  // with a high baseAccuracy; debuffs (Insult/Preach) target enemies with
+  // a lower one — same faith-scaled hit-chance shape as status spells.
+  praise: {
+    id: 'praise', name: 'Praise',
+    jpCost: 200, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
+    effect: { kind: 'stat-shift', stat: 'bravery', amount: 5,
+              targetTeam: 'ally', baseAccuracy: 200 },
+  },
+  insult: {
+    id: 'insult', name: 'Insult',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
+    effect: { kind: 'stat-shift', stat: 'bravery', amount: -5,
+              targetTeam: 'enemy', baseAccuracy: 130 },
+  },
+  solution: {
+    id: 'solution', name: 'Solution',
+    jpCost: 200, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
+    effect: { kind: 'stat-shift', stat: 'faith', amount: 5,
+              targetTeam: 'ally', baseAccuracy: 200 },
+  },
+  preach: {
+    id: 'preach', name: 'Preach',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
+    effect: { kind: 'stat-shift', stat: 'faith', amount: -5,
+              targetTeam: 'enemy', baseAccuracy: 130 },
   },
 
   // ─── Reactions ────────────────────────────────────────────────────────────

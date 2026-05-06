@@ -49,7 +49,7 @@ export function abilityTargets(
 ): { x: number; z: number }[] {
   let allowEnemy = false, allowAlly = false, allowSelf = false;
   const isRevive = ability.effect.kind === 'revive';
-  if (ability.effect.kind === 'inflict-status') {
+  if (ability.effect.kind === 'inflict-status' || ability.effect.kind === 'stat-shift') {
     const t = ability.effect.targetTeam;
     allowEnemy = t === 'enemy' || t === 'any';
     allowAlly  = t === 'ally'  || t === 'any';
@@ -144,7 +144,7 @@ export function affectedUnits(
   // Mirror the per-effect targeting logic from abilityTargets.
   let allowEnemy = false, allowAlly = false, allowSelf = false;
   const isRevive = eff.kind === 'revive';
-  if (eff.kind === 'inflict-status') {
+  if (eff.kind === 'inflict-status' || eff.kind === 'stat-shift') {
     const t = eff.targetTeam;
     allowEnemy = t === 'enemy' || t === 'any';
     allowAlly  = t === 'ally'  || t === 'any';

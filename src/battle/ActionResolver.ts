@@ -473,6 +473,32 @@ export function resolveRevive(caster: Unit, target: Unit, hpPercent: number): Re
   return { caster, target, amount: heal };
 }
 
+// ─── Stat shifts (Mediator's Talk Skill) ────────────────────────────────────
+
+export interface StatShiftOutcome {
+  user: Unit;
+  target: Unit;
+  stat: 'faith' | 'bravery';
+  before: number;
+  after: number;
+}
+
+/**
+ * Permanent faith/bravery shift. Mutates the live stat AND, for player units,
+ * the UnitProgression so the change survives across battles. Clamps to
+ * [1, 100] (FFT canon range — 0 and 100 are technically possible but the
+ * floor of 1 keeps math safer).
+ */
+export function applyStatShift(
+  user: Unit, target: Unit, stat: 'faith' | 'bravery', amount: number,
+): StatShiftOutcome {
+  const before = target[stat];
+  const after = Math.max(1, Math.min(100, before + amount));
+  target[stat] = after;
+  if (target.progression) target.progression[stat] = after;
+  return { user, target, stat, before, after };
+}
+
 // ─── Other ──────────────────────────────────────────────────────────────────
 
 export function resolvePotion(user: Unit, target: Unit): PotionOutcome {

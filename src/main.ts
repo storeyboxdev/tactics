@@ -9,7 +9,7 @@ import {
 } from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
-  resolveRevive, applyBreak, facingTowards,
+  resolveRevive, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -535,6 +535,23 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     hud.showFloatingMiss(target);
     return false;
   }
+  if (eff.kind === 'stat-shift') {
+    const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
+    if (rollHit(chance, Math.random)) {
+      const out = applyStatShift(actor, target, eff.stat, eff.amount);
+      const arrow = eff.amount > 0 ? '↑' : '↓';
+      hud.log(
+        `${ab.name}: ${target.name} ${eff.stat.toUpperCase()} ` +
+        `${out.before} ${arrow} ${out.after}`,
+      );
+      // Reaching an enemy at all counts for EXP — these abilities are
+      // targeted, intentional moves, even when the magnitude is small.
+      return target.team === 'enemy' && out.before !== out.after;
+    }
+    hud.log(`${ab.name}: ${target.name} resists`);
+    hud.showFloatingMiss(target);
+    return false;
+  }
   return false;
 }
 
@@ -636,6 +653,12 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
       }
       const hit = magicStatusHitChance(actor, target, eff.baseAccuracy);
       return `${target.name}: → ${STATUS_DEFS[eff.statusId].name} @ ${hit}%`;
+    }
+    case 'stat-shift': {
+      const hit = magicStatusHitChance(actor, target, eff.baseAccuracy);
+      const projected = Math.max(1, Math.min(100, target[eff.stat] + eff.amount));
+      const arrow = eff.amount > 0 ? '↑' : '↓';
+      return `${target.name}: ${eff.stat.toUpperCase()} ${target[eff.stat]} ${arrow} ${projected} @ ${hit}%`;
     }
     default:
       return null;
