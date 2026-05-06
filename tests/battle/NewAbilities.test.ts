@@ -10,7 +10,7 @@ import { abilityTargets } from '../../src/battle/Targeting';
 import { ABILITIES } from '../../src/data/abilities';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 

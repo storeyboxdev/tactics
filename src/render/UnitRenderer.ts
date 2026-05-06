@@ -3,7 +3,7 @@ import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from '../battle/
 import { BattleMap } from '../battle/Map';
 import { AssetLoader } from '../core/AssetLoader';
 import { AnimationState } from './AnimationState';
-import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME } from '../data/sprites';
+import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME } from '../data/sprites';
 
 // Camera quadrant 0..3 corresponds to camera position roughly: 0=SE, 1=SW, 2=NW, 3=NE.
 // The cardinal world side of the unit most facing the camera is then S, W, N, E.
@@ -97,6 +97,13 @@ export class UnitRenderer {
     const e = this.entries.find(en => en.unit === unit);
     if (!e || !e.sheetTexture) { onImpact?.(); return; }
     e.anim.play('attack', { onImpact, impactFrame: ATTACK_IMPACT_FRAME });
+  }
+
+  /** One-shot ranged attack: draw / release / recover. Mirrors playAttack. */
+  playRangedAttack(unit: Unit, onImpact?: () => void): void {
+    const e = this.entries.find(en => en.unit === unit);
+    if (!e || !e.sheetTexture) { onImpact?.(); return; }
+    e.anim.play('ranged', { onImpact, impactFrame: RANGED_IMPACT_FRAME });
   }
 
   playHurt(unit: Unit): void {

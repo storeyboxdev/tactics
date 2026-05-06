@@ -28,6 +28,8 @@ export interface JobPrereq { jobId: string; level: number; }
 export interface JobStats {
   hp: number; mp: number; pa: number; ma: number; speed: number;
   move: number; jump: number; faith: number; bravery: number;
+  /** Class Evade %, 0–60ish. Subtracted from physical-hit chance. */
+  evasion: number;
 }
 
 /** Per-stat display multiplier (× raw / 100). Move/jump/faith/bravery omitted. */
@@ -62,6 +64,7 @@ export const RAW_STAT_BASELINE = { hp: 50, mp: 10, pa: 5, ma: 5, speed: 10 };
 
 const stat = (over: Partial<JobStats>): JobStats => ({
   hp: 50, mp: 10, pa: 5, ma: 5, speed: 10, move: 4, jump: 1, faith: 50, bravery: 50,
+  evasion: 10,
   ...over,
 });
 
@@ -77,7 +80,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   squire: {
     id: 'squire', name: 'Squire',
     prereqs: [],
-    baseStats: stat({ hp: 55, pa: 5, ma: 4, bravery: 60 }),
+    baseStats: stat({ hp: 55, pa: 5, ma: 4, bravery: 60, evasion: 5 }),
     mult:   { hp: 110, mp: 100, pa: 100, ma:  80, speed: 100 },
     growth: { hp:   6, mp:   3, pa:   5, ma:   4, speed:   1 },
     ...noAbilities,
@@ -85,7 +88,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   chemist: {
     id: 'chemist', name: 'Chemist',
     prereqs: [],
-    baseStats: stat({ hp: 45, mp: 16, pa: 4, ma: 4 }),
+    baseStats: stat({ hp: 45, mp: 16, pa: 4, ma: 4, evasion: 5 }),
     mult:   { hp:  90, mp: 160, pa:  80, ma:  80, speed: 100 },
     growth: { hp:   4, mp:   6, pa:   3, ma:   4, speed:   1 },
     ...noAbilities,
@@ -95,7 +98,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   knight: {
     id: 'knight', name: 'Knight',
     prereqs: [{ jobId: 'squire', level: 2 }],
-    baseStats: stat({ hp: 70, pa: 7, ma: 3, speed: 9, move: 3, faith: 40, bravery: 75 }),
+    baseStats: stat({ hp: 70, pa: 7, ma: 3, speed: 9, move: 3, faith: 40, bravery: 75, evasion: 5 }),
     mult:   { hp: 140, mp: 100, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   9, mp:   2, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['power_break', 'speed_break'],
@@ -104,7 +107,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   archer: {
     id: 'archer', name: 'Archer',
     prereqs: [{ jobId: 'squire', level: 2 }],
-    baseStats: stat({ pa: 6, ma: 3, speed: 11, jump: 2 }),
+    baseStats: stat({ pa: 6, ma: 3, speed: 11, jump: 2, evasion: 15 }),
     mult:   { hp: 100, mp: 100, pa: 120, ma:  60, speed: 110 },
     growth: { hp:   5, mp:   2, pa:   6, ma:   2, speed:   2 },
     learnableActives: ['charge_2'],
@@ -135,7 +138,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   monk: {
     id: 'monk', name: 'Monk',
     prereqs: [{ jobId: 'knight', level: 2 }],
-    baseStats: stat({ hp: 60, mp: 8, pa: 8, ma: 3, speed: 11, jump: 2 }),
+    baseStats: stat({ hp: 60, mp: 8, pa: 8, ma: 3, speed: 11, jump: 2, evasion: 15 }),
     mult:   { hp: 120, mp:  80, pa: 160, ma:  60, speed: 110 },
     growth: { hp:   9, mp:   2, pa:   9, ma:   2, speed:   2 },
     learnableActives: ['wave_fist', 'chakra'],
@@ -144,7 +147,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   thief: {
     id: 'thief', name: 'Thief',
     prereqs: [{ jobId: 'archer', level: 2 }],
-    baseStats: stat({ hp: 45, mp: 8, pa: 5, ma: 3, speed: 13, move: 5, jump: 3 }),
+    baseStats: stat({ hp: 45, mp: 8, pa: 5, ma: 3, speed: 13, move: 5, jump: 3, evasion: 30 }),
     mult:   { hp:  90, mp:  80, pa: 100, ma:  60, speed: 130 },
     growth: { hp:   4, mp:   2, pa:   5, ma:   2, speed:   3 },
     ...noAbilities,
@@ -174,7 +177,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   geomancer: {
     id: 'geomancer', name: 'Geomancer',
     prereqs: [{ jobId: 'monk', level: 4 }],
-    baseStats: stat({ hp: 55, mp: 18, pa: 6, ma: 6, jump: 2 }),
+    baseStats: stat({ hp: 55, mp: 18, pa: 6, ma: 6, jump: 2, evasion: 15 }),
     mult:   { hp: 110, mp: 180, pa: 120, ma: 120, speed: 100 },
     growth: { hp:   6, mp:   5, pa:   5, ma:   5, speed:   1 },
     learnableActives: ['pebble_blast'],
@@ -183,7 +186,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   lancer: {
     id: 'lancer', name: 'Lancer',
     prereqs: [{ jobId: 'knight', level: 4 }, { jobId: 'thief', level: 4 }],
-    baseStats: stat({ hp: 65, mp: 12, pa: 7, ma: 3, speed: 9, jump: 4 }),
+    baseStats: stat({ hp: 65, mp: 12, pa: 7, ma: 3, speed: 9, jump: 4, evasion: 5 }),
     mult:   { hp: 130, mp: 120, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   8, mp:   3, pa:   7, ma:   2, speed:   1 },
     ...noAbilities,
@@ -214,7 +217,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
       { jobId: 'knight', level: 4 }, { jobId: 'monk', level: 5 },
       { jobId: 'lancer', level: 2 }, { jobId: 'geomancer', level: 2 },
     ],
-    baseStats: stat({ hp: 65, mp: 12, pa: 7, ma: 5, move: 3, bravery: 70 }),
+    baseStats: stat({ hp: 65, mp: 12, pa: 7, ma: 5, move: 3, bravery: 70, evasion: 5 }),
     mult:   { hp: 130, mp: 120, pa: 140, ma: 100, speed: 100 },
     growth: { hp:   8, mp:   4, pa:   7, ma:   5, speed:   1 },
     ...noAbilities,
@@ -228,7 +231,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
       { jobId: 'archer', level: 4 }, { jobId: 'thief', level: 5 },
       { jobId: 'geomancer', level: 2 },
     ],
-    baseStats: stat({ pa: 7, ma: 3, speed: 14, move: 5, jump: 3 }),
+    baseStats: stat({ pa: 7, ma: 3, speed: 14, move: 5, jump: 3, evasion: 25 }),
     mult:   { hp: 100, mp: 100, pa: 140, ma:  60, speed: 140 },
     growth: { hp:   5, mp:   2, pa:   8, ma:   2, speed:   3 },
     learnableActives: ['throw_shuriken'],
@@ -258,7 +261,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
   dancer: {
     id: 'dancer', name: 'Dancer',
     prereqs: [{ jobId: 'geomancer', level: 4 }, { jobId: 'mediator', level: 4 }],
-    baseStats: stat({ mp: 22, pa: 4, ma: 6, speed: 9 }),
+    baseStats: stat({ mp: 22, pa: 4, ma: 6, speed: 9, evasion: 20 }),
     mult:   { hp: 100, mp: 220, pa:  80, ma: 120, speed:  90 },
     growth: { hp:   5, mp:   5, pa:   6, ma:   4, speed:   1 },
     ...noAbilities,

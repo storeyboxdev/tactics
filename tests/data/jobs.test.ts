@@ -53,6 +53,13 @@ describe('JOB_DEFS catalog', () => {
     expect(JOB_DEFS.black_mage.learnableActives).toEqual(['fire', 'bolt', 'ice']);
   });
 
+  it('every job has a non-negative numeric evasion in baseStats', () => {
+    for (const job of Object.values(JOB_DEFS)) {
+      expect(typeof job.baseStats.evasion, `${job.id}.evasion type`).toBe('number');
+      expect(job.baseStats.evasion, `${job.id}.evasion`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it('Mime requires every other generic job (deepest unlock)', () => {
     const required = new Set(JOB_DEFS.mime.prereqs.map(p => p.jobId));
     // sample a few key jobs that should be required for Mime

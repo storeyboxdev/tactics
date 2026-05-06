@@ -71,4 +71,14 @@ describe('computeDisplayStats', () => {
     const p = progFor('squire');
     expect(() => computeDisplayStats(p, 'no_such_job')).toThrow();
   });
+
+  it('evasion comes from the equipped job\'s baseStats, not raw', () => {
+    const p = progFor('thief');
+    p.jobs.knight = { jp: 0, unlocked: true, learnedAbilities: [] };
+    expect(computeDisplayStats(p, 'thief').evasion).toBe(JOB_DEFS.thief.baseStats.evasion);
+    expect(computeDisplayStats(p, 'knight').evasion).toBe(JOB_DEFS.knight.baseStats.evasion);
+    expect(computeDisplayStats(p, 'thief').evasion).toBeGreaterThan(
+      computeDisplayStats(p, 'knight').evasion,
+    );
+  });
 });

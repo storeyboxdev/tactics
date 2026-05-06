@@ -19,6 +19,8 @@ export interface DisplayStats {
   jump: number;
   faith: number;
   bravery: number;
+  /** Per-job constant — not raw-scaled. Used by physical-hit chance. */
+  evasion: number;
 }
 
 /** Compute the unit's currently-equipped-job display stats from progression. */
@@ -36,5 +38,6 @@ export function computeDisplayStats(p: UnitProgression, jobId: string): DisplayS
     jump:  job.baseStats.jump,
     faith:   p.faith,
     bravery: p.bravery,
+    evasion: job.baseStats.evasion,
   };
 }

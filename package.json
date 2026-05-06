@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen-art": "node scripts/generate-placeholder-art.mjs"
+    "gen-art": "node scripts/generate-placeholder-art.mjs",
+    "gen-reference": "node scripts/generate-reference-sheet.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

@@ -2,11 +2,11 @@
  * Single source of truth for the unit sprite-sheet convention.
  *
  * Each unit sheet is a grid of fixed-size cells: 4 rows (one per relative-view
- * facing) × 11 columns (animation frames, grouped by state). Total sheet size
- * is `cellW * cols` × `cellH * rows` = 352 × 192 px.
+ * facing) × 14 columns (animation frames, grouped by state). Total sheet size
+ * is `cellW * cols` × `cellH * rows` = 448 × 192 px.
  *
- *                col 0   col 1   col 2  col 3  col 4   col 5  col 6  col 7  col 8   col 9   col 10
- *                ─── idle ───   ────── walk ──────   ─────────── attack ──────────  hurt    ko
+ *                col 0   col 1   col 2  col 3  col 4   col 5  col 6  col 7  col 8   col 9   col 10  col 11  col 12  col 13
+ *                ─── idle ───   ────── walk ──────   ─────────── attack ──────────  hurt    ko      ──── ranged: draw / release / recover ────
  *   row 0 front
  *   row 1 right
  *   row 2 back
@@ -16,7 +16,7 @@
  * these values — keep them in sync if you change cell size or column ranges.
  */
 
-export type AnimStateName = 'idle' | 'walk' | 'attack' | 'hurt' | 'ko';
+export type AnimStateName = 'idle' | 'walk' | 'attack' | 'hurt' | 'ko' | 'ranged';
 
 export interface AnimStateDef {
   /** Column indices inside the sheet for this state's frames, in order. */
@@ -31,7 +31,7 @@ export const SHEET_LAYOUT = {
   cellW: 32,
   cellH: 48,
   rows: 4,
-  cols: 11,
+  cols: 14,
 
   /** Row index per relative view — matches UnitRenderer's existing FRAME_* ids. */
   rowOf: { front: 0, right: 1, back: 2, left: 3 } as const,
@@ -42,8 +42,11 @@ export const SHEET_LAYOUT = {
     attack: { cols: [5, 6, 7, 8],    frameTime: 0.10, loop: false },
     hurt:   { cols: [9],             frameTime: 0.30, loop: false },
     ko:     { cols: [10],            frameTime: 99.0, loop: true  },
+    ranged: { cols: [11, 12, 13],    frameTime: 0.10, loop: false },
   } satisfies Record<AnimStateName, AnimStateDef>,
 } as const;
 
 /** Frame index (0..N-1) within an attack at which the hit "lands" on the target. */
 export const ATTACK_IMPACT_FRAME = 2;
+/** Frame index within ranged at which the projectile leaves the bow / fist. */
+export const RANGED_IMPACT_FRAME = 1;

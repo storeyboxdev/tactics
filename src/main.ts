@@ -8,6 +8,7 @@ import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
+  physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import {
@@ -423,8 +424,13 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
   if (eff.kind === 'debuff') {
     const out = applyBreak(actor, target, eff.stat, eff.amount);
     const statLabel = out.stat.toUpperCase();
-    hud.log(`${actor.name} ${ab.name} on ${target.name}: ${statLabel} -${out.amount}`);
-    awardForAction(actor, target.team === 'enemy' && out.amount > 0);
+    if (out.hit) {
+      hud.log(`${actor.name} ${ab.name} on ${target.name}: ${statLabel} -${out.amount}`);
+    } else {
+      hud.log(`${actor.name} ${ab.name} on ${target.name}: missed`);
+      hud.showFloatingMiss(target);
+    }
+    awardForAction(actor, target.team === 'enemy' && out.hit);
   } else if (eff.kind === 'magic-damage') {
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
@@ -436,14 +442,27 @@ function applyInstantAbility(actor: Unit, ab: Ability, target: Unit) {
     awardForAction(actor, false);
   } else if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
-    hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg (${out.facing})`);
-    playSpellHitVisual(target);
-    awardForAction(actor, target.team === 'enemy' && out.damage > 0);
+    if (out.hit) {
+      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg (${out.facing})`);
+      unitRenderer.playRangedAttack(actor, () => playSpellHitVisual(target));
+    } else {
+      hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
+      unitRenderer.playRangedAttack(actor);
+      hud.showFloatingMiss(target);
+    }
+    awardForAction(actor, target.team === 'enemy' && out.hit);
   } else if (eff.kind === 'inflict-status') {
-    target.addStatus(eff.statusId);
-    const def = STATUS_DEFS[eff.statusId];
-    hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
-    awardForAction(actor, target.team === 'enemy');
+    const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
+    if (rollHit(chance, Math.random)) {
+      target.addStatus(eff.statusId);
+      const def = STATUS_DEFS[eff.statusId];
+      hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
+      awardForAction(actor, target.team === 'enemy');
+    } else {
+      hud.log(`${ab.name}: ${target.name} resists`);
+      hud.showFloatingMiss(target);
+      awardForAction(actor, false);
+    }
   }
 }
 
@@ -474,17 +493,30 @@ function resolveScheduledSpell(spell: PendingSpell) {
     awardForAction(spell.caster, false);
   } else if (eff.kind === 'physical-ranged-damage') {
     const out = resolveRangedAttack(spell.caster, target, eff.weaponPower, map);
-    hud.log(
-      `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg (${out.facing})` +
-      (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
-    );
-    playSpellHitVisual(target);
-    awardForAction(spell.caster, target.team === 'enemy' && out.damage > 0);
+    if (out.hit) {
+      hud.log(
+        `${ab.name}: ${spell.caster.name} → ${target.name} for ${out.damage} dmg (${out.facing})` +
+        (target.hp <= 0 ? ` — ${target.name} KO'd` : ''),
+      );
+      unitRenderer.playRangedAttack(spell.caster, () => playSpellHitVisual(target));
+    } else {
+      hud.log(`${ab.name}: ${spell.caster.name} misses ${target.name}`);
+      unitRenderer.playRangedAttack(spell.caster);
+      hud.showFloatingMiss(target);
+    }
+    awardForAction(spell.caster, target.team === 'enemy' && out.hit);
   } else if (eff.kind === 'inflict-status') {
-    target.addStatus(eff.statusId);
-    const def = STATUS_DEFS[eff.statusId];
-    hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
-    awardForAction(spell.caster, target.team === 'enemy');
+    const chance = magicStatusHitChance(spell.caster, target, eff.baseAccuracy);
+    if (rollHit(chance, Math.random)) {
+      target.addStatus(eff.statusId);
+      const def = STATUS_DEFS[eff.statusId];
+      hud.log(`${ab.name}: ${target.name} is now ${def.name}`);
+      awardForAction(spell.caster, target.team === 'enemy');
+    } else {
+      hud.log(`${ab.name}: ${target.name} resists`);
+      hud.showFloatingMiss(target);
+      awardForAction(spell.caster, false);
+    }
   }
 }
 
@@ -508,7 +540,7 @@ function hoverPreview(actor: Unit, x: number | null, z: number | null): string |
   const target = unitAt(units, x, z);
   if (!target) return null;
   const pred = predictAttackDamage(actor, target, map);
-  return formatDamageLine(target, pred.damage, pred.facing);
+  return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance);
 }
 
 function potionPreview(_actor: Unit, x: number | null, z: number | null): string | null {
@@ -528,11 +560,11 @@ function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | 
   switch (eff.kind) {
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, eff.spellPower);
-      return formatDamageLine(target, pred.damage, null);
+      return formatDamageLine(target, pred.damage, null, pred.hitChance);
     }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, eff.weaponPower, map);
-      return formatDamageLine(target, pred.damage, pred.facing);
+      return formatDamageLine(target, pred.damage, pred.facing, pred.hitChance);
     }
     case 'magic-heal': {
       if (target.hp >= target.hpMax) return `${target.name}: ${HP_FULL}`;
@@ -540,21 +572,30 @@ function abilityPreview(actor: Unit, ab: Ability, x: number | null, z: number | 
       const filled = Math.min(pred.amount, target.hpMax - target.hp);
       return `${target.name}: +${filled} HP`;
     }
-    case 'debuff':
-      return `${target.name}: ${eff.stat.toUpperCase()} -${eff.amount}`;
-    case 'inflict-status':
-      return target.hasStatus(eff.statusId)
-        ? `${target.name}: already ${STATUS_DEFS[eff.statusId].name}`
-        : `${target.name}: → ${STATUS_DEFS[eff.statusId].name}`;
+    case 'debuff': {
+      const facing = relativeFacing(actor, target);
+      const hit = physicalHitChance(target, facing);
+      return `${target.name}: ${eff.stat.toUpperCase()} -${eff.amount} @ ${hit}%`;
+    }
+    case 'inflict-status': {
+      if (target.hasStatus(eff.statusId)) {
+        return `${target.name}: already ${STATUS_DEFS[eff.statusId].name}`;
+      }
+      const hit = magicStatusHitChance(actor, target, eff.baseAccuracy);
+      return `${target.name}: → ${STATUS_DEFS[eff.statusId].name} @ ${hit}%`;
+    }
     default:
       return null;
   }
 }
 
-function formatDamageLine(target: Unit, damage: number, facing: string | null): string {
+function formatDamageLine(
+  target: Unit, damage: number, facing: string | null, hitChance?: number,
+): string {
   const koTag = damage >= target.hp ? ' → KO' : '';
   const facingTag = facing ? ` (${facing})` : '';
-  return `${target.name}: ${damage} dmg${facingTag}${koTag}`;
+  const hitTag = hitChance !== undefined && hitChance < 100 ? ` @ ${hitChance}%` : '';
+  return `${target.name}: ${damage} dmg${facingTag}${hitTag}${koTag}`;
 }
 
 // ─── EXP / JP awards ────────────────────────────────────────────────────────
@@ -618,6 +659,11 @@ function awardForAttack(out: AttackOutcome): void {
 }
 
 function logAttack(out: AttackOutcome) {
+  if (!out.hit) {
+    hud.log(`${out.attacker.name} misses ${out.target.name}!`);
+    hud.showFloatingMiss(out.target);
+    return;
+  }
   hud.log(
     `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg ` +
     `(${out.facing}, h${out.heightDiff >= 0 ? '+' : ''}${out.heightDiff})` +
@@ -667,6 +713,7 @@ function applyMovementEndHook(unit: Unit) {
  */
 function playAttackVisual(out: AttackOutcome) {
   unitRenderer.playAttack(out.attacker, () => {
+    if (!out.hit) return; // miss: attacker swings, target unaffected
     if (out.target.hp <= 0) unitRenderer.playKO(out.target);
     else unitRenderer.playHurt(out.target);
   });

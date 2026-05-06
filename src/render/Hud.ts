@@ -233,6 +233,31 @@ export class Hud {
     setTimeout(() => block.remove(), 2300);
   }
 
+  /** A muted-red MISS toast on a unit, sharing the floating-award rise/fade. */
+  showFloatingMiss(target: Unit): void {
+    const block = document.createElement('div');
+    Object.assign(block.style, {
+      padding: '4px 8px',
+      background: 'rgba(10, 10, 20, 0.78)',
+      border: '1px solid rgba(217, 99, 99, 0.55)',
+      borderRadius: '4px',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontSize: '12px',
+      color: '#d96363',
+      textAlign: 'center',
+      animation: 'hudAwardRise 1.6s ease-out forwards',
+    });
+    const head = document.createElement('div');
+    head.textContent = target.name;
+    head.style.cssText = 'font-weight: 700; font-size: 11px; color: #fff; opacity: 0.85;';
+    const line = document.createElement('div');
+    line.textContent = 'MISS';
+    block.appendChild(head);
+    block.appendChild(line);
+    this.awardsEl.appendChild(block);
+    setTimeout(() => block.remove(), 1700);
+  }
+
   showResult(winner: 'player' | 'enemy', onContinue: () => void): void {
     const root = document.getElementById('hud')!;
     const overlay = document.createElement('div');

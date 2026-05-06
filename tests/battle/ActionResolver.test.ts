@@ -6,7 +6,7 @@ import {
 import { resolveAttack, resolvePotion, relativeFacing } from '../../src/battle/ActionResolver';
 
 const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 
@@ -86,6 +86,30 @@ describe('resolveAttack', () => {
     expect(out.damage).toBeGreaterThan(0);
     expect(tgt.hp).toBe(0);
     expect(tgt.isAlive).toBe(false);
+  });
+
+  it('a missed attack leaves HP unchanged and reports hit:false damage:0', () => {
+    // Phantom-evasion target → physicalHitChance returns 0 (clamped from
+    // negative). rollHit with chance=0 short-circuits to false without
+    // consuming the rng.
+    const map = new BattleMap(flatMap(5, 5));
+    const tgt = makeUnit('t', 'enemy', 2, 2, FACING_N, { hp: 100, evasion: 200 });
+    const out = resolveAttack(makeUnit('a', 'player', 2, 1, FACING_S), tgt, map, rngHalf);
+    expect(out.hit).toBe(false);
+    expect(out.damage).toBe(0);
+    expect(tgt.hp).toBe(100);
+  });
+
+  it('miss skips Sleep-break and any reaction', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const tgt = makeUnit('t', 'enemy', 2, 2, FACING_N, { hp: 100, evasion: 200, bravery: 100 });
+    tgt.addStatus('sleep');
+    tgt.reaction = 'counter';
+    const attacker = makeUnit('a', 'player', 2, 1, FACING_S);
+    const out = resolveAttack(attacker, tgt, map, rngHalf);
+    expect(out.hit).toBe(false);
+    expect(tgt.hasStatus('sleep')).toBe(true);   // not broken by miss
+    expect(out.counter).toBeUndefined();         // no counter on miss
   });
 });
 

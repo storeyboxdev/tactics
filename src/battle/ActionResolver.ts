@@ -32,6 +32,7 @@ export interface SpellOutcome {
   caster: Unit;
   target: Unit;
   damage: number;
+  hit: boolean;
   autoPotion?: AutoPotionOutcome;
 }
 
@@ -52,8 +53,44 @@ const FACING_DAMAGE_MOD: Record<RelativeFacing, number> = {
   back:  1.25,
 };
 
+/** Per-facing bonus (percentage points) to physical-hit chance. */
+const FACING_HIT_BONUS: Record<RelativeFacing, number> = {
+  front: 0,
+  side:  10,
+  back:  20,
+};
+
 export const PLACEHOLDER_WEAPON_POWER = 4;
+/** Placeholder weapon-accuracy until the equip system lands. */
+export const WEAPON_ACCURACY = 95;
 const POTION_HEAL = 30;
+
+// ─── Hit-chance helpers ─────────────────────────────────────────────────────
+
+/**
+ * Physical hit % = WEAPON_ACCURACY - target.evasion + facingBonus, clamped to
+ * [0, 100]. Used for melee Attack, ranged abilities, and Breaks.
+ */
+export function physicalHitChance(target: Unit, facing: RelativeFacing): number {
+  const raw = WEAPON_ACCURACY - target.evasion + FACING_HIT_BONUS[facing];
+  return Math.max(0, Math.min(100, raw));
+}
+
+/**
+ * Magic-status hit % = baseAccuracy × casterFaith/100 × targetFaith/100,
+ * clamped to [0, 100]. Mirrors FFT's faith-scaled formula for inflict-status.
+ */
+export function magicStatusHitChance(caster: Unit, target: Unit, baseAccuracy: number): number {
+  const raw = baseAccuracy * (caster.faith / 100) * (target.faith / 100);
+  return Math.max(0, Math.min(100, Math.floor(raw)));
+}
+
+/** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
+export function rollHit(chance: number, rng: Rng): boolean {
+  if (chance >= 100) return true;
+  if (chance <= 0)   return false;
+  return rng() * 100 < chance;
+}
 
 // ─── Facing helpers ─────────────────────────────────────────────────────────
 
@@ -104,6 +141,7 @@ export interface AttackPrediction {
   damage: number;
   facing: RelativeFacing;
   heightDiff: number;
+  hitChance: number;
 }
 
 export function predictAttackDamage(
@@ -124,6 +162,7 @@ export function predictAttackDamage(
     }),
     facing,
     heightDiff: aH - tH,
+    hitChance: physicalHitChance(target, facing),
   };
 }
 
@@ -143,11 +182,22 @@ export function resolveAttack(
   const aH = map.getTile(attacker.x, attacker.z).h;
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacing(attacker, target);
+
+  // Roll hit BEFORE damage. The damage random multiplier still consumes a
+  // second rng() so the deterministic test rngs (`() => 0.5`) keep producing
+  // the same damage numbers they always did.
+  const hit = rollHit(physicalHitChance(target, facing), rng);
+  const randomMul = 0.85 + rng() * 0.30;
+
+  if (!hit) {
+    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false };
+  }
+
   const damage = computeAttackDamage({
     pa: attacker.pa,
     weaponPower: PLACEHOLDER_WEAPON_POWER,
     attackerH: aH, targetH: tH,
-    facing, randomMul: 0.85 + rng() * 0.30,
+    facing, randomMul,
   });
   target.hp = Math.max(0, target.hp - damage);
 
@@ -209,7 +259,7 @@ export function computeSpellDamage(p: SpellDamageInputs): number {
   return Math.max(1, Math.floor(raw));
 }
 
-export interface SpellPrediction { damage: number; }
+export interface SpellPrediction { damage: number; hitChance: number; }
 
 export function predictSpellDamage(caster: Unit, target: Unit, spellPower: number): SpellPrediction {
   return {
@@ -220,6 +270,9 @@ export function predictSpellDamage(caster: Unit, target: Unit, spellPower: numbe
       targetFaith: target.faith,
       randomMul: 1.0,
     }),
+    // Damage spells are 100% — Faith already gates the damage value, a second
+    // faith-roll on top would be doubly punitive on low-faith casters.
+    hitChance: 100,
   };
 }
 
@@ -239,7 +292,7 @@ export function resolveSpell(
   target.hp = Math.max(0, target.hp - damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  const out: SpellOutcome = { caster, target, damage };
+  const out: SpellOutcome = { caster, target, damage, hit: true };
   // Auto-Potion is the only reaction that fires on magic damage in our MVP set
   // (Counter is melee-only).
   if (target.isAlive && target.reaction) {
@@ -261,12 +314,14 @@ export interface RangedAttackOutcome {
   damage: number;
   heightDiff: number;
   facing: RelativeFacing;
+  hit: boolean;
 }
 
 export interface RangedAttackPrediction {
   damage: number;
   facing: RelativeFacing;
   heightDiff: number;
+  hitChance: number;
 }
 
 export function predictRangedAttack(
@@ -283,6 +338,7 @@ export function predictRangedAttack(
     }),
     facing,
     heightDiff: aH - tH,
+    hitChance: physicalHitChance(target, facing),
   };
 }
 
@@ -298,14 +354,22 @@ export function resolveRangedAttack(
   const aH = map.getTile(attacker.x, attacker.z).h;
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacing(attacker, target);
+
+  const hit = rollHit(physicalHitChance(target, facing), rng);
+  const randomMul = 0.85 + rng() * 0.30;
+
+  if (!hit) {
+    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false };
+  }
+
   const damage = computeAttackDamage({
     pa: attacker.pa, weaponPower,
     attackerH: aH, targetH: tH,
-    facing, randomMul: 0.85 + rng() * 0.30,
+    facing, randomMul,
   });
   target.hp = Math.max(0, target.hp - damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
-  return { attacker, target, damage, heightDiff: aH - tH, facing };
+  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true };
 }
 
 // ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────
@@ -326,13 +390,14 @@ export function computeHealAmount(p: SpellDamageInputs): number {
   return Math.max(1, Math.floor(raw));
 }
 
-export function predictHeal(caster: Unit, target: Unit, spellPower: number): { amount: number } {
+export function predictHeal(caster: Unit, target: Unit, spellPower: number): { amount: number; hitChance: number } {
   return {
     amount: computeHealAmount({
       ma: caster.ma, spellPower,
       casterFaith: caster.faith, targetFaith: target.faith,
       randomMul: 1.0,
     }),
+    hitChance: 100,
   };
 }
 
@@ -361,12 +426,24 @@ export interface BreakOutcome {
   user: Unit;
   target: Unit;
   stat: 'pa' | 'speed' | 'ma';
-  amount: number;       // actual reduction applied (clamped above 1)
+  amount: number;       // actual reduction applied (0 on miss)
+  hit: boolean;
 }
 
-/** Permanent (battle-duration) reduction of a single combat stat. */
-export function applyBreak(user: Unit, target: Unit, stat: 'pa' | 'speed' | 'ma', amount: number): BreakOutcome {
+/**
+ * Permanent (battle-duration) reduction of a single combat stat. Rolls a
+ * physical-hit chance off the target's facing toward `user`; on miss, no
+ * reduction is applied.
+ */
+export function applyBreak(
+  user: Unit, target: Unit, stat: 'pa' | 'speed' | 'ma', amount: number,
+  rng: Rng = Math.random,
+): BreakOutcome {
+  const facing = relativeFacing(user, target);
+  if (!rollHit(physicalHitChance(target, facing), rng)) {
+    return { user, target, stat, amount: 0, hit: false };
+  }
   const before = target[stat];
   target[stat] = Math.max(1, target[stat] - amount);
-  return { user, target, stat, amount: before - target[stat] };
+  return { user, target, stat, amount: before - target[stat], hit: true };
 }

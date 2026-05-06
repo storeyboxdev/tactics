@@ -18,13 +18,14 @@ const PUBLIC_SPRITES = resolve(ROOT, 'public/sprites');
 // ─── Sheet layout (mirrors src/data/sprites.ts) ─────────────────────────────
 const LAYOUT = {
   cellW: 32, cellH: 48,
-  rows: 4, cols: 11,
+  rows: 4, cols: 14,
   states: {
     idle:   { cols: [0, 1] },
     walk:   { cols: [2, 3, 4] },
     attack: { cols: [5, 6, 7, 8] },
     hurt:   { cols: [9] },
     ko:     { cols: [10] },
+    ranged: { cols: [11, 12, 13] },
   },
 };
 
@@ -40,7 +41,18 @@ const HAIR  = [50, 38, 34, 255];
 const EYE   = [16, 16, 26, 255];
 const WHITE = [255, 255, 255, 255];
 
-const JOB_LETTER = { squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M', time_mage: 'T', oracle: 'O' };
+// Single-character glyph per job. The font (below) must have a bitmap for
+// every letter we use. Clashes were avoided by hand: tHief→H, saVurai→V,
+// dancer=P (Performer), mediator=D (Diplomat), calculator=X.
+const JOB_LETTER = {
+  squire:     'S', chemist:   'C', knight:     'K',
+  black_mage: 'M', time_mage: 'T', oracle:     'O',
+  archer:     'A', monk:      'F', white_mage: 'W',
+  thief:      'H', geomancer: 'G', lancer:     'L',
+  mediator:   'D', summoner:  'U', samurai:    'V',
+  ninja:      'N', calculator:'X', bard:       'B',
+  dancer:     'P', mime:      'I',
+};
 const JOBS  = Object.keys(JOB_LETTER);
 const TEAMS = ['player', 'enemy'];
 
@@ -79,6 +91,20 @@ const FONT = {
   M: ['10001','11011','10101','10001','10001'],
   T: ['11111','00100','00100','00100','00100'],
   O: ['01110','10001','10001','10001','01110'],
+  A: ['01110','10001','11111','10001','10001'],
+  F: ['11111','10000','11110','10000','10000'],
+  W: ['10001','10001','10101','11011','10001'],
+  H: ['10001','10001','11111','10001','10001'],
+  G: ['01110','10000','10011','10001','01110'],
+  L: ['10000','10000','10000','10000','11111'],
+  D: ['11110','10001','10001','10001','11110'],
+  U: ['10001','10001','10001','10001','01110'],
+  V: ['10001','10001','10001','01010','00100'],
+  N: ['10001','11001','10101','10011','10001'],
+  X: ['10001','01010','00100','01010','10001'],
+  B: ['11110','10001','11110','10001','11110'],
+  P: ['11110','10001','11110','10000','10000'],
+  I: ['11111','00100','00100','00100','11111'],
 };
 
 function drawLetter(buf, x, y, letter, color) {
@@ -141,9 +167,19 @@ function drawCell(buf, cellCol, cellRow, { view, state, frameInState, team, jobL
     else if (frameInState === 1) rightArmY = 16;
     else if (frameInState === 2) rightArmY = 24;
     else rightArmY = 20;
+  } else if (state === 'ranged') {
+    // 3-frame: draw → release → recover
+    if      (frameInState === 0) rightArmY = 12;  // pulled back
+    else if (frameInState === 1) rightArmY = 18;  // extended forward
+    else                          rightArmY = 16;  // returning
   }
   fillRect(buf, x0 + 7,  y0 + leftArmY  + bob, 2, 10, colors.dark);
   fillRect(buf, x0 + 23, y0 + rightArmY + bob, 2, 10, colors.dark);
+
+  // Ranged-specific projectile / bow flash on the release frame.
+  if (state === 'ranged' && frameInState === 1) {
+    fillRect(buf, x0 + 26, y0 + rightArmY + 3 + bob, 4, 1, colors.dark);
+  }
 
   // Job initial centered on chest
   drawLetter(buf, x0 + 13, y0 + 22 + bob, jobLetter, WHITE);

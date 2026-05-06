@@ -3,7 +3,7 @@ import { Unit, UnitDef, UnitStats, FACING_E, Team } from '../../src/battle/Unit'
 import { TurnSystem } from '../../src/battle/TurnSystem';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 50, mp: 0, pa: 5, ma: 5, speed: 10, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 50, mp: 0, pa: 5, ma: 5, speed: 10, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 

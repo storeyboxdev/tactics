@@ -7,7 +7,7 @@ import { resolveAttack, resolveSpell } from '../../src/battle/ActionResolver';
 import { MovePlan } from '../../src/battle/Movement';
 
 const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 0, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 0, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 
@@ -56,6 +56,29 @@ describe('Auto-Potion reaction', () => {
     const out = resolveAttack(attacker, target, map, rngHalf);
     expect(target.isAlive).toBe(false);
     expect(out.autoPotion).toBeUndefined();
+  });
+
+  it('does not fire when the original melee attack misses', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { pa: 5 });
+    const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 100, evasion: 200 });
+    target.reaction = 'auto_potion';
+    const out = resolveAttack(attacker, target, map, rngHalf);
+    expect(out.hit).toBe(false);
+    expect(out.autoPotion).toBeUndefined();
+  });
+});
+
+describe('Counter reaction on miss', () => {
+  it('does not trigger when the original attack misses', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const attacker = makeUnit('a', 'player', 2, 2, FACING_E, { hp: 100 });
+    const target   = makeUnit('t', 'enemy',  3, 2, FACING_E, { hp: 100, evasion: 200, bravery: 100 });
+    target.reaction = 'counter';
+    const out = resolveAttack(attacker, target, map, rngHalf);
+    expect(out.hit).toBe(false);
+    expect(out.counter).toBeUndefined();
+    expect(attacker.hp).toBe(100); // unscathed
   });
 });
 

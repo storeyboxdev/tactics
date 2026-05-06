@@ -4,7 +4,7 @@ import { Unit, UnitDef, UnitStats, FACING_E } from '../../src/battle/Unit';
 import { MovePlan } from '../../src/battle/Movement';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 50, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 50, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 

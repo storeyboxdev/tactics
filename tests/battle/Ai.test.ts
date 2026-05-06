@@ -6,7 +6,7 @@ import {
 import { HeuristicAi } from '../../src/battle/Ai';
 
 const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 

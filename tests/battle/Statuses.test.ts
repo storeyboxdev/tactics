@@ -5,7 +5,7 @@ import { TurnSystem, TickEvent } from '../../src/battle/TurnSystem';
 import { resolveAttack } from '../../src/battle/ActionResolver';
 
 const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 0, pa: 5, ma: 5, speed: 10, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 0, pa: 5, ma: 5, speed: 10, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 

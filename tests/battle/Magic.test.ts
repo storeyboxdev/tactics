@@ -3,10 +3,11 @@ import { BattleMap, MapData } from '../../src/battle/Map';
 import { Unit, UnitDef, UnitStats, FACING_N, FACING_E, FACING_S, FACING_W, Facing, Team } from '../../src/battle/Unit';
 import {
   resolveAttack, resolveSpell, applyBreak, computeSpellDamage,
+  predictSpellDamage,
 } from '../../src/battle/ActionResolver';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
-  hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50,
+  hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
   ...over,
 });
 
@@ -111,15 +112,36 @@ describe('Counter reaction', () => {
 describe('applyBreak', () => {
   it('reduces the named stat and returns the actual amount applied', () => {
     const t = makeUnit('t', 'enemy', 0, 0, FACING_N, { pa: 5 });
-    const o = applyBreak(makeUnit('a', 'player', 0, 0, FACING_N), t, 'pa', 2);
+    const o = applyBreak(makeUnit('a', 'player', 0, 0, FACING_N), t, 'pa', 2, rngHalf);
+    expect(o.hit).toBe(true);
     expect(t.pa).toBe(3);
     expect(o.amount).toBe(2);
   });
 
   it('clamps the stat at 1 when a Break would drop it below', () => {
     const t = makeUnit('t', 'enemy', 0, 0, FACING_N, { speed: 2 });
-    const o = applyBreak(makeUnit('a', 'player', 0, 0, FACING_N), t, 'speed', 5);
+    const o = applyBreak(makeUnit('a', 'player', 0, 0, FACING_N), t, 'speed', 5, rngHalf);
     expect(t.speed).toBe(1);
     expect(o.amount).toBe(1);
+  });
+
+  it('a missed Break does not reduce the stat at all', () => {
+    const t = makeUnit('t', 'enemy', 0, 0, FACING_N, { pa: 5, evasion: 200 });
+    const o = applyBreak(makeUnit('a', 'player', 0, 0, FACING_N), t, 'pa', 2, rngHalf);
+    expect(o.hit).toBe(false);
+    expect(o.amount).toBe(0);
+    expect(t.pa).toBe(5);
+  });
+});
+
+describe('predictSpellDamage hit chance', () => {
+  it('damage spells report hit chance 100 — Faith already gates damage', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { faith: 30 });
+    const t = makeUnit('t', 'enemy',  0, 0, FACING_W, { faith: 30 });
+    const pred = predictSpellDamage(c, t, 14);
+    expect(pred.hitChance).toBe(100);
+    // Damage scales with faith squared, so the preview number is small —
+    // but the "always-hits" property is what matters for the planner.
+    expect(pred.damage).toBeGreaterThanOrEqual(1);
   });
 });

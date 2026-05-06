@@ -14,7 +14,12 @@ export type AbilityEffect =
   | { kind: 'magic-heal'; spellPower: number }
   | { kind: 'physical-ranged-damage'; weaponPower: number }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
-  | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any' }
+  /**
+   * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
+   * faith-scaled hit formula `Y × casterFaith/100 × targetFaith/100` and
+   * clamped to [0, 100].
+   */
+  | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
   // Passive: reactions trigger when the unit is hit.
   | { kind: 'reaction-counter' }
   | { kind: 'reaction-auto-potion'; amount: number }
@@ -93,29 +98,29 @@ export const ABILITIES: Record<string, Ability> = {
   haste: {
     id: 'haste', name: 'Haste',
     jpCost: 300, type: 'magical', range: 3, chargeTime: 2, mpCost: 8,
-    effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally' },
+    effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally', baseAccuracy: 200 },
   },
   slow: {
     id: 'slow', name: 'Slow',
     jpCost: 400, type: 'magical', range: 3, chargeTime: 3, mpCost: 8,
-    effect: { kind: 'inflict-status', statusId: 'slow', targetTeam: 'enemy' },
+    effect: { kind: 'inflict-status', statusId: 'slow', targetTeam: 'enemy', baseAccuracy: 120 },
   },
   stop: {
     id: 'stop', name: 'Stop',
     jpCost: 600, type: 'magical', range: 3, chargeTime: 4, mpCost: 14,
-    effect: { kind: 'inflict-status', statusId: 'stop', targetTeam: 'enemy' },
+    effect: { kind: 'inflict-status', statusId: 'stop', targetTeam: 'enemy', baseAccuracy: 100 },
   },
 
   // ─── Oracle ───────────────────────────────────────────────────────────────
   sleep: {
     id: 'sleep', name: 'Sleep',
     jpCost: 300, type: 'magical', range: 3, chargeTime: 2, mpCost: 8,
-    effect: { kind: 'inflict-status', statusId: 'sleep', targetTeam: 'enemy' },
+    effect: { kind: 'inflict-status', statusId: 'sleep', targetTeam: 'enemy', baseAccuracy: 130 },
   },
   poison_spell: {
     id: 'poison_spell', name: 'Poison',
     jpCost: 200, type: 'magical', range: 3, chargeTime: 2, mpCost: 6,
-    effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy' },
+    effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy', baseAccuracy: 140 },
   },
 
   // ─── White Mage ───────────────────────────────────────────────────────────

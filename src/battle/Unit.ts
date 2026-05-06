@@ -24,6 +24,7 @@ export interface UnitStats {
   jump: number;   // vertical climb
   faith: number;  // 0..100
   bravery: number;// 0..100
+  evasion: number;// Class Evade %, subtracted from physical-hit chance
 }
 
 export interface UnitDef {
@@ -78,6 +79,7 @@ export class Unit {
   jump: number;
   faith: number;
   bravery: number;
+  evasion: number;
 
   ct = 0;
   statuses: StatusInstance[] = [];
@@ -111,6 +113,7 @@ export class Unit {
     this.jump = def.stats.jump;
     this.faith = def.stats.faith;
     this.bravery = def.stats.bravery;
+    this.evasion = def.stats.evasion;
 
     this.reaction = def.reaction ?? null;
     this.support = def.support ?? null;
@@ -184,6 +187,7 @@ export class Unit {
     this.jump = s.jump;
     this.faith = s.faith;
     this.bravery = s.bravery;
+    this.evasion = s.evasion;
     this.level = this.progression.totalLevel;
   }
 }

@@ -3,7 +3,8 @@ import { BattleMap } from './Map';
 import { MovePlan } from './Movement';
 import { unitAt, abilityTargets } from './Targeting';
 import {
-  predictAttackDamage, predictSpellDamage, predictHeal, computeAttackDamage,
+  predictAttackDamage, predictSpellDamage, predictHeal, predictRangedAttack,
+  physicalHitChance, magicStatusHitChance, relativeFacing,
   PLACEHOLDER_WEAPON_POWER,
 } from './ActionResolver';
 import { ABILITIES } from '../data/abilities';
@@ -119,11 +120,12 @@ function scoreOption(
     const target = units.find(u => u.id === action.targetId);
     if (target) {
       const pred = predictAttackDamage(actor, target, map, endTile);
-      s += pred.damage;
-      if (target.hp - pred.damage <= 0) s += 100;
+      const p = pred.hitChance / 100;
+      s += pred.damage * p;
+      if (target.hp - pred.damage <= 0) s += 100 * p;
     }
   } else {
-    s += scoreAbility(action, units, actor);
+    s += scoreAbility(action, units, actor, map);
   }
 
   // Threat from adjacent opponents at this end-tile.
@@ -141,32 +143,38 @@ function scoreAbility(
   action: { abilityId: string; targetId: string },
   units: readonly Unit[],
   actor: Unit,
+  map: BattleMap,
 ): number {
   const ab = ABILITIES[action.abilityId];
   const target = units.find(u => u.id === action.targetId);
   if (!target) return 0;
   switch (ab.effect.kind) {
-    case 'inflict-status':
-      return STATUS_VALUE[ab.effect.statusId] ?? 0;
+    case 'inflict-status': {
+      const base = STATUS_VALUE[ab.effect.statusId] ?? 0;
+      const p = magicStatusHitChance(actor, target, ab.effect.baseAccuracy) / 100;
+      return base * p;
+    }
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
+      // Damage spells are hit-chance 100 — no discount.
       return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
     }
     case 'physical-ranged-damage': {
-      const dmg = computeAttackDamage({
-        pa: actor.pa, weaponPower: ab.effect.weaponPower,
-        attackerH: 0, targetH: 0, facing: 'front', randomMul: 1.0,
-      });
-      return dmg + (target.hp - dmg <= 0 ? 100 : 0);
+      const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
+      const p = pred.hitChance / 100;
+      return pred.damage * p + (target.hp - pred.damage <= 0 ? 100 * p : 0);
     }
     case 'magic-heal': {
       // Only score the portion of healing that actually fills the gap.
       const pred = predictHeal(actor, target, ab.effect.spellPower);
       return Math.min(pred.amount, target.hpMax - target.hp);
     }
-    case 'debuff':
+    case 'debuff': {
       // Slightly worth — keeps AI from bricking on Power/Speed Break.
-      return 6;
+      const facing = relativeFacing(actor, target);
+      const p = physicalHitChance(target, facing) / 100;
+      return 6 * p;
+    }
     default:
       return 0;
   }
