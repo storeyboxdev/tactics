@@ -13,11 +13,21 @@ function hexToCss(c: number): string {
 export interface ActionMenuOpts {
   canMove: boolean;
   canAct: boolean;
-  skills: SkillEntry[];
+  /**
+   * Skill commands grouped by source — primary job first, then optional
+   * secondary (FFT's Secondary Command). Each group renders under a small
+   * heading so the player can see *why* an ability is on offer.
+   */
+  skillGroups: SkillGroup[];
   onMove: () => void;
   onAttack: () => void;
   onItem: () => void;
   onWait: () => void;
+}
+
+export interface SkillGroup {
+  label: string;          // e.g. "Knight (primary)" or "Black Magic (secondary)"
+  skills: SkillEntry[];
 }
 
 export interface SkillEntry {
@@ -154,16 +164,28 @@ export class Hud {
     });
     menu.appendChild(makeButton('Move',   opts.canMove, opts.onMove));
     menu.appendChild(makeButton('Attack', opts.canAct,  opts.onAttack));
-    if (opts.skills.length > 0) {
-      const sep = document.createElement('div');
-      sep.style.cssText = 'height: 1px; background: rgba(255,255,255,0.15); margin: 2px 0;';
-      menu.appendChild(sep);
-      for (const s of opts.skills) {
-        menu.appendChild(makeButton(s.label, opts.canAct && s.enabled, s.onPick));
-      }
-      const sep2 = document.createElement('div');
-      sep2.style.cssText = 'height: 1px; background: rgba(255,255,255,0.15); margin: 2px 0;';
-      menu.appendChild(sep2);
+    const nonEmptyGroups = opts.skillGroups.filter(g => g.skills.length > 0);
+    if (nonEmptyGroups.length > 0) {
+      const sepTop = document.createElement('div');
+      sepTop.style.cssText = 'height: 1px; background: rgba(255,255,255,0.15); margin: 2px 0;';
+      menu.appendChild(sepTop);
+      nonEmptyGroups.forEach((group, i) => {
+        const heading = document.createElement('div');
+        heading.textContent = group.label;
+        heading.style.cssText = 'font-size: 10px; letter-spacing: 1px; opacity: 0.55; padding: 2px 4px;';
+        menu.appendChild(heading);
+        for (const s of group.skills) {
+          menu.appendChild(makeButton(s.label, opts.canAct && s.enabled, s.onPick));
+        }
+        if (i < nonEmptyGroups.length - 1) {
+          const inner = document.createElement('div');
+          inner.style.cssText = 'height: 1px; background: rgba(255,255,255,0.08); margin: 2px 0;';
+          menu.appendChild(inner);
+        }
+      });
+      const sepBot = document.createElement('div');
+      sepBot.style.cssText = 'height: 1px; background: rgba(255,255,255,0.15); margin: 2px 0;';
+      menu.appendChild(sepBot);
     }
     menu.appendChild(makeButton('Item',   opts.canAct,  opts.onItem));
     menu.appendChild(makeButton('Wait',   true,         opts.onWait));

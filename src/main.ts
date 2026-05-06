@@ -20,7 +20,7 @@ import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
 import { CameraController } from './render/CameraController';
 import { Cursor } from './render/Cursor';
-import { Hud, SkillEntry } from './render/Hud';
+import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
 import { loadSave, SavedUnit } from './core/Save';
@@ -241,7 +241,7 @@ function showActionMenu() {
   hud.showActionMenu({
     canMove: !hasMoved,
     canAct:  !hasActed,
-    skills:  jobAbilitiesFor(currentActor),
+    skillGroups: actionMenuGroupsFor(currentActor),
     onMove:   () => beginMove(),
     onAttack: () => beginAttack(),
     onItem:   () => beginItem(),
@@ -249,14 +249,33 @@ function showActionMenu() {
   });
 }
 
-function jobAbilitiesFor(actor: Unit): SkillEntry[] {
-  // Player units only show abilities they've LEARNED inside their current
-  // job — JP spent earns the menu entry. Enemies (no progression) keep the
-  // legacy "all learnable" path so they remain a credible threat without a
-  // training history.
+/**
+ * Builds the action menu's skill groups: primary job's learned actives, and
+ * — if a Secondary Command is set — that secondary job's learned actives.
+ *
+ * Player units only see abilities they've LEARNED inside the source job;
+ * enemies (no progression) keep the legacy "all learnable" path so they
+ * remain a credible threat without a training history.
+ */
+function actionMenuGroupsFor(actor: Unit): SkillGroup[] {
+  const groups: SkillGroup[] = [];
+  groups.push({
+    label: jobLabel(actor.jobId, 'primary'),
+    skills: skillsFor(actor, actor.jobId),
+  });
+  if (actor.secondaryJobId && actor.secondaryJobId !== actor.jobId) {
+    groups.push({
+      label: jobLabel(actor.secondaryJobId, 'secondary'),
+      skills: skillsFor(actor, actor.secondaryJobId),
+    });
+  }
+  return groups;
+}
+
+function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
   const ids = actor.progression
-    ? learnedActivesInJob(actor.progression, actor.jobId)
-    : (JOB_DEFS[actor.jobId]?.learnableActives ?? []);
+    ? learnedActivesInJob(actor.progression, jobId)
+    : (JOB_DEFS[jobId]?.learnableActives ?? []);
   return ids.map(id => {
     const ab = ABILITIES[id];
     return {
@@ -266,6 +285,11 @@ function jobAbilitiesFor(actor: Unit): SkillEntry[] {
       onPick: () => beginSkill(id),
     };
   });
+}
+
+function jobLabel(jobId: string, role: 'primary' | 'secondary'): string {
+  const name = JOB_DEFS[jobId]?.name ?? jobId;
+  return `${name} (${role})`;
 }
 
 function skillLabel(ab: Ability): string {

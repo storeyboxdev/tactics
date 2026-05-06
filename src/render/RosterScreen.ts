@@ -171,6 +171,9 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
     // Make sure the job has a progress entry — it does (it's already unlocked),
     // but ensure() is idempotent and keeps the type contract simple.
     ensureJobProgress(p, u.jobId);
+    // Auto-clear secondary when it would duplicate the primary — FFT canon,
+    // and the action menu would dedupe-skip the second group anyway.
+    if (u.secondaryJobId === u.jobId) u.secondaryJobId = null;
     // Validate equipped passives are still legal under the new mix of unlocked
     // jobs — they should remain since we don't lock anything. Strip any equip
     // that references an ability we no longer have.
@@ -179,6 +182,32 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
   });
   jobSection.appendChild(jobSelect);
   panel.appendChild(jobSection);
+
+  // Secondary Command — a second job's learned actives appear in battle.
+  // Only unlocked jobs that are NOT the current primary are eligible.
+  const secondarySection = document.createElement('div');
+  secondarySection.appendChild(sectionLabel('Secondary Command'));
+  const secondaryOptions = unlocked.filter(id => id !== u.jobId);
+  const secondarySelect = document.createElement('select');
+  secondarySelect.style.cssText = selectCss();
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '';
+  noneOpt.textContent = '— none —';
+  if (!u.secondaryJobId) noneOpt.selected = true;
+  secondarySelect.appendChild(noneOpt);
+  for (const id of secondaryOptions) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = JOB_DEFS[id]?.name ?? id;
+    if (id === u.secondaryJobId) opt.selected = true;
+    secondarySelect.appendChild(opt);
+  }
+  secondarySelect.addEventListener('change', () => {
+    u.secondaryJobId = secondarySelect.value === '' ? null : secondarySelect.value;
+    renderUnitPanel(panel, u);
+  });
+  secondarySection.appendChild(secondarySelect);
+  panel.appendChild(secondarySection);
 
   // Equip slots — pulled from learned passives across all unlocked jobs.
   const learned = allLearnedPassives(p);

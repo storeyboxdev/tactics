@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BattleMap, MapData } from '../../src/battle/Map';
 import {
-  Unit, UnitDef, UnitStats, FACING_N, FACING_E, FACING_S, FACING_W, Facing, Team,
+  Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import {
   resolveRangedAttack, resolveHeal, computeHealAmount, predictHeal,
