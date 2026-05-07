@@ -17,6 +17,7 @@ import { HeuristicAi, EnemyController } from './battle/Ai';
 import {
   awardExp, awardJp, learnedActivesInJob, jobLevelFor,
 } from './battle/Progression';
+import { LastActionLog } from './battle/LastAction';
 import { computeDisplayStats } from './battle/Stats';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
@@ -156,6 +157,7 @@ const cam = new CameraController(
 
 const turns = new TurnSystem(units);
 const hud = new Hud();
+const lastActions = new LastActionLog();
 
 // Per-tick status events come from TurnSystem. Mirror them in the action log
 // and trigger the KO animation if poison drops a unit to 0.
@@ -298,10 +300,13 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
     : (JOB_DEFS[jobId]?.learnableActives ?? []);
   return ids.map(id => {
     const ab = ABILITIES[id];
+    let enabled = actor.mp >= ab.mpCost;
+    // Mimic disables when the mime's team has no recorded action to copy.
+    if (ab.effect.kind === 'mimic' && !lastActions.get(actor.team)) enabled = false;
     return {
       id,
       label: skillLabel(ab),
-      enabled: actor.mp >= ab.mpCost,
+      enabled,
       onPick: () => beginSkill(id),
     };
   });
@@ -402,6 +407,13 @@ function beginSkill(abilityId: string) {
   if (!ab) return;
   if (unit.mp < ab.mpCost) { hud.log(`${unit.name}: not enough MP for ${ab.name}`); return; }
 
+  // Mimic: replay the mime's team's most recent ability at the same target.
+  // No targeting prompt — the original action's coords are reused.
+  if (ab.effect.kind === 'mimic') {
+    castMimic(unit);
+    return;
+  }
+
   const tiles = abilityTargets(unit, ab, map, units);
   if (tiles.length === 0) { hud.log(`${unit.name}: no targets in range for ${ab.name}`); return; }
 
@@ -423,6 +435,7 @@ function beginSkill(abilityId: string) {
         const resolveTick = turns.tick + ab.chargeTime;
         turns.schedule({ caster: unit, abilityId: ab.id, target: { x, z }, resolveTick });
         hud.log(`${unit.name} begins casting ${ab.name} on ${target.name} (resolves in ${ab.chargeTime} ticks)`);
+        lastActions.record(unit.team, ab.id, x, z);
         if (ab.castAirborne) {
           unit.airborne = true;
           hud.log(`  ↳ ${unit.name} leaps into the air`);
@@ -435,6 +448,7 @@ function beginSkill(abilityId: string) {
         }
       } else {
         applyInstantAbility(unit, ab, x, z);
+        lastActions.record(unit.team, ab.id, x, z);
       }
 
       hasActed = true;
@@ -472,6 +486,43 @@ function applyInstantAbility(actor: Unit, ab: Ability, cx: number, cz: number) {
     if (applyEffectToTarget(actor, ab, target)) affectedEnemy = true;
   }
   awardForAction(actor, affectedEnemy);
+}
+
+/**
+ * Replay the mime's team's most recent ability at the same target tile. The
+ * mime's MP / Faith / PA / MA are used (so a mimicked Fire from a high-Faith
+ * mime hits harder than the original from a low-Faith Black Mage). MP cost
+ * is FREE for the mime — Mimic is the cost.
+ */
+function castMimic(unit: Unit) {
+  const last = lastActions.get(unit.team);
+  if (!last) {
+    hud.log(`${unit.name}: nothing to mimic yet`);
+    return;
+  }
+  const ab = ABILITIES[last.abilityId];
+  if (!ab) {
+    hud.log(`${unit.name}: mimic target ability ${last.abilityId} no longer defined`);
+    return;
+  }
+  hud.log(`${unit.name} mimics ${ab.name}!`);
+  if (ab.chargeTime > 0) {
+    // Mimicked charged spells charge again — same as a fresh cast — but
+    // skip MP. (Mime's CT cost is the limiter.)
+    const resolveTick = turns.tick + ab.chargeTime;
+    turns.schedule({ caster: unit, abilityId: ab.id, target: { x: last.x, z: last.z }, resolveTick });
+    if (ab.castAirborne) {
+      unit.airborne = true;
+      hud.log(`  ↳ ${unit.name} leaps into the air (mimicked Jump)`);
+    }
+  } else {
+    applyInstantAbility(unit, ab, last.x, last.z);
+  }
+  // Mimic itself doesn't enter the last-action log (otherwise it'd self-
+  // chain forever). Mark hasActed and end the turn flow normally.
+  hasActed = true;
+  refreshHud();
+  if (!autoEndIfDone()) showActionMenu();
 }
 
 function collectAbilityTargets(actor: Unit, ab: Ability, cx: number, cz: number): Unit[] {
@@ -987,6 +1038,7 @@ function enemyAutoTurn(actor: Unit) {
         } else {
           applyInstantAbility(actor, ab, target.x, target.z);
         }
+        lastActions.record(actor.team, ab.id, target.x, target.z);
       }
     }
     turns.endTurn(actor, {

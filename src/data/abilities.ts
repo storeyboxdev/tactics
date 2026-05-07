@@ -29,6 +29,13 @@ export type AbilityEffect =
    */
   | { kind: 'stat-shift'; stat: 'faith' | 'bravery'; amount: number;
       targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
+  /**
+   * Mime: re-cast whatever the mime's own team did most recently. The caller
+   * looks up the recorded (abilityId, target tile) and runs the standard
+   * apply-instant-ability pipeline as the mime. No range / target picker —
+   * the original action's target tile is reused.
+   */
+  | { kind: 'mimic' }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -388,6 +395,18 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
     effect: { kind: 'stat-shift', stat: 'faith', amount: -5,
               targetTeam: 'enemy', baseAccuracy: 130 },
+  },
+
+  // ─── Mime ─────────────────────────────────────────────────────────────────
+  mimic: {
+    // Replays the mime's team's most recent ability at the same target. The
+    // recorded ability's CT and AoE still apply (a mimicked Cura still
+    // charges, a mimicked Pebble Blast still hits a 5-tile cross). MP cost
+    // is FREE for the mime regardless of what's being copied — the copy
+    // itself is the cost.
+    id: 'mimic', name: 'Mimic',
+    jpCost: 200, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'mimic' },
   },
 
   // ─── Reactions ────────────────────────────────────────────────────────────
