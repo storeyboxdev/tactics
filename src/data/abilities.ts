@@ -57,6 +57,10 @@ export type AbilityEffect =
   | { kind: 'reaction-auto-potion'; amount: number }
   // Passive: supports modify the unit between events.
   | { kind: 'support-mp-recovery'; amount: number }
+  /** Multiplies JP earned per action by `factor` (e.g. 1.5 = +50%). */
+  | { kind: 'support-jp-up'; factor: number }
+  /** Multiplies the caster's effective MA on magic-damage / magic-heal casts. */
+  | { kind: 'support-magic-attack-up'; factor: number }
   // Passive: movements modify movement / fire when moving.
   | { kind: 'movement-move-plus'; amount: number }
   | { kind: 'movement-hp-up'; amount: number };
@@ -464,10 +468,27 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 200, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'movement-move-plus', amount: 1 },
   },
+  move_plus_2: {
+    id: 'move_plus_2', name: 'Move +2',
+    jpCost: 500, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-move-plus', amount: 2 },
+  },
   move_hp_up: {
     id: 'move_hp_up', name: 'Move HP Up',
     jpCost: 300, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'movement-hp-up', amount: 5 },
+  },
+
+  // ─── Support extensions ───────────────────────────────────────────────────
+  jp_up: {
+    id: 'jp_up', name: 'JP Up',
+    jpCost: 500, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-jp-up', factor: 1.5 },
+  },
+  magic_attack_up: {
+    id: 'magic_attack_up', name: 'Magic Attack Up',
+    jpCost: 600, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-magic-attack-up', factor: 1.25 },
   },
 };
 

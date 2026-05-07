@@ -130,7 +130,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  76, mp: 320, pa:  60, ma: 180, speed: 100 },
     growth: { hp:   3, mp:   9, pa:   2, ma:   9, speed:   1 },
     learnableActives: ['fire', 'bolt', 'ice', 'fire_2', 'bolt_2', 'ice_2'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['magic_attack_up'], learnableMovements: [],
   },
 
   // ─── Tier 2: physical branch ──────────────────────────────────────────────
@@ -150,7 +150,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  90, mp:  80, pa: 100, ma:  60, speed: 130 },
     growth: { hp:   4, mp:   2, pa:   5, ma:   2, speed:   3 },
     learnableActives: ['mug'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: ['move_plus_2'],
   },
 
   // ─── Tier 2: magic branch ─────────────────────────────────────────────────
@@ -201,7 +201,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  90, mp: 200, pa:  80, ma: 100, speed: 100 },
     growth: { hp:   5, mp:   6, pa:   3, ma:   5, speed:   1 },
     learnableActives: ['praise', 'insult', 'solution', 'preach'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['jp_up'], learnableMovements: [],
   },
   summoner: {
     id: 'summoner', name: 'Summoner',

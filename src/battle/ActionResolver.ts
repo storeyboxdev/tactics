@@ -100,6 +100,20 @@ export function magicStatusHitChance(caster: Unit, target: Unit, baseAccuracy: n
   return Math.max(0, Math.min(100, Math.floor(raw)));
 }
 
+/**
+ * Caster's MA after equipped supports. Magic Attack Up multiplies it (1.25
+ * by default). Used by every magic-damage / magic-heal predictor and
+ * resolver so the effective damage matches what the planner saw.
+ */
+export function effectiveMa(caster: Unit): number {
+  if (!caster.support) return caster.ma;
+  const ab = ABILITIES[caster.support];
+  if (ab?.effect.kind === 'support-magic-attack-up') {
+    return Math.floor(caster.ma * ab.effect.factor);
+  }
+  return caster.ma;
+}
+
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
 export function rollHit(chance: number, rng: Rng): boolean {
   if (chance >= 100) return true;
@@ -294,7 +308,7 @@ export interface SpellPrediction { damage: number; hitChance: number; }
 export function predictSpellDamage(caster: Unit, target: Unit, spellPower: number): SpellPrediction {
   return {
     damage: computeSpellDamage({
-      ma: caster.ma,
+      ma: effectiveMa(caster),
       spellPower,
       casterFaith: caster.faith,
       targetFaith: target.faith,
@@ -313,7 +327,7 @@ export function resolveSpell(
   rng: Rng = Math.random,
 ): SpellOutcome {
   const damage = computeSpellDamage({
-    ma: caster.ma,
+    ma: effectiveMa(caster),
     spellPower,
     casterFaith: caster.faith,
     targetFaith: target.faith,
@@ -446,7 +460,7 @@ export function computeHealAmount(p: SpellDamageInputs): number {
 export function predictHeal(caster: Unit, target: Unit, spellPower: number): { amount: number; hitChance: number } {
   return {
     amount: computeHealAmount({
-      ma: caster.ma, spellPower,
+      ma: effectiveMa(caster), spellPower,
       casterFaith: caster.faith, targetFaith: target.faith,
       randomMul: 1.0,
     }),
@@ -458,7 +472,7 @@ export function resolveHeal(
   caster: Unit, target: Unit, spellPower: number, rng: Rng = Math.random,
 ): HealOutcome {
   const amount = computeHealAmount({
-    ma: caster.ma, spellPower,
+    ma: effectiveMa(caster), spellPower,
     casterFaith: caster.faith, targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });

@@ -878,8 +878,17 @@ function awardForAction(actor: Unit, affectedEnemy: boolean): void {
   if (actor.team !== 'player' || !actor.progression) return;
   const lines: string[] = [];
 
-  const jpRes = awardJp(actor.progression, actor.jobId, JP_PER_ACTION);
-  lines.push(`+${JP_PER_ACTION} JP`);
+  // JP Up support multiplies JP earned. The factor lives on the support's
+  // ability effect — currently 1.5 (50% bonus), but adjustable per ability.
+  let jpAmount = JP_PER_ACTION;
+  if (actor.support) {
+    const supportAb = ABILITIES[actor.support];
+    if (supportAb?.effect.kind === 'support-jp-up') {
+      jpAmount = Math.floor(jpAmount * supportAb.effect.factor);
+    }
+  }
+  const jpRes = awardJp(actor.progression, actor.jobId, jpAmount);
+  lines.push(`+${jpAmount} JP`);
 
   if (affectedEnemy) {
     const expRes = awardExp(actor.progression, actor.jobId, EXP_PER_ACTION);
