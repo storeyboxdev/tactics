@@ -164,6 +164,14 @@ export class Unit {
     return this.move;
   }
 
+  /** `jump` stat plus any movement-ability bonus (e.g. Jump +1). */
+  get effectiveJump(): number {
+    if (!this.movement) return this.jump;
+    const ab = ABILITIES[this.movement];
+    if (ab?.effect.kind === 'movement-jump-plus') return this.jump + ab.effect.amount;
+    return this.jump;
+  }
+
   hasStatus(id: StatusId): boolean {
     return this.statuses.some(s => s.id === id);
   }

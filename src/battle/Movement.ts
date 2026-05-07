@@ -63,7 +63,7 @@ export class MovePlan {
         if (!hasFloat && !map.isPassable(nx, nz)) continue;
         if (occupied.has(k)) continue;
         const nTile = map.getTile(nx, nz);
-        if (Math.abs(nTile.h - curTile.h) > unit.jump) continue;
+        if (Math.abs(nTile.h - curTile.h) > unit.effectiveJump) continue;
         const node: Node = { x: nx, z: nz, cost: cur.cost + 1, parent: key(cur.x, cur.z) };
         this.nodes.set(k, node);
         queue.push(node);

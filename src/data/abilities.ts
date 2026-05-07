@@ -65,11 +65,15 @@ export type AbilityEffect =
   | { kind: 'support-jp-up'; factor: number }
   /** Multiplies the caster's effective MA on magic-damage / magic-heal casts. */
   | { kind: 'support-magic-attack-up'; factor: number }
+  /** Multiplies incoming physical damage by `factor` (0.75 = 25% reduction). */
+  | { kind: 'support-defense-up'; factor: number }
   // Passive: movements modify movement / fire when moving.
   | { kind: 'movement-move-plus'; amount: number }
   | { kind: 'movement-hp-up'; amount: number }
   /** Treats water tiles as passable for movement / pathing. */
-  | { kind: 'movement-float' };
+  | { kind: 'movement-float' }
+  /** Adds `amount` to the unit's effective jump stat (taller climbs allowed). */
+  | { kind: 'movement-jump-plus'; amount: number };
 
 export type AbilityKind = 'physical' | 'magical' | 'reaction' | 'support' | 'movement';
 
@@ -518,6 +522,24 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'magic_attack_up', name: 'Magic Attack Up',
     jpCost: 600, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'support-magic-attack-up', factor: 1.25 },
+  },
+  defense_up: {
+    // 25% reduction on every incoming physical hit (melee + ranged + Break).
+    // Magic damage is unaffected — Magic Defense Up is a separate slot when
+    // it eventually lands.
+    id: 'defense_up', name: 'Defense Up',
+    jpCost: 500, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-defense-up', factor: 0.75 },
+  },
+  jump_plus_1: {
+    id: 'jump_plus_1', name: 'Jump +1',
+    jpCost: 250, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-jump-plus', amount: 1 },
+  },
+  jump_plus_2: {
+    id: 'jump_plus_2', name: 'Jump +2',
+    jpCost: 500, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-jump-plus', amount: 2 },
   },
 };
 

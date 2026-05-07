@@ -101,7 +101,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 140, mp: 100, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   9, mp:   2, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['power_break', 'speed_break'],
-    learnableReactions: ['hp_restore'], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['hp_restore'], learnableSupports: ['defense_up'], learnableMovements: [],
   },
   archer: {
     id: 'archer', name: 'Archer',
@@ -190,7 +190,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 130, mp: 120, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   8, mp:   3, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['jump'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: ['jump_plus_1', 'jump_plus_2'],
   },
 
   // ─── Tier 3: magic specialists ────────────────────────────────────────────

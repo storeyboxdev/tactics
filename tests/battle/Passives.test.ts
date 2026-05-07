@@ -4,7 +4,7 @@ import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import {
-  effectiveMa, predictSpellDamage, resolveSpell,
+  effectiveMa, predictSpellDamage, resolveSpell, resolveAttack,
 } from '../../src/battle/ActionResolver';
 import { MovePlan } from '../../src/battle/Movement';
 
@@ -77,6 +77,72 @@ describe('Float', () => {
     const plan = new MovePlan(u, map, [u]);
     const reachable = plan.endTiles().map(t => `${t.x},${t.z}`);
     expect(reachable).not.toContain('2,2');
+  });
+});
+
+describe('Defense Up', () => {
+  it('reduces incoming melee damage by the support factor', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const baseTarget = makeUnit('t1', 'enemy', 2, 2, FACING_W, { hp: 999 });
+    const armoredTarget = makeUnit('t2', 'enemy', 2, 2, FACING_W, { hp: 999 });
+    armoredTarget.support = 'defense_up';
+
+    const a1 = makeUnit('a1', 'player', 1, 2, FACING_E, { pa: 5 });
+    const a2 = makeUnit('a2', 'player', 1, 2, FACING_E, { pa: 5 });
+
+    const baseOut    = resolveAttack(a1, baseTarget,    map, rngHalf);
+    const armoredOut = resolveAttack(a2, armoredTarget, map, rngHalf);
+
+    expect(armoredOut.damage).toBeLessThan(baseOut.damage);
+    expect(armoredOut.damage).toBeGreaterThan(0);
+  });
+});
+
+describe('Jump +N', () => {
+  it('Jump +1 lets the unit climb a height-2 step that base Jump 1 cannot', () => {
+    // 5x5 map: south half height 1, central rim height 3, north half height 1.
+    const data: MapData = {
+      name: 'cliff', width: 5, height: 5,
+      heights: [
+        [1, 1, 1, 1, 1],
+        [3, 3, 3, 3, 3],   // wall row — height-2 step from below
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+      ],
+      spawns: { player: [], enemy: [] },
+    };
+    const map = new BattleMap(data);
+    const u = makeUnit('u', 'player', 2, 2, FACING_E, { move: 5, jump: 1 });
+
+    const planA = new MovePlan(u, map, [u]);
+    expect(planA.endTiles().map(t => `${t.x},${t.z}`)).not.toContain('2,1');
+
+    u.movement = 'jump_plus_1';
+    const planB = new MovePlan(u, map, [u]);
+    expect(planB.endTiles().map(t => `${t.x},${t.z}`)).toContain('2,1');
+  });
+
+  it('Jump +2 reaches a height-3 step that Jump +1 cannot', () => {
+    const data: MapData = {
+      name: 'cliff', width: 5, height: 5,
+      heights: [
+        [1, 1, 1, 1, 1],
+        [4, 4, 4, 4, 4],   // 3-step rise
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+      ],
+      spawns: { player: [], enemy: [] },
+    };
+    const map = new BattleMap(data);
+    const u = makeUnit('u', 'player', 2, 2, FACING_E, { move: 5, jump: 1 });
+    u.movement = 'jump_plus_1';
+    const planA = new MovePlan(u, map, [u]);
+    expect(planA.endTiles().map(t => `${t.x},${t.z}`)).not.toContain('2,1');
+    u.movement = 'jump_plus_2';
+    const planB = new MovePlan(u, map, [u]);
+    expect(planB.endTiles().map(t => `${t.x},${t.z}`)).toContain('2,1');
   });
 });
 

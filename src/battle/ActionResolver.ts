@@ -114,6 +114,19 @@ export function effectiveMa(caster: Unit): number {
   return caster.ma;
 }
 
+/**
+ * Multiplier on incoming physical damage from the target's equipped support
+ * (Defense Up = 0.75). Returns 1.0 when no defensive support is equipped.
+ * Magic damage is NOT scaled here — Magic Defense Up will be a separate
+ * support kind when it lands.
+ */
+export function effectiveDefenseFactor(target: Unit): number {
+  if (!target.support) return 1;
+  const ab = ABILITIES[target.support];
+  if (ab?.effect.kind === 'support-defense-up') return ab.effect.factor;
+  return 1;
+}
+
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
 export function rollHit(chance: number, rng: Rng): boolean {
   if (chance >= 100) return true;
@@ -241,7 +254,8 @@ export function resolveAttack(
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });
-  const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
+  const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
+  const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
   target.applyDamage(damage);
 
   const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
@@ -422,7 +436,8 @@ export function resolveRangedAttack(
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });
-  const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
+  const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
+  const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
   target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
