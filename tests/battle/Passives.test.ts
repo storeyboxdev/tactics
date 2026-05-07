@@ -27,6 +27,59 @@ function flatMap(width: number, depth: number, h = 1): MapData {
 
 const rngHalf = () => 0.5;
 
+describe('Float', () => {
+  it('lets a unit walk onto and through water tiles', () => {
+    // Map has a single water row across the middle (height 0); land at top
+    // and bottom (height 1). Without Float, BFS can't cross. With it, can.
+    const data: MapData = {
+      name: 'pond', width: 5, height: 5,
+      heights: [
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0],   // water row
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+      ],
+      spawns: { player: [], enemy: [] },
+    };
+    const map = new BattleMap(data);
+    const u = makeUnit('u', 'player', 2, 0, FACING_E, { move: 5 });
+
+    // Without Float: BFS stops at the north shore.
+    const planA = new MovePlan(u, map, [u]);
+    const reachableA = planA.endTiles().map(t => `${t.x},${t.z}`);
+    expect(reachableA).not.toContain('2,3'); // south shore
+    expect(reachableA).not.toContain('2,2'); // water tile
+
+    // With Float: water becomes passable, BFS reaches the south shore.
+    u.movement = 'float';
+    const planB = new MovePlan(u, map, [u]);
+    const reachableB = planB.endTiles().map(t => `${t.x},${t.z}`);
+    expect(reachableB).toContain('2,2'); // water tile is now standable
+    expect(reachableB).toContain('2,3'); // south shore reachable
+  });
+
+  it('non-float movements (Move +1) do NOT bypass water', () => {
+    const data: MapData = {
+      name: 'pond', width: 5, height: 5,
+      heights: [
+        [1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+      ],
+      spawns: { player: [], enemy: [] },
+    };
+    const map = new BattleMap(data);
+    const u = makeUnit('u', 'player', 2, 0, FACING_E, { move: 5 });
+    u.movement = 'move_plus_1';
+    const plan = new MovePlan(u, map, [u]);
+    const reachable = plan.endTiles().map(t => `${t.x},${t.z}`);
+    expect(reachable).not.toContain('2,2');
+  });
+});
+
 describe('Move +2', () => {
   it('expands the BFS reachable set further than Move +1', () => {
     const map = new BattleMap(flatMap(15, 15));

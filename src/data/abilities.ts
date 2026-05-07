@@ -67,7 +67,9 @@ export type AbilityEffect =
   | { kind: 'support-magic-attack-up'; factor: number }
   // Passive: movements modify movement / fire when moving.
   | { kind: 'movement-move-plus'; amount: number }
-  | { kind: 'movement-hp-up'; amount: number };
+  | { kind: 'movement-hp-up'; amount: number }
+  /** Treats water tiles as passable for movement / pathing. */
+  | { kind: 'movement-float' };
 
 export type AbilityKind = 'physical' | 'magical' | 'reaction' | 'support' | 'movement';
 
@@ -496,6 +498,14 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'move_hp_up', name: 'Move HP Up',
     jpCost: 300, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'movement-hp-up', amount: 5 },
+  },
+  float: {
+    // Hovers the unit slightly above the ground — water tiles become passable
+    // for both pathing and end-of-move standing. Pairs strongly with the
+    // Water Pond map: floating mages can cross while everyone else flanks.
+    id: 'float', name: 'Float',
+    jpCost: 600, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-float' },
   },
 
   // ─── Support extensions ───────────────────────────────────────────────────

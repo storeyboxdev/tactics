@@ -1,5 +1,6 @@
 import { Unit } from './Unit';
 import { BattleMap } from './Map';
+import { ABILITIES } from '../data/abilities';
 
 interface Node {
   x: number;
@@ -39,6 +40,11 @@ export class MovePlan {
       if (u !== unit && !u.crystallized && !u.airborne) occupied.add(key(u.x, u.z));
     }
 
+    // Float passes over water tiles. Other movement abilities don't change
+    // passability, so the predicate falls back to the map's terrain rule.
+    const movementAb = unit.movement ? ABILITIES[unit.movement] : null;
+    const hasFloat = movementAb?.effect.kind === 'movement-float';
+
     const start: Node = { x: unit.x, z: unit.z, cost: 0, parent: null };
     this.nodes.set(key(start.x, start.z), start);
 
@@ -54,7 +60,7 @@ export class MovePlan {
         const k = key(nx, nz);
         if (this.nodes.has(k)) continue;
         if (!map.inBounds(nx, nz)) continue;
-        if (!map.isPassable(nx, nz)) continue;
+        if (!hasFloat && !map.isPassable(nx, nz)) continue;
         if (occupied.has(k)) continue;
         const nTile = map.getTile(nx, nz);
         if (Math.abs(nTile.h - curTile.h) > unit.jump) continue;

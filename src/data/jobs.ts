@@ -161,7 +161,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  80, mp: 280, pa:  60, ma: 160, speed: 100 },
     growth: { hp:   4, mp:   9, pa:   2, ma:   7, speed:   1 },
     learnableActives: ['haste', 'slow', 'stop'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: ['float'],
   },
   oracle: {
     id: 'oracle', name: 'Oracle',
