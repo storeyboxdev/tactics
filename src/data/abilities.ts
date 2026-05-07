@@ -36,6 +36,15 @@ export type AbilityEffect =
    * the original action's target tile is reused.
    */
   | { kind: 'mimic' }
+  /**
+   * Calculator: simultaneously hit every alive unit on the field whose
+   * `stat` is divisible by `divisor`, with a magic-damage burst at
+   * `spellPower`. Ignores team and range — both your own units and enemies
+   * matching the rule take the hit, so picking the right divisor is the
+   * tactical play. No MP cost; the math itself is the cost.
+   */
+  | { kind: 'math-skill'; stat: 'hp' | 'mp' | 'ct' | 'level'; divisor: number;
+      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -395,6 +404,27 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
     effect: { kind: 'stat-shift', stat: 'faith', amount: -5,
               targetTeam: 'enemy', baseAccuracy: 130 },
+  },
+
+  // ─── Calculator (Math Skill) ──────────────────────────────────────────────
+  // Global magic-damage filtered by a divisibility rule. No range, no MP,
+  // no team filter — every alive unit matching the rule takes the hit. The
+  // tactical play is observing the field and picking the rule that catches
+  // the most enemies and fewest allies.
+  math_lvl_3: {
+    id: 'math_lvl_3', name: 'Lv %3 → Fire',
+    jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'math-skill', stat: 'level', divisor: 3, spellPower: 12, element: 'fire' },
+  },
+  math_lvl_4: {
+    id: 'math_lvl_4', name: 'Lv %4 → Bolt',
+    jpCost: 500, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'math-skill', stat: 'level', divisor: 4, spellPower: 14, element: 'bolt' },
+  },
+  math_ct_5: {
+    id: 'math_ct_5', name: 'CT %5 → Ice',
+    jpCost: 600, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'math-skill', stat: 'ct', divisor: 5, spellPower: 14, element: 'ice' },
   },
 
   // ─── Mime ─────────────────────────────────────────────────────────────────

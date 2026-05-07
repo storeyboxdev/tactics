@@ -68,12 +68,9 @@ const stat = (over: Partial<JobStats>): JobStats => ({
   ...over,
 });
 
-const noAbilities = {
-  learnableActives: [] as string[],
-  learnableReactions: [] as string[],
-  learnableSupports: [] as string[],
-  learnableMovements: [] as string[],
-};
+// Every job now declares learnableActives explicitly. The legacy `noAbilities`
+// helper was removed when Calculator was filled in — every JobDef should
+// list its slots so adding a new ability is a one-line append.
 
 export const JOB_DEFS: Record<string, JobDef> = {
   // ─── Tier 0: starter jobs (no prereqs) ────────────────────────────────────
@@ -253,7 +250,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 40, mp: 24, pa: 3, ma: 7, speed: 8, move: 3 }),
     mult:   { hp:  80, mp: 240, pa:  60, ma: 140, speed:  80 },
     growth: { hp:   3, mp:   8, pa:   2, ma:   8, speed:   1 },
-    ...noAbilities,
+    learnableActives: ['math_lvl_3', 'math_lvl_4', 'math_ct_5'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
   // ─── Tier 5: gendered & mime (deepest unlocks) ────────────────────────────

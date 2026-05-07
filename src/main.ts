@@ -414,6 +414,14 @@ function beginSkill(abilityId: string) {
     return;
   }
 
+  // Math Skill: a global rule-filtered magic-damage sweep. No targeting
+  // prompt — every alive unit on the field whose stat is divisible by the
+  // rule's divisor takes the hit (both teams).
+  if (ab.effect.kind === 'math-skill') {
+    castMathSkill(unit, ab);
+    return;
+  }
+
   const tiles = abilityTargets(unit, ab, map, units);
   if (tiles.length === 0) { hud.log(`${unit.name}: no targets in range for ${ab.name}`); return; }
 
@@ -523,6 +531,51 @@ function castMimic(unit: Unit) {
   hasActed = true;
   refreshHud();
   if (!autoEndIfDone()) showActionMenu();
+}
+
+/**
+ * Calculator: hit every alive unit whose stat is divisible by the rule's
+ * divisor with a per-target magic-damage roll, regardless of team or range.
+ * Includes the caster themselves if their stat matches — Math Skill is
+ * indiscriminate, that's the catch.
+ */
+function castMathSkill(actor: Unit, ab: Ability) {
+  if (ab.effect.kind !== 'math-skill') return;
+  const eff = ab.effect;
+  const matched: Unit[] = [];
+  for (const u of units) {
+    if (!u.isAlive) continue;
+    const v = mathStatOf(u, eff.stat);
+    if (v % eff.divisor === 0) matched.push(u);
+  }
+
+  if (matched.length === 0) {
+    hud.log(`${ab.name}: no units match (${eff.stat} % ${eff.divisor} = 0)`);
+    return;
+  }
+
+  hud.log(`${ab.name}: ${matched.length} unit${matched.length === 1 ? '' : 's'} match`);
+  let affectedEnemy = false;
+  for (const target of matched) {
+    const out = resolveSpell(actor, target, eff.spellPower);
+    hud.log(`  ↳ ${actor.name} → ${target.name} for ${out.damage} dmg`);
+    spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+    if (target.team === 'enemy' && out.damage > 0) affectedEnemy = true;
+  }
+  awardForAction(actor, affectedEnemy);
+  lastActions.record(actor.team, ab.id, actor.x, actor.z);
+  hasActed = true;
+  refreshHud();
+  if (!autoEndIfDone()) showActionMenu();
+}
+
+function mathStatOf(u: Unit, stat: 'hp' | 'mp' | 'ct' | 'level'): number {
+  switch (stat) {
+    case 'hp': return u.hp;
+    case 'mp': return u.mp;
+    case 'ct': return u.ct;
+    case 'level': return u.level;
+  }
 }
 
 function collectAbilityTargets(actor: Unit, ab: Ability, cx: number, cz: number): Unit[] {
