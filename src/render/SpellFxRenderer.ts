@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { BattleMap } from '../battle/Map';
 
-export type FxElement = 'fire' | 'ice' | 'bolt' | 'earth' | 'heal';
+export type FxElement = 'fire' | 'ice' | 'bolt' | 'earth' | 'heal' | 'holy';
 
 interface ElementConfig {
   texture: THREE.Texture;
@@ -48,6 +48,7 @@ export class SpellFxRenderer {
       bolt:  makeBoltTexture(),
       earth: makeEarthTexture(),
       heal:  makeHealTexture(),
+      holy:  makeHolyTexture(),
     };
   }
 
@@ -130,6 +131,7 @@ const ELEMENT_CONFIG: Record<FxElement, ElementConfig> = {
   bolt:  { texture: null!, duration: 0.28, startScale: 0.95, endScale: 1.05, yStart: 1.20, yEnd: 1.20, fadeStart: 0.30 },
   earth: { texture: null!, duration: 0.32, startScale: 0.45, endScale: 0.95, yStart: 0.30, yEnd: 0.30, fadeStart: 0.55 },
   heal:  { texture: null!, duration: 0.42, startScale: 0.40, endScale: 0.80, yStart: 0.25, yEnd: 0.95, fadeStart: 0.45 },
+  holy:  { texture: null!, duration: 0.50, startScale: 0.50, endScale: 1.40, yStart: 0.55, yEnd: 0.55, fadeStart: 0.45 },
 };
 
 // ─── Procedural textures ────────────────────────────────────────────────────
@@ -212,6 +214,38 @@ function makeEarthTexture(): THREE.Texture {
   ctx.fillRect(21, 13, 3, 1);
   ctx.fillRect(13, 20, 3, 1);
   ctx.fillRect(23, 23, 3, 1);
+  return canvasTex(c);
+}
+
+function makeHolyTexture(): THREE.Texture {
+  // Gold radial flare with eight short rays — feels distinctly "divine"
+  // without leaning on a literal cross (already used by heal).
+  const c = makeCanvas(48, 48);
+  const ctx = c.getContext('2d')!;
+  const cx = 24, cy = 24;
+
+  // Eight radial spokes.
+  ctx.strokeStyle = '#fff8c8';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.moveTo(cx + Math.cos(a) * 6,  cy + Math.sin(a) * 6);
+    ctx.lineTo(cx + Math.cos(a) * 22, cy + Math.sin(a) * 22);
+  }
+  ctx.stroke();
+
+  // Bright gold core.
+  const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, 14);
+  g.addColorStop(0,   '#ffffff');
+  g.addColorStop(0.4, '#fff0a0');
+  g.addColorStop(0.8, '#f0c040');
+  g.addColorStop(1,   'rgba(180, 120, 0, 0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+  ctx.fill();
+
   return canvasTex(c);
 }
 

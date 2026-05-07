@@ -10,7 +10,7 @@
 import { StatusId } from './statuses';
 
 export type AbilityEffect =
-  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
+  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' }
   | { kind: 'magic-heal'; spellPower: number }
   | { kind: 'physical-ranged-damage'; weaponPower: number;
       /** If set, the caster heals for floor(damage × drainPercent / 100) on a hit. Used by Thief's Mug. */
@@ -44,7 +44,7 @@ export type AbilityEffect =
    * tactical play. No MP cost; the math itself is the cost.
    */
   | { kind: 'math-skill'; stat: 'hp' | 'mp' | 'ct' | 'level'; divisor: number;
-      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
+      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -178,6 +178,15 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'magic-damage', spellPower: 18, element: 'ice' },
     area: { radius: 1 },
   },
+  flare: {
+    // The Black Mage's ceiling — non-elemental, single-target, monster
+    // damage. No AoE, no element to resist. The trade-off is the longest
+    // charge (7) and steepest MP cost in the game; if a Black Mage casts
+    // Flare, the rest of the party is buying them the window.
+    id: 'flare', name: 'Flare',
+    jpCost: 800, type: 'magical', range: 4, chargeTime: 7, mpCost: 32,
+    effect: { kind: 'magic-damage', spellPower: 32 },
+  },
 
   // ─── Time Mage ────────────────────────────────────────────────────────────
   haste: {
@@ -218,6 +227,24 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'cura', name: 'Cura',
     jpCost: 250, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
     effect: { kind: 'magic-heal', spellPower: 18 },
+  },
+  curaja: {
+    // Tier-3 heal — high spellpower plus a radius-1 cross to top up a
+    // huddled party. Long charge (5) so the timing window matters; pricey
+    // MP keeps it from being spammed.
+    id: 'curaja', name: 'Curaja',
+    jpCost: 600, type: 'magical', range: 4, chargeTime: 5, mpCost: 24,
+    effect: { kind: 'magic-heal', spellPower: 26 },
+    area: { radius: 1 },
+  },
+  holy: {
+    // The White Mage's offensive ceiling — single-target Holy element. Long
+    // charge, high MP, no AoE — but spellpower 28 lands harder than any
+    // tier-2 Black Mage spell. Element 'holy' has no resists yet but the
+    // tag is reserved for when Holy/Dark resistance lands.
+    id: 'holy', name: 'Holy',
+    jpCost: 800, type: 'magical', range: 4, chargeTime: 6, mpCost: 30,
+    effect: { kind: 'magic-damage', spellPower: 28, element: 'holy' },
   },
   raise: {
     id: 'raise', name: 'Raise',

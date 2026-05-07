@@ -120,7 +120,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ mp: 24, pa: 3, ma: 7, speed: 9, move: 3, faith: 70 }),
     mult:   { hp: 100, mp: 240, pa:  60, ma: 140, speed:  90 },
     growth: { hp:   4, mp:   8, pa:   2, ma:   7, speed:   1 },
-    learnableActives: ['cure', 'cura', 'raise'],
+    learnableActives: ['cure', 'cura', 'curaja', 'raise', 'holy'],
     learnableReactions: [], learnableSupports: ['magic_defense_up'], learnableMovements: [],
   },
   black_mage: {
@@ -129,7 +129,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 38, mp: 32, pa: 3, ma: 9, move: 3, faith: 80, bravery: 35 }),
     mult:   { hp:  76, mp: 320, pa:  60, ma: 180, speed: 100 },
     growth: { hp:   3, mp:   9, pa:   2, ma:   9, speed:   1 },
-    learnableActives: ['fire', 'bolt', 'ice', 'fire_2', 'bolt_2', 'ice_2'],
+    learnableActives: ['fire', 'bolt', 'ice', 'fire_2', 'bolt_2', 'ice_2', 'flare'],
     learnableReactions: [], learnableSupports: ['magic_attack_up'], learnableMovements: [],
   },
 
