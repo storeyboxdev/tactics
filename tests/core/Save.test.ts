@@ -77,6 +77,25 @@ describe('Save round-trip', () => {
     expect(loaded.roster[0].id).toBe('p1');
   });
 
+  it('battleCount increments on each saveRoster call', () => {
+    const seed = bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' });
+    const u = unitFromSaved(seed);
+    saveRoster([u]);
+    expect(loadSave()?.battleCount).toBe(1);
+    saveRoster([u]);
+    expect(loadSave()?.battleCount).toBe(2);
+    saveRoster([u]);
+    expect(loadSave()?.battleCount).toBe(3);
+  });
+
+  it('migrate fills battleCount to 0 for a save written before the field existed', () => {
+    localStorage.setItem('tactics-save-v1', JSON.stringify({
+      version: 1,
+      roster: [],
+    }));
+    expect(loadSave()?.battleCount).toBe(0);
+  });
+
   it('wipeSave clears the persisted roster', () => {
     saveRoster([unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }))]);
     expect(loadSave()).not.toBeNull();

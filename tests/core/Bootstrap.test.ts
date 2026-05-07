@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoster, bootstrapUnit } from '../../src/core/Bootstrap';
+import { defaultRoster, bootstrapUnit, pickEnemyJobs } from '../../src/core/Bootstrap';
 import { JOB_DEFS, RAW_STAT_BASELINE } from '../../src/data/jobs';
 import { ABILITIES } from '../../src/data/abilities';
 import { jobLevelFor, prereqsSatisfied, MAX_OVERALL_LEVEL } from '../../src/battle/Progression';
@@ -74,6 +74,43 @@ describe('bootstrapUnit', () => {
 
   it('throws on unknown jobId', () => {
     expect(() => bootstrapUnit({ id: 't', name: 'T', jobId: 'no_such_job' })).toThrow();
+  });
+});
+
+describe('pickEnemyJobs — tier ramp', () => {
+  // Deterministic rng: always 0.0 (picks first index).
+  const rng0 = () => 0;
+  // Deterministic rng: always 0.999 (picks last index).
+  const rng1 = () => 0.999;
+
+  it('battle 0 returns squires only', () => {
+    const jobs = pickEnemyJobs(0, 5, rng1);
+    expect(jobs.every(j => j === 'squire')).toBe(true);
+  });
+
+  it('battle 2 widens to tier-1 jobs', () => {
+    const jobs = pickEnemyJobs(2, 5, rng1);
+    // rng1 always picks the last entry of the tier-1 pool: 'archer'.
+    // Plus the always-included squire.
+    expect(jobs).toContain('archer');
+    expect(jobs).toContain('squire');
+  });
+
+  it('battle 6 includes any of the 20 jobs', () => {
+    const jobs = pickEnemyJobs(6, 5, rng1);
+    // rng1 picks the last entry of the full pool: 'mime'.
+    expect(jobs).toContain('mime');
+  });
+
+  it('always includes at least one squire as a sanity baseline', () => {
+    for (const battle of [0, 2, 4, 6, 10]) {
+      const jobs = pickEnemyJobs(battle, 5, rng0);
+      expect(jobs).toContain('squire');
+    }
+  });
+
+  it('count=0 returns an empty array', () => {
+    expect(pickEnemyJobs(5, 0)).toEqual([]);
   });
 });
 

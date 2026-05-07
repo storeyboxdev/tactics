@@ -15,6 +15,12 @@ const SAVE_KEY = 'tactics-save-v1';
 export interface SaveFile {
   version: 1;
   roster: SavedUnit[];
+  /**
+   * Number of battles successfully completed (and saved). Drives the enemy
+   * tier-pool. Optional on disk for backwards compatibility — old saves
+   * load with `battleCount = 0`.
+   */
+  battleCount: number;
 }
 
 export interface SavedUnit {
@@ -54,7 +60,11 @@ export function saveRoster(units: Unit[]): void {
       progression: u.progression,
     });
   }
-  const file: SaveFile = { version: 1, roster };
+  // Bump the battle counter — every saveRoster call follows a battle finish,
+  // so this naturally tracks "how many battles has this party survived".
+  const prev = loadSave();
+  const battleCount = (prev?.battleCount ?? 0) + 1;
+  const file: SaveFile = { version: 1, roster, battleCount };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(file));
   } catch {
@@ -73,7 +83,7 @@ export function wipeSave(): void {
  */
 function migrate(raw: unknown): SaveFile | null {
   if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as { version?: unknown; roster?: unknown };
+  const obj = raw as { version?: unknown; roster?: unknown; battleCount?: unknown };
   if (obj.version !== 1) return null;
   if (!Array.isArray(obj.roster)) return null;
   const roster: SavedUnit[] = [];
@@ -81,7 +91,8 @@ function migrate(raw: unknown): SaveFile | null {
     const su = validateSavedUnit(entry);
     if (su) roster.push(su);
   }
-  return { version: 1, roster };
+  const battleCount = typeof obj.battleCount === 'number' ? obj.battleCount : 0;
+  return { version: 1, roster, battleCount };
 }
 
 function validateSavedUnit(raw: unknown): SavedUnit | null {

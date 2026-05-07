@@ -33,7 +33,7 @@ import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
 import { loadSave, SavedUnit } from './core/Save';
-import { defaultRoster } from './core/Bootstrap';
+import { defaultRoster, pickEnemyJobs } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
 
@@ -118,13 +118,12 @@ function buildPlayerUnit(saved: SavedUnit, x: number, z: number): Unit {
 
 const playerSpawns = map.spawns.player;
 const enemySpawns  = map.spawns.enemy;
-// Mirror-matching the Squire starter roster — keeps battle 1 winnable while
-// the player has zero learned actives. Crank this up (or vary jobs) once the
-// roster has spent a few battles' worth of JP.
-const enemyJobs    = ['squire', 'squire', 'squire', 'squire', 'squire'];
-
 const save = loadSave();
 const roster: SavedUnit[] = save?.roster ?? defaultRoster();
+// Enemy team scales with how many battles the party has survived. Battle 0
+// is Squires-only (the very first fight the player ever sees); Tier-1 jobs
+// come in by battle 2, casters by 4, the full pool by 6.
+const enemyJobs = pickEnemyJobs(save?.battleCount ?? 0, enemySpawns.length);
 
 const units: Unit[] = [];
 playerSpawns.forEach(([x, z], i) => {

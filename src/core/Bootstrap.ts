@@ -38,6 +38,55 @@ export function defaultRoster(): SavedUnit[] {
   return DEFAULT_ROSTER_SEEDS.map(bootstrapUnit);
 }
 
+/**
+ * Tiered enemy job pools, indexed by completed-battle count. Battle 0 is
+ * Squires-only (the very first fight the player ever sees). Each tier
+ * widens the pool — the previous tier is always still in. By battle 6+
+ * every job is a possible roll.
+ */
+const ENEMY_TIERS: Array<readonly string[]> = [
+  // 0 — first battle: pure mirror, full safety net.
+  ['squire'],
+  // 2 — basic Tier-1 jobs come in (chemists patch, knights bash, archers ping).
+  ['squire', 'chemist', 'knight', 'archer'],
+  // 4 — first wave of casters and rogues (sleep / poison / mug pressure).
+  ['squire', 'chemist', 'knight', 'archer', 'monk', 'thief', 'white_mage', 'black_mage', 'oracle'],
+  // 6 — full pool. Anything goes.
+  [
+    'squire', 'chemist', 'knight', 'archer', 'monk', 'thief',
+    'white_mage', 'black_mage', 'time_mage', 'oracle',
+    'geomancer', 'lancer', 'mediator', 'summoner',
+    'samurai', 'ninja', 'calculator', 'bard', 'dancer', 'mime',
+  ],
+];
+
+function poolFor(battleCount: number): readonly string[] {
+  if (battleCount >= 6) return ENEMY_TIERS[3];
+  if (battleCount >= 4) return ENEMY_TIERS[2];
+  if (battleCount >= 2) return ENEMY_TIERS[1];
+  return ENEMY_TIERS[0];
+}
+
+/**
+ * Pick `count` enemy job ids for the next battle. Always includes one
+ * Squire so the player has at least one "vanilla" target to read against.
+ * The remaining slots are sampled from the tier-appropriate pool.
+ */
+export function pickEnemyJobs(battleCount: number, count: number, rng: () => number = Math.random): string[] {
+  if (count <= 0) return [];
+  const pool = poolFor(battleCount);
+  const out: string[] = ['squire'];
+  for (let i = 1; i < count; i++) {
+    out.push(pool[Math.floor(rng() * pool.length)]);
+  }
+  // Shuffle so the squire isn't always first.
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export function bootstrapUnit(seed: RosterSeed): SavedUnit {
   const startingJob = JOB_DEFS[seed.jobId];
   if (!startingJob) throw new Error(`bootstrapUnit: unknown jobId ${seed.jobId}`);
