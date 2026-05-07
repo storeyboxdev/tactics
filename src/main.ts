@@ -528,13 +528,16 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     return false;
   }
   if (eff.kind === 'physical-ranged-damage') {
-    const out = resolveRangedAttack(actor, target, eff.weaponPower, map);
+    const out = resolveRangedAttack(actor, target, eff.weaponPower, map, undefined, eff.drainPercent ?? 0);
     // Damage was applied synchronously in the resolver. The projectile is
     // a visual delay — when it lands, the per-target hurt anim and any
     // crit/miss toast fire so the timing reads as "shot → impact".
     if (out.hit) {
       const critTag = out.crit ? ' ★CRIT' : '';
       hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
+      if (out.drained > 0) {
+        hud.log(`  ↳ ${actor.name} drains +${out.drained} HP`);
+      }
       projectiles.fire(actor, target, () => {
         playSpellHitVisual(target);
         if (out.crit) hud.showFloatingCrit(target);

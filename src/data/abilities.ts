@@ -12,7 +12,9 @@ import { StatusId } from './statuses';
 export type AbilityEffect =
   | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' }
   | { kind: 'magic-heal'; spellPower: number }
-  | { kind: 'physical-ranged-damage'; weaponPower: number }
+  | { kind: 'physical-ranged-damage'; weaponPower: number;
+      /** If set, the caster heals for floor(damage × drainPercent / 100) on a hit. Used by Thief's Mug. */
+      drainPercent?: number }
   /**
    * Restore a KO'd ally to `hpPercent`% of their hpMax (floor, min 1). The
    * targeting layer surfaces only KO'd allies for this effect; resolution
@@ -290,6 +292,18 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 150, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
     effect: { kind: 'magic-damage', spellPower: 8, element: 'earth' },
     area: { radius: 1 },  // 5-tile cross around the target
+  },
+
+  // ─── Thief ────────────────────────────────────────────────────────────────
+  // FFT canon's Steal kit needs an equipment system we don't have yet. Mug
+  // gives the Thief a distinctive identity move using only existing
+  // mechanics: a melee-range physical that drains half the dealt damage as
+  // HP onto the attacker. Doesn't trigger Counter (consistent with the
+  // ranged-physical rule).
+  mug: {
+    id: 'mug', name: 'Mug',
+    jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 4, drainPercent: 50 },
   },
 
   // ─── Ninja ────────────────────────────────────────────────────────────────

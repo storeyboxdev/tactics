@@ -346,6 +346,8 @@ export interface RangedAttackOutcome {
   facing: RelativeFacing;
   hit: boolean;
   crit: boolean;
+  /** HP healed onto the attacker (Mug-style drain). 0 when no drain. */
+  drained: number;
 }
 
 export interface RangedAttackPrediction {
@@ -382,7 +384,9 @@ export function predictRangedAttack(
  * still fires on hit.
  */
 export function resolveRangedAttack(
-  attacker: Unit, target: Unit, weaponPower: number, map: BattleMap, rng: Rng = Math.random,
+  attacker: Unit, target: Unit, weaponPower: number, map: BattleMap,
+  rng: Rng = Math.random,
+  drainPercent: number = 0,
 ): RangedAttackOutcome {
   const aH = map.getTile(attacker.x, attacker.z).h;
   const tH = map.getTile(target.x, target.z).h;
@@ -393,7 +397,10 @@ export function resolveRangedAttack(
   const randomMul = 0.85 + rng() * 0.30;
 
   if (!hit) {
-    return { attacker, target, damage: 0, heightDiff: aH - tH, facing, hit: false, crit: false };
+    return {
+      attacker, target, damage: 0, heightDiff: aH - tH,
+      facing, hit: false, crit: false, drained: 0,
+    };
   }
 
   const baseDamage = computeAttackDamage({
@@ -404,7 +411,18 @@ export function resolveRangedAttack(
   const damage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
-  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
+
+  // Drain: convert a percentage of the damage dealt into healing on the
+  // attacker, capped at their hpMax. Misses drain nothing.
+  let drained = 0;
+  if (drainPercent > 0) {
+    const desired = Math.max(1, Math.floor(damage * drainPercent / 100));
+    const before = attacker.hp;
+    attacker.hp = Math.min(attacker.hpMax, attacker.hp + desired);
+    drained = attacker.hp - before;
+  }
+
+  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit, drained };
 }
 
 // ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────

@@ -73,6 +73,54 @@ describe('resolveRangedAttack', () => {
   });
 });
 
+describe('Mug — drain on ranged-physical', () => {
+  it('heals the attacker for floor(damage * drainPercent / 100) on hit', () => {
+    const map = new BattleMap(flatMap(8, 8));
+    const a = makeUnit('a', 'player', 0, 0, FACING_E, { pa: 5, hp: 100 });
+    a.hp = 50;
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W, { hp: 100 });
+    const out = resolveRangedAttack(a, t, 4, map, rngHalf, 50);
+    expect(out.hit).toBe(true);
+    // 5 PA × 4 weaponPower × 1.0 facing × 1.0 height × 1.0 randomMul = 20 damage.
+    // Drain 50% = 10 HP back to attacker.
+    expect(out.damage).toBe(20);
+    expect(out.drained).toBe(10);
+    expect(a.hp).toBe(60);
+  });
+
+  it('caps drain at the attacker\'s hpMax', () => {
+    const map = new BattleMap(flatMap(8, 8));
+    const a = makeUnit('a', 'player', 0, 0, FACING_E, { pa: 5, hp: 100 });
+    a.hp = 95;
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W);
+    const out = resolveRangedAttack(a, t, 4, map, rngHalf, 50);
+    // Drain wants 10 but only 5 fits.
+    expect(out.drained).toBe(5);
+    expect(a.hp).toBe(100);
+  });
+
+  it('a missed Mug drains nothing', () => {
+    const map = new BattleMap(flatMap(8, 8));
+    const a = makeUnit('a', 'player', 0, 0, FACING_E, { pa: 5, hp: 50 });
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W, { evasion: 200 });
+    const before = a.hp;
+    const out = resolveRangedAttack(a, t, 4, map, rngHalf, 50);
+    expect(out.hit).toBe(false);
+    expect(out.drained).toBe(0);
+    expect(a.hp).toBe(before);
+  });
+
+  it('drainPercent 0 (default) leaves the attacker unchanged', () => {
+    const map = new BattleMap(flatMap(8, 8));
+    const a = makeUnit('a', 'player', 0, 0, FACING_E, { pa: 5, hp: 50 });
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W);
+    const before = a.hp;
+    const out = resolveRangedAttack(a, t, 4, map, rngHalf);
+    expect(out.drained).toBe(0);
+    expect(a.hp).toBe(before);
+  });
+});
+
 describe('predictRangedAttack', () => {
   it('matches the deterministic damage of resolveRangedAttack at randomMul=1.0', () => {
     const map = new BattleMap(flatMap(8, 8));

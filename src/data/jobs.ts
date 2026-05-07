@@ -152,7 +152,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 45, mp: 8, pa: 5, ma: 3, speed: 13, move: 5, jump: 3, evasion: 30 }),
     mult:   { hp:  90, mp:  80, pa: 100, ma:  60, speed: 130 },
     growth: { hp:   4, mp:   2, pa:   5, ma:   2, speed:   3 },
-    ...noAbilities,
+    learnableActives: ['mug'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
   // ─── Tier 2: magic branch ─────────────────────────────────────────────────
