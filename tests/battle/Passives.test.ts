@@ -96,6 +96,50 @@ describe('Defense Up', () => {
     expect(armoredOut.damage).toBeLessThan(baseOut.damage);
     expect(armoredOut.damage).toBeGreaterThan(0);
   });
+
+  it('does NOT reduce magic damage', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const baseT    = makeUnit('t1', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 });
+    const armoredT = makeUnit('t2', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 });
+    armoredT.support = 'defense_up';
+    const baseOut    = resolveSpell(c, baseT,    14, rngHalf);
+    const armoredOut = resolveSpell(c, armoredT, 14, rngHalf);
+    expect(armoredOut.damage).toBe(baseOut.damage);
+  });
+});
+
+describe('Magic Defense Up', () => {
+  it('reduces incoming magic damage by the support factor', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const baseT    = makeUnit('t1', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 });
+    const wardedT  = makeUnit('t2', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 });
+    wardedT.support = 'magic_defense_up';
+    const baseOut   = resolveSpell(c, baseT,   14, rngHalf);
+    const wardedOut = resolveSpell(c, wardedT, 14, rngHalf);
+    expect(wardedOut.damage).toBeLessThan(baseOut.damage);
+    expect(wardedOut.damage).toBeGreaterThan(0);
+  });
+
+  it('predictSpellDamage reflects the reduction so the AI sees it', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const baseT   = makeUnit('t1', 'enemy', 1, 0, FACING_W, { faith: 100 });
+    const wardedT = makeUnit('t2', 'enemy', 1, 0, FACING_W, { faith: 100 });
+    wardedT.support = 'magic_defense_up';
+    expect(predictSpellDamage(c, wardedT, 14).damage)
+      .toBeLessThan(predictSpellDamage(c, baseT, 14).damage);
+  });
+
+  it('does NOT reduce physical damage', () => {
+    const map = new BattleMap(flatMap(5, 5));
+    const baseT   = makeUnit('t1', 'enemy', 2, 2, FACING_W, { hp: 999 });
+    const wardedT = makeUnit('t2', 'enemy', 2, 2, FACING_W, { hp: 999 });
+    wardedT.support = 'magic_defense_up';
+    const a1 = makeUnit('a1', 'player', 1, 2, FACING_E, { pa: 5 });
+    const a2 = makeUnit('a2', 'player', 1, 2, FACING_E, { pa: 5 });
+    const baseOut   = resolveAttack(a1, baseT,   map, rngHalf);
+    const wardedOut = resolveAttack(a2, wardedT, map, rngHalf);
+    expect(wardedOut.damage).toBe(baseOut.damage);
+  });
 });
 
 describe('Jump +N', () => {

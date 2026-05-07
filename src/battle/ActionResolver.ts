@@ -117,13 +117,23 @@ export function effectiveMa(caster: Unit): number {
 /**
  * Multiplier on incoming physical damage from the target's equipped support
  * (Defense Up = 0.75). Returns 1.0 when no defensive support is equipped.
- * Magic damage is NOT scaled here — Magic Defense Up will be a separate
- * support kind when it lands.
  */
 export function effectiveDefenseFactor(target: Unit): number {
   if (!target.support) return 1;
   const ab = ABILITIES[target.support];
   if (ab?.effect.kind === 'support-defense-up') return ab.effect.factor;
+  return 1;
+}
+
+/**
+ * Multiplier on incoming magic damage from the target's equipped support
+ * (Magic Defense Up = 0.75). Returns 1.0 otherwise. Heals never use this —
+ * they aren't damage.
+ */
+export function effectiveMagicDefenseFactor(target: Unit): number {
+  if (!target.support) return 1;
+  const ab = ABILITIES[target.support];
+  if (ab?.effect.kind === 'support-magic-defense-up') return ab.effect.factor;
   return 1;
 }
 
@@ -320,14 +330,15 @@ export function computeSpellDamage(p: SpellDamageInputs): number {
 export interface SpellPrediction { damage: number; hitChance: number; }
 
 export function predictSpellDamage(caster: Unit, target: Unit, spellPower: number): SpellPrediction {
+  const raw = computeSpellDamage({
+    ma: effectiveMa(caster),
+    spellPower,
+    casterFaith: caster.faith,
+    targetFaith: target.faith,
+    randomMul: 1.0,
+  });
   return {
-    damage: computeSpellDamage({
-      ma: effectiveMa(caster),
-      spellPower,
-      casterFaith: caster.faith,
-      targetFaith: target.faith,
-      randomMul: 1.0,
-    }),
+    damage: Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target))),
     // Damage spells are 100% — Faith already gates the damage value, a second
     // faith-roll on top would be doubly punitive on low-faith casters.
     hitChance: 100,
@@ -340,13 +351,14 @@ export function resolveSpell(
   spellPower: number,
   rng: Rng = Math.random,
 ): SpellOutcome {
-  const damage = computeSpellDamage({
+  const raw = computeSpellDamage({
     ma: effectiveMa(caster),
     spellPower,
     casterFaith: caster.faith,
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
+  const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
   target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 

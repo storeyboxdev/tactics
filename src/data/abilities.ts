@@ -67,6 +67,8 @@ export type AbilityEffect =
   | { kind: 'support-magic-attack-up'; factor: number }
   /** Multiplies incoming physical damage by `factor` (0.75 = 25% reduction). */
   | { kind: 'support-defense-up'; factor: number }
+  /** Multiplies incoming magic damage by `factor` (0.75 = 25% reduction). */
+  | { kind: 'support-magic-defense-up'; factor: number }
   // Passive: movements modify movement / fire when moving.
   | { kind: 'movement-move-plus'; amount: number }
   | { kind: 'movement-hp-up'; amount: number }
@@ -530,6 +532,14 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'defense_up', name: 'Defense Up',
     jpCost: 500, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'support-defense-up', factor: 0.75 },
+  },
+  magic_defense_up: {
+    // Mirror of Defense Up, but on the magic side: every magic-damage spell
+    // (Fire/Bolt/Ice tiers, Pebble Blast, Math Skill, summons) lands for 25%
+    // less. Heals and status spells aren't damage, so they're unaffected.
+    id: 'magic_defense_up', name: 'Magic Defense Up',
+    jpCost: 500, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-magic-defense-up', factor: 0.75 },
   },
   jump_plus_1: {
     id: 'jump_plus_1', name: 'Jump +1',
