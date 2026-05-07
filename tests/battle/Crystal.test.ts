@@ -46,7 +46,8 @@ describe('Unit.applyDamage + KO transition', () => {
 
   it('returns the actual amount dealt and clamps at 0', () => {
     const u = makeUnit('u', 'player', 0, 0, FACING_E, { hp: 10 });
-    expect(u.applyDamage(15)).toBe(10);
+    const r = u.applyDamage(15);
+    expect(r.dealt).toBe(10);
     expect(u.hp).toBe(0);
   });
 });

@@ -17,6 +17,13 @@ export const FACING_E: Facing = 1;
 export const FACING_S: Facing = 2;
 export const FACING_W: Facing = 3;
 
+/** Returned by Unit.applyDamage so callers can log reaction triggers. */
+export interface DamageResult {
+  dealt: number;
+  hpRestored: number;
+  braveGained: number;
+}
+
 export interface UnitStats {
   hp: number;
   mp: number;
@@ -185,20 +192,46 @@ export class Unit {
   }
 
   /**
-   * Single chokepoint for HP loss. Mutates `hp`, clamps at 0, and — on the
-   * transition from alive→KO — starts the crystal countdown. Resolvers should
-   * call this rather than mutating `hp` directly so the KO handshake is
-   * always consistent. Returns the actual amount removed.
+   * Single chokepoint for HP loss. Mutates `hp`, clamps at 0, starts the KO
+   * countdown on the alive→KO transition, and fires reaction passives that
+   * trigger on damage taken (HP Restore, Brave Up). Resolvers should call
+   * this rather than mutating `hp` directly so the handshake is always
+   * consistent. Returns a result object with the dealt amount and any
+   * reaction-side-effects so the orchestrator can log them.
    */
-  applyDamage(amount: number): number {
-    if (amount <= 0) return 0;
+  applyDamage(amount: number): DamageResult {
+    if (amount <= 0) return { dealt: 0, hpRestored: 0, braveGained: 0 };
     const before = this.hp;
     this.hp = Math.max(0, this.hp - amount);
     const dealt = before - this.hp;
     if (this.hp === 0 && this.koTimer < 0) {
       this.koTimer = KO_COUNTDOWN_TURNS;
     }
-    return dealt;
+
+    let hpRestored = 0;
+    let braveGained = 0;
+    const reactionAb = this.reaction ? ABILITIES[this.reaction] : null;
+    const eff = reactionAb?.effect;
+
+    // HP Restore: alive AND HP at or below threshold → top up.
+    if (eff?.kind === 'reaction-hp-restore' && this.hp > 0
+        && this.hp <= Math.floor(this.hpMax * eff.thresholdPercent / 100)) {
+      const heal = Math.max(1, Math.floor(this.hpMax * eff.hpPercent / 100));
+      const beforeHeal = this.hp;
+      this.hp = Math.min(this.hpMax, this.hp + heal);
+      hpRestored = this.hp - beforeHeal;
+    }
+
+    // Brave Up: every damage instance bumps bravery, including poison ticks.
+    // Sync to progression so the gain survives across battles.
+    if (eff?.kind === 'reaction-brave-up' && this.isAlive) {
+      const beforeBrave = this.bravery;
+      this.bravery = Math.min(100, this.bravery + eff.amount);
+      braveGained = this.bravery - beforeBrave;
+      if (this.progression) this.progression.bravery = this.bravery;
+    }
+
+    return { dealt, hpRestored, braveGained };
   }
 
   /**

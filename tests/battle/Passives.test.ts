@@ -42,6 +42,71 @@ describe('Move +2', () => {
   });
 });
 
+describe('HP Restore reaction', () => {
+  it('fires when damage drops HP at or below the threshold percent', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { hp: 100 });
+    u.reaction = 'hp_restore';
+    // 100 → 20 hp via 80 damage. 20 ≤ 25% threshold → restore +25.
+    const r = u.applyDamage(80);
+    expect(r.dealt).toBe(80);
+    expect(r.hpRestored).toBe(25);
+    expect(u.hp).toBe(45);
+  });
+
+  it('does not fire if the unit is dropped to 0 in one shot', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { hp: 100 });
+    u.reaction = 'hp_restore';
+    const r = u.applyDamage(200);
+    expect(u.hp).toBe(0);
+    expect(r.hpRestored).toBe(0);
+  });
+
+  it('does not fire above the threshold', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { hp: 100 });
+    u.reaction = 'hp_restore';
+    // 100 → 50 hp via 50 damage. 50 > 25% threshold → no restore.
+    const r = u.applyDamage(50);
+    expect(r.hpRestored).toBe(0);
+    expect(u.hp).toBe(50);
+  });
+
+  it('does not fire without the reaction equipped', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { hp: 100 });
+    const r = u.applyDamage(80);
+    expect(r.hpRestored).toBe(0);
+    expect(u.hp).toBe(20);
+  });
+});
+
+describe('Brave Up reaction', () => {
+  it('raises bravery by the configured amount on every damage instance', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { bravery: 50 });
+    u.reaction = 'brave_up';
+    u.applyDamage(5);
+    u.applyDamage(5);
+    u.applyDamage(5);
+    expect(u.bravery).toBe(53);
+  });
+
+  it('clamps at 100', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { bravery: 99 });
+    u.reaction = 'brave_up';
+    u.applyDamage(1);
+    u.applyDamage(1);
+    expect(u.bravery).toBe(100);
+  });
+
+  it('does not fire when the damage is zero / unit is dead', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { bravery: 50 });
+    u.reaction = 'brave_up';
+    u.applyDamage(0);
+    expect(u.bravery).toBe(50);
+    u.hp = 0;
+    u.applyDamage(5);
+    expect(u.bravery).toBe(50);
+  });
+});
+
 describe('Magic Attack Up', () => {
   it('effectiveMa returns base MA for a unit with no support', () => {
     const u = makeUnit('u', 'player', 0, 0, FACING_E, { ma: 8 });

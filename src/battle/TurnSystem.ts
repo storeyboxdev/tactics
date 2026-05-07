@@ -89,7 +89,7 @@ export class TurnSystem {
       const def = STATUS_DEFS[s.id];
       if (def.hpPerTick) {
         if (def.hpPerTick > 0) {
-          const dealt = u.applyDamage(def.hpPerTick);
+          const { dealt } = u.applyDamage(def.hpPerTick);
           this.onTickEvent?.({ kind: 'status-damage', unit: u, statusId: s.id, amount: dealt, ko: u.hp <= 0 });
           if (u.hp <= 0) return; // dead — no further ticks this turn
         } else {

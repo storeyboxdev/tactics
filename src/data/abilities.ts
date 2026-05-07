@@ -55,6 +55,10 @@ export type AbilityEffect =
   // Passive: reactions trigger when the unit is hit.
   | { kind: 'reaction-counter' }
   | { kind: 'reaction-auto-potion'; amount: number }
+  /** Heals `hpPercent`% of hpMax when the unit's HP drops to ≤ thresholdPercent. */
+  | { kind: 'reaction-hp-restore'; thresholdPercent: number; hpPercent: number }
+  /** Raises bravery by `amount` (clamped at 100) on every damage instance. */
+  | { kind: 'reaction-brave-up'; amount: number }
   // Passive: supports modify the unit between events.
   | { kind: 'support-mp-recovery'; amount: number }
   /** Multiplies JP earned per action by `factor` (e.g. 1.5 = +50%). */
@@ -453,6 +457,21 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'auto_potion', name: 'Auto-Potion',
     jpCost: 350, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'reaction-auto-potion', amount: 30 },
+  },
+  hp_restore: {
+    // Lazarus-style — when the unit drops below 25% HP, snap them back up
+    // by 25% hpMax. Triggers on any damage (poison ticks, magic, melee).
+    id: 'hp_restore', name: 'HP Restore',
+    jpCost: 600, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-hp-restore', thresholdPercent: 25, hpPercent: 25 },
+  },
+  brave_up: {
+    // Slow-burn courage: every hit that lands on this unit raises their
+    // permanent bravery by 1. Synergises with Counter (more brave = more
+    // counter-procs) and survives between battles via UnitProgression.
+    id: 'brave_up', name: 'Brave Up',
+    jpCost: 400, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-brave-up', amount: 1 },
   },
 
   // ─── Support ──────────────────────────────────────────────────────────────

@@ -101,7 +101,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 140, mp: 100, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   9, mp:   2, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['power_break', 'speed_break'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['hp_restore'], learnableSupports: [], learnableMovements: [],
   },
   archer: {
     id: 'archer', name: 'Archer',
@@ -262,7 +262,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 220, pa:  80, ma: 120, speed:  90 },
     growth: { hp:   4, mp:   7, pa:   3, ma:   6, speed:   1 },
     learnableActives: ['cheer_song'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['brave_up'], learnableSupports: [], learnableMovements: [],
   },
   dancer: {
     id: 'dancer', name: 'Dancer',
