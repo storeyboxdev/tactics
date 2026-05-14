@@ -13,7 +13,7 @@
 export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
-  | 'reraise';
+  | 'reraise' | 'death_sentence';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -40,6 +40,9 @@ export interface StatusDef {
   blocksAct?: boolean;
   /** True if the unit cannot cast magical-type abilities (Silence). */
   blocksMagic?: boolean;
+  /** When the status's duration counter hits 0, KO the unit by routing lethal
+   *  damage through applyDamage (so Reraise and on-damage reactions trigger). */
+  koOnExpire?: boolean;
   /** Mutual-exclusion group key — applying a new status in the same group replaces the existing one. */
   group?: string;
 }
@@ -102,6 +105,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     // won't strip it.
     id: 'reraise', name: 'Reraise', short: 'RRZ', color: 0xf5c95a,
     expiry: { kind: 'permanent' },
+  },
+  death_sentence: {
+    // 24-tick countdown to a guaranteed KO. The lethal damage routes through
+    // applyDamage on expiry, so a target with Reraise gets one last chance.
+    // Esuna / Remedy cure this — it's a debuff, not a buff.
+    id: 'death_sentence', name: 'Death Sentence', short: 'DST', color: 0x8a0000,
+    expiry: { kind: 'duration', ticks: 24 },
+    koOnExpire: true,
   },
 };
 

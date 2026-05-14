@@ -106,6 +106,15 @@ export class TurnSystem {
         if (s.remainingTicks === 0) {
           u.statuses = u.statuses.filter(x => x !== s);
           this.onTickEvent?.({ kind: 'status-expire', unit: u, statusId: s.id });
+          // koOnExpire (Death Sentence): drive lethal damage through
+          // applyDamage so Reraise / on-damage reactions trigger normally.
+          if (def.koOnExpire && u.isAlive) {
+            const r = u.applyDamage(u.hp);
+            this.onTickEvent?.({
+              kind: 'status-damage',
+              unit: u, statusId: s.id, amount: r.dealt, ko: u.hp <= 0,
+            });
+          }
         }
       }
     }

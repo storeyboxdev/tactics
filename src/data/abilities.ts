@@ -354,7 +354,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -378,7 +378,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
 
@@ -511,7 +511,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },
@@ -747,6 +747,17 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 4,
     effect: { kind: 'stat-shift', stat: 'faith', amount: -5,
               targetTeam: 'enemy', baseAccuracy: 130 },
+  },
+  death_sentence: {
+    // The Mediator's nuclear-option Talk Skill: a 24-tick countdown to a
+    // guaranteed KO. Low baseAcc (70) keeps it a probabilistic threat — at
+    // typical 50/50 faith it lands ~17% of the time. When it does, the
+    // lethal damage on expiry routes through applyDamage so Reraise still
+    // has a chance to save the target.
+    id: 'death_sentence', name: 'Death Sentence',
+    jpCost: 600, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'inflict-status', statusId: 'death_sentence',
+              targetTeam: 'enemy', baseAccuracy: 70 },
   },
 
   // ─── Calculator (Math Skill) ──────────────────────────────────────────────

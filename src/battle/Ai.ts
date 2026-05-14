@@ -44,6 +44,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   silence:   12,   // overridden: 2 if target has no magical learnables
   regen:     20,   // overridden: 8 if target near full HP
   reraise:   30,   // strong prophylactic on a frontline ally
+  death_sentence: 50,  // 24-tick guaranteed KO when it lands
 };
 
 /** Whether a unit has any magical-type ability available — used to gate

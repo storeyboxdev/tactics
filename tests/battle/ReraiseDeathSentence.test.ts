@@ -102,3 +102,59 @@ describe('White Mage learns Reraise', () => {
     expect(ab.effect.targetTeam).toBe('ally');
   });
 });
+
+describe('Death Sentence: koOnExpire', () => {
+  it('KOs the unit when its timer reaches 0', () => {
+    const u = makeUnit('u', 'enemy', 0, 0, FACING_E);
+    u.addStatus('death_sentence');
+    // Force expiry on the next tick.
+    const ds = u.statuses.find(s => s.id === 'death_sentence')!;
+    ds.remainingTicks = 1;
+    const fast = makeUnit('fast', 'player', 1, 0, FACING_E, { speed: 1000 });
+    const ts = new TurnSystem([u, fast]);
+    ts.advance();
+    expect(u.isAlive).toBe(false);
+    expect(u.hasStatus('death_sentence')).toBe(false);
+  });
+
+  it('Reraise saves a Death-Sentenced target on expiry', () => {
+    const u = makeUnit('u', 'enemy', 0, 0, FACING_E);
+    u.hpMax = 100;
+    u.hp = 100;
+    u.addStatus('death_sentence');
+    u.addStatus('reraise');
+    const ds = u.statuses.find(s => s.id === 'death_sentence')!;
+    ds.remainingTicks = 1;
+    const fast = makeUnit('fast', 'player', 1, 0, FACING_E, { speed: 1000 });
+    const ts = new TurnSystem([u, fast]);
+    ts.advance();
+    expect(u.isAlive).toBe(true);
+    expect(u.hp).toBe(10);          // ceil(100 * 0.10)
+    expect(u.hasStatus('reraise')).toBe(false);
+    expect(u.hasStatus('death_sentence')).toBe(false);
+  });
+});
+
+describe('Mediator learns Death Sentence', () => {
+  it('Death Sentence sits in Mediator learnableActives', () => {
+    expect(JOB_DEFS.mediator.learnableActives).toContain('death_sentence');
+  });
+
+  it('Death Sentence inflicts death_sentence on enemies with low baseAcc', () => {
+    const ab = ABILITIES.death_sentence;
+    expect(ab.range).toBe(4);
+    expect(ab.mpCost).toBe(0);
+    if (ab.effect.kind !== 'inflict-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('death_sentence');
+    expect(ab.effect.targetTeam).toBe('enemy');
+    expect(ab.effect.baseAccuracy).toBe(70);
+  });
+
+  it('Esuna and Remedy cure death_sentence', () => {
+    const esuna = ABILITIES.esuna.effect;
+    const remedy = ABILITIES.remedy.effect;
+    if (esuna.kind !== 'cure-status' || remedy.kind !== 'cure-status') throw new Error('bad fixture');
+    expect(esuna.statuses).toContain('death_sentence');
+    expect(remedy.statuses).toContain('death_sentence');
+  });
+});
