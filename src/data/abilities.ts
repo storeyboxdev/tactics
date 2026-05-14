@@ -526,6 +526,15 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 9 },
     castAirborne: true,
   },
+  high_jump: {
+    // Heavier plunge — longer charge (7 vs 5), bigger payoff (WP 13 vs 9).
+    // The Lancer is hidden longer, giving the enemy more time to
+    // reposition. When it lands, it lands harder. Single-target.
+    id: 'high_jump', name: 'High Jump',
+    jpCost: 500, type: 'physical', range: 4, chargeTime: 7, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 13 },
+    castAirborne: true,
+  },
 
   // ─── Monk ─────────────────────────────────────────────────────────────────
   wave_fist: {

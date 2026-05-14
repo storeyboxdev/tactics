@@ -80,6 +80,28 @@ describe('resolveFlatHeal: combined HP + MP', () => {
   });
 });
 
+describe('Lancer: High Jump', () => {
+  it('Lancer learns High Jump alongside Jump', () => {
+    const lancer = JOB_DEFS.lancer.learnableActives;
+    expect(lancer).toContain('jump');
+    expect(lancer).toContain('high_jump');
+  });
+
+  it('High Jump hits harder than vanilla Jump at longer charge', () => {
+    const j = ABILITIES.jump.effect;
+    const hj = ABILITIES.high_jump.effect;
+    if (j.kind !== 'physical-ranged-damage' || hj.kind !== 'physical-ranged-damage') {
+      throw new Error('bad fixture');
+    }
+    expect(hj.weaponPower).toBeGreaterThan(j.weaponPower);
+    expect(ABILITIES.high_jump.chargeTime).toBeGreaterThan(ABILITIES.jump.chargeTime);
+  });
+
+  it('High Jump uses castAirborne (same as vanilla Jump)', () => {
+    expect(ABILITIES.high_jump.castAirborne).toBe(true);
+  });
+});
+
 describe('Chemist catalog', () => {
   it('Chemist learns Hi-Potion and Ether', () => {
     expect(JOB_DEFS.chemist.learnableActives).toContain('hi_potion');
