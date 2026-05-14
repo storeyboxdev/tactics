@@ -660,6 +660,36 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy', baseAccuracy: 140 },
     area: { radius: 2 },
   },
+  witch_hunt: {
+    // The Dancer's bread-and-butter combat dance. Non-elemental magic damage
+    // in a 5-tile cross — no element tag means no resistance dodges it but
+    // no weakness exploit either. Sits below Wiznaibus on the power curve
+    // so the player learns it first.
+    id: 'witch_hunt', name: 'Witch Hunt',
+    jpCost: 300, type: 'magical', range: 4, chargeTime: 3, mpCost: 10,
+    effect: { kind: 'magic-damage', spellPower: 9 },
+    area: { radius: 2 },
+  },
+  wiznaibus: {
+    // Higher-tier damage dance. Spellpower 13 in a 5-tile cross — comparable
+    // total damage to a Black Mage tier-2 spell at faster cast (CT 3 vs 5),
+    // with the trade that the per-target damage is lower. Pairs naturally
+    // with party setups that funnel enemies into a cluster.
+    id: 'wiznaibus', name: 'Wiznaibus',
+    jpCost: 500, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
+    effect: { kind: 'magic-damage', spellPower: 13 },
+    area: { radius: 2 },
+  },
+  disillusion: {
+    // Magical-side mirror of Slow Dance — shuts off enemy casters by knocking
+    // their MA down 1 per cast. Non-persistent (debuff expires at battle
+    // end). Faith-scaled hit roll like other dances.
+    id: 'disillusion', name: 'Disillusion',
+    jpCost: 350, type: 'magical', range: 4, chargeTime: 3, mpCost: 12,
+    effect: { kind: 'stat-shift', stat: 'ma', amount: -1,
+              targetTeam: 'enemy', baseAccuracy: 130, persistent: false },
+    area: { radius: 2 },
+  },
 
   // ─── Mediator (Talk Skill) ────────────────────────────────────────────────
   // Permanent faith/bravery shifts. Buffs (Praise/Solution) target allies

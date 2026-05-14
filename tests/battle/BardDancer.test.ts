@@ -43,3 +43,45 @@ describe("Bard's party songs", () => {
     expect(eff.persistent).toBe(false);
   });
 });
+
+describe("Dancer's combat dances", () => {
+  it('Dancer learns five dances', () => {
+    expect(JOB_DEFS.dancer.learnableActives).toEqual([
+      'slow_dance', 'polka_polka', 'witch_hunt', 'wiznaibus', 'disillusion',
+    ]);
+  });
+
+  it('all dances share the range-4 radius-2 template', () => {
+    for (const id of ['slow_dance', 'polka_polka', 'witch_hunt', 'wiznaibus', 'disillusion']) {
+      const ab = ABILITIES[id];
+      expect(ab.range).toBe(4);
+      expect(ab.area?.radius).toBe(2);
+      expect(ab.chargeTime).toBe(3);
+      expect(ab.type).toBe('magical');
+    }
+  });
+
+  it('Wiznaibus hits harder than Witch Hunt', () => {
+    const wh = ABILITIES.witch_hunt.effect;
+    const wz = ABILITIES.wiznaibus.effect;
+    if (wh.kind !== 'magic-damage' || wz.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(wz.spellPower).toBeGreaterThan(wh.spellPower);
+  });
+
+  it('damage dances stay non-elemental (FFT canon)', () => {
+    const wh = ABILITIES.witch_hunt.effect;
+    const wz = ABILITIES.wiznaibus.effect;
+    if (wh.kind !== 'magic-damage' || wz.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(wh.element).toBeUndefined();
+    expect(wz.element).toBeUndefined();
+  });
+
+  it('Disillusion is a non-persistent -1 MA on enemies', () => {
+    const eff = ABILITIES.disillusion.effect;
+    if (eff.kind !== 'stat-shift') throw new Error('bad fixture');
+    expect(eff.stat).toBe('ma');
+    expect(eff.amount).toBe(-1);
+    expect(eff.targetTeam).toBe('enemy');
+    expect(eff.persistent).toBe(false);
+  });
+});
