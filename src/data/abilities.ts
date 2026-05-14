@@ -268,6 +268,16 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 300, type: 'magical', range: 4, chargeTime: 2, mpCost: 8,
     effect: { kind: 'inflict-status', statusId: 'regen', targetTeam: 'ally', baseAccuracy: 200 },
   },
+  esuna: {
+    // White Mage cleanup — one cast clears any of the listed statuses the
+    // target has. Pricier MP than Cure to discourage abuse, and won't
+    // remove buffs (haste, regen) or KO.
+    id: 'esuna', name: 'Esuna',
+    jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
+    effect: { kind: 'cure-status',
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              targetTeam: 'ally', baseAccuracy: 200 },
+  },
 
   // ─── Chemist ──────────────────────────────────────────────────────────────
   phoenix_down: {
@@ -278,6 +288,19 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'phoenix_down', name: 'Phoenix Down',
     jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'revive', hpPercent: 25 },
+  },
+  remedy: {
+    // Chemist's status-cleanup counterpart to Phoenix Down: melee range, no
+    // MP, no charge, but lower hit-rate than Esuna (no faith multiplier
+    // would still scale with baseAcc 200; we set lower baseAcc to mark it
+    // as the "good enough in a pinch" version). Type 'physical' keeps it
+    // usable through Silence — Chemist's bag of tools is canonically
+    // mundane, not magical.
+    id: 'remedy', name: 'Remedy',
+    jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'cure-status',
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              targetTeam: 'ally', baseAccuracy: 160 },
   },
 
   // ─── Squire ───────────────────────────────────────────────────────────────

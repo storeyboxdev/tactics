@@ -4,6 +4,7 @@ import {
 } from '../../src/battle/Unit';
 import { TurnSystem } from '../../src/battle/TurnSystem';
 import { resolveCureStatus } from '../../src/battle/ActionResolver';
+import { ABILITIES } from '../../src/data/abilities';
 import { JOB_DEFS } from '../../src/data/jobs';
 import { STATUS_DEFS } from '../../src/data/statuses';
 
@@ -94,7 +95,27 @@ describe('Status arsenal: resolveCureStatus', () => {
 });
 
 describe('Status arsenal: ability catalog wiring', () => {
-  it('White Mage learns Regen', () => {
+  it('White Mage learns Regen and Esuna', () => {
     expect(JOB_DEFS.white_mage.learnableActives).toContain('regen');
+    expect(JOB_DEFS.white_mage.learnableActives).toContain('esuna');
+  });
+
+  it('Chemist learns Remedy', () => {
+    expect(JOB_DEFS.chemist.learnableActives).toContain('remedy');
+  });
+
+  it('Remedy is physical-type so it works under Silence', () => {
+    expect(ABILITIES.remedy.type).toBe('physical');
+  });
+
+  it('Esuna is magical-type (Silence blocks it)', () => {
+    expect(ABILITIES.esuna.type).toBe('magical');
+  });
+
+  it('Esuna cures the same status set as Remedy', () => {
+    const esuna = ABILITIES.esuna.effect;
+    const remedy = ABILITIES.remedy.effect;
+    if (esuna.kind !== 'cure-status' || remedy.kind !== 'cure-status') throw new Error('bad fixture');
+    expect([...esuna.statuses].sort()).toEqual([...remedy.statuses].sort());
   });
 });
