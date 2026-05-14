@@ -302,6 +302,16 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 400, type: 'magical', range: 1, chargeTime: 0, mpCost: 8,
     effect: { kind: 'inflict-status', statusId: 'berserk', targetTeam: 'enemy', baseAccuracy: 130 },
   },
+  confuse: {
+    // Ranged confuse with a charge window — when it lands, the target's
+    // turn forces a basic-attack on a random alive unit, regardless of
+    // team. Their own allies are valid targets, which is what makes the
+    // 24-tick duration genuinely scary. Lower baseAcc than Berserk Touch
+    // since the upside (potential ally damage) is huge when it lands.
+    id: 'confuse', name: 'Confuse',
+    jpCost: 500, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
+    effect: { kind: 'inflict-status', statusId: 'confuse', targetTeam: 'enemy', baseAccuracy: 110 },
+  },
 
   // ─── White Mage ───────────────────────────────────────────────────────────
   cure: {
@@ -363,7 +373,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -387,7 +397,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
 
@@ -520,7 +530,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },

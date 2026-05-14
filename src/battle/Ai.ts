@@ -46,6 +46,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   reraise:   30,   // strong prophylactic on a frontline ally
   death_sentence: 50,  // 24-tick guaranteed KO when it lands
   berserk:   20,   // forces enemy to waste turns chasing; +50% PA is the bite
+  confuse:   22,   // random target hits any team — meaningful chance of self-team damage
 };
 
 /** Whether a unit has any magical-type ability available — used to gate

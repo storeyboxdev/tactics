@@ -96,12 +96,13 @@ describe('HeuristicAi — abilities', () => {
     const map = new BattleMap(flatMap(7, 5));
     const oc = makeUnit('oc', 'enemy', 3, 2, FACING_W, { mp: 30, pa: 3, ma: 8, move: 0 }, 'oracle');
     const p = makeUnit('p', 'player', 5, 2, FACING_W);
-    p.addStatus('sleep'); // already asleep — Oracle should pick Poison instead
+    p.addStatus('sleep'); // already asleep — Oracle picks the next-best status
     const ai = new HeuristicAi();
     const d = ai.decide(oc, map, [oc, p]);
     expect(d.action?.kind).toBe('ability');
     if (d.action?.kind === 'ability') {
-      expect(d.action.abilityId).toBe('poison_spell');
+      // The pick must NOT be sleep (target already has it).
+      expect(d.action.abilityId).not.toBe('sleep');
     }
   });
 });

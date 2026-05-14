@@ -14,7 +14,7 @@ export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
   | 'reraise' | 'death_sentence'
-  | 'berserk';
+  | 'berserk' | 'confuse';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -122,6 +122,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     // player Squire is a problem you have to cure.
     id: 'berserk', name: 'Berserk', short: 'BSK', color: 0xc8602a,
     expiry: { kind: 'duration', ticks: 32 },
+  },
+  confuse: {
+    // Like Berserk but the target is RANDOM — any alive unit other than the
+    // confused one, regardless of team. A confused frontline Knight can
+    // accidentally bash their own White Mage. No PA boost — confuse is
+    // disorientation, not rage.
+    id: 'confuse', name: 'Confuse', short: 'CON', color: 0xa040c0,
+    expiry: { kind: 'duration', ticks: 24 },
   },
 };
 

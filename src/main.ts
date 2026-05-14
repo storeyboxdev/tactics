@@ -259,8 +259,9 @@ function activateNext() {
 
   // AI-override statuses (Berserk, Confuse) take the turn from both teams.
   // Runs alternate logic instead of player menu / standard AI.
-  if (actor.hasStatus('berserk')) {
-    hud.setStatus(`${actor.name} is Berserk!`);
+  if (actor.hasStatus('berserk') || actor.hasStatus('confuse')) {
+    const label = actor.hasStatus('berserk') ? 'Berserk' : 'Confused';
+    hud.setStatus(`${actor.name} is ${label}!`);
     setTimeout(() => runOverrideTurn(actor), 600);
     return;
   }

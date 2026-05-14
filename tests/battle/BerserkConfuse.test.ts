@@ -82,3 +82,36 @@ describe('Berserk status catalog', () => {
     }
   });
 });
+
+describe('Confuse status catalog', () => {
+  it('Confuse lasts 24 ticks', () => {
+    expect(STATUS_DEFS.confuse.expiry).toEqual({ kind: 'duration', ticks: 24 });
+  });
+
+  it('Confuse does NOT boost PA (disorientation, not rage)', () => {
+    const u = makeUnit('u', 'player', 0, 0, FACING_E, { pa: 10 });
+    u.addStatus('confuse');
+    expect(effectivePa(u)).toBe(10);
+  });
+
+  it('Oracle learns Confuse', () => {
+    expect(JOB_DEFS.oracle.learnableActives).toContain('confuse');
+  });
+
+  it('Confuse is ranged, charged, inflicts confuse', () => {
+    const ab = ABILITIES.confuse;
+    expect(ab.range).toBe(4);
+    expect(ab.chargeTime).toBe(2);
+    if (ab.effect.kind !== 'inflict-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('confuse');
+    expect(ab.effect.targetTeam).toBe('enemy');
+  });
+
+  it('Esuna / Remedy / Stigma Magic cure confuse', () => {
+    for (const id of ['esuna', 'remedy', 'stigma_magic']) {
+      const eff = ABILITIES[id].effect;
+      if (eff.kind !== 'cure-status') throw new Error('bad fixture');
+      expect(eff.statuses).toContain('confuse');
+    }
+  });
+});
