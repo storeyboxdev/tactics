@@ -562,11 +562,13 @@ export const ABILITIES: Record<string, Ability> = {
   water_ball: {
     // A blast of frigid water — requires the Geomancer to actually stand
     // on water, so pairs naturally with Float (Time Mage movement) or
-    // shallow-approach maps. Range 4 single-target. 'water' element
-    // is a cosmetic tag until resistance lands.
+    // shallow-approach maps. Range 4 single-target. Water damage plus a
+    // Slow proc (statusBaseAcc 80) — the chill drags on the target's CT
+    // growth for 32 ticks.
     id: 'water_ball', name: 'Water Ball',
     jpCost: 300, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
-    effect: { kind: 'magic-damage', spellPower: 10, element: 'water' },
+    effect: { kind: 'damage-and-status', spellPower: 10, element: 'water',
+              statusId: 'slow', statusBaseAcc: 80 },
     requiresTerrain: ['water'],
   },
   will_o_wisp: {

@@ -19,11 +19,12 @@ describe('Water Ball (water) + Will-O-Wisp (sand)', () => {
     expect(geo).toContain('will_o_wisp');
   });
 
-  it('Water Ball is water-gated, water-elemental', () => {
+  it('Water Ball is water-gated, water-elemental, chains Slow', () => {
     const ab = ABILITIES.water_ball;
     expect(ab.requiresTerrain).toEqual(['water']);
-    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    if (ab.effect.kind !== 'damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.element).toBe('water');
+    expect(ab.effect.statusId).toBe('slow');
   });
 
   it('Will-O-Wisp is sand-gated, fire-elemental', () => {
