@@ -259,6 +259,15 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 350, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
     effect: { kind: 'revive', hpPercent: 50 },
   },
+  regen: {
+    // FFT-style Regen — ally inflict-status that ticks healing. Mirror the
+    // shape of Haste (CT 2, MP 8, baseAcc 200) so the casting-economy
+    // matches a positive-status spell. -4 hp/tick over 32 ticks = ~128 HP
+    // total if it runs full duration; usually less because the unit gets hit.
+    id: 'regen', name: 'Regen',
+    jpCost: 300, type: 'magical', range: 4, chargeTime: 2, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'regen', targetTeam: 'ally', baseAccuracy: 200 },
+  },
 
   // ─── Chemist ──────────────────────────────────────────────────────────────
   phoenix_down: {

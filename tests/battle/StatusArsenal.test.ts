@@ -4,6 +4,7 @@ import {
 } from '../../src/battle/Unit';
 import { TurnSystem } from '../../src/battle/TurnSystem';
 import { resolveCureStatus } from '../../src/battle/ActionResolver';
+import { JOB_DEFS } from '../../src/data/jobs';
 import { STATUS_DEFS } from '../../src/data/statuses';
 
 const rngHit = () => 0;          // always passes hit roll
@@ -89,5 +90,11 @@ describe('Status arsenal: resolveCureStatus', () => {
     expect(out.hit).toBe(false);
     expect(out.removed).toEqual([]);
     expect(target.hasStatus('poison')).toBe(true);
+  });
+});
+
+describe('Status arsenal: ability catalog wiring', () => {
+  it('White Mage learns Regen', () => {
+    expect(JOB_DEFS.white_mage.learnableActives).toContain('regen');
   });
 });
