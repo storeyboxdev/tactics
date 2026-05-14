@@ -118,4 +118,11 @@ describe('Status arsenal: ability catalog wiring', () => {
     if (esuna.kind !== 'cure-status' || remedy.kind !== 'cure-status') throw new Error('bad fixture');
     expect([...esuna.statuses].sort()).toEqual([...remedy.statuses].sort());
   });
+
+  it('Oracle learns Silence Song, Paralyze, and Foxbird', () => {
+    const oracle = JOB_DEFS.oracle.learnableActives;
+    expect(oracle).toContain('silence_song');
+    expect(oracle).toContain('paralyze');
+    expect(oracle).toContain('foxbird');
+  });
 });

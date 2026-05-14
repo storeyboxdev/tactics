@@ -224,6 +224,31 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 200, type: 'magical', range: 3, chargeTime: 2, mpCost: 6,
     effect: { kind: 'inflict-status', statusId: 'poison', targetTeam: 'enemy', baseAccuracy: 140 },
   },
+  silence_song: {
+    // Locks an enemy out of all magical-type abilities for 32 ticks. The
+    // most devastating cast against a Black Mage or Summoner; near-useless
+    // on a Knight. AI scoring reflects the asymmetry.
+    id: 'silence_song', name: 'Silence Song',
+    jpCost: 300, type: 'magical', range: 4, chargeTime: 2, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'silence', targetTeam: 'enemy', baseAccuracy: 130 },
+  },
+  paralyze: {
+    // Pins an enemy in place — they can still attack adjacent foes but can't
+    // chase or reposition. Pair with Poison or a Black Mage's charged spell
+    // for a guaranteed hit. Shares the `restraint` group with Foxbird, so
+    // a Don't Move replaces a Don't Act (and vice versa).
+    id: 'paralyze', name: 'Paralyze',
+    jpCost: 400, type: 'magical', range: 3, chargeTime: 2, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'dont_move', targetTeam: 'enemy', baseAccuracy: 120 },
+  },
+  foxbird: {
+    // The Oracle's hardest debuff: target can move but can't Attack, Skill,
+    // or Item for 24 ticks. Steepest baseAcc penalty + biggest MP cost in
+    // the Oracle kit reflects how brutal it is when it lands.
+    id: 'foxbird', name: 'Foxbird',
+    jpCost: 500, type: 'magical', range: 3, chargeTime: 2, mpCost: 10,
+    effect: { kind: 'inflict-status', statusId: 'dont_act', targetTeam: 'enemy', baseAccuracy: 110 },
+  },
 
   // ─── White Mage ───────────────────────────────────────────────────────────
   cure: {
