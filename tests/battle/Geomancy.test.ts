@@ -12,6 +12,21 @@ describe('Geomancer terrain-strike kit: schema gate', () => {
   });
 });
 
+describe('Local Quake (dirt)', () => {
+  it('Geomancer learns Local Quake', () => {
+    expect(JOB_DEFS.geomancer.learnableActives).toContain('local_quake');
+  });
+
+  it('Local Quake is a self-centered dirt-gated AoE earth strike', () => {
+    const ab = ABILITIES.local_quake;
+    expect(ab.requiresTerrain).toEqual(['dirt']);
+    expect(ab.range).toBe(0);
+    expect(ab.area?.radius).toBe(1);
+    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(ab.effect.element).toBe('earth');
+  });
+});
+
 describe('Hell Ivy (grass)', () => {
   it('Geomancer learns Hell Ivy alongside Pebble Blast', () => {
     const geo = JOB_DEFS.geomancer.learnableActives;

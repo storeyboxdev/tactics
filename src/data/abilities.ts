@@ -523,6 +523,17 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'magic-damage', spellPower: 10, element: 'earth' },
     requiresTerrain: ['grass'],
   },
+  local_quake: {
+    // Self-centered ground tremor — the Geomancer stamps the dirt and a
+    // radius-1 cross of force rolls outward. Lower spellpower than the
+    // single-target strikes (an AoE catches multiple), but range 0 means
+    // the caster is in their own blast: friendly fire is a real concern.
+    id: 'local_quake', name: 'Local Quake',
+    jpCost: 300, type: 'magical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 8, element: 'earth' },
+    area: { radius: 1 },
+    requiresTerrain: ['dirt'],
+  },
 
   // ─── Thief ────────────────────────────────────────────────────────────────
   // FFT canon's Steal kit needs an equipment system we don't have yet. Mug
