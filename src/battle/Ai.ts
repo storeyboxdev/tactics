@@ -104,10 +104,12 @@ export class HeuristicAi implements EnemyController {
       }
 
       // Ability candidates — gated by MP and "doesn't already have status".
+      const tileTerrain = map.getTile(tile.x, tile.z).terrain;
       for (const abId of learnable) {
         const ab = ABILITIES[abId];
         if (actor.mp < ab.mpCost) continue;
         if (silenced && ab.type === 'magical') continue;
+        if (ab.requiresTerrain && !ab.requiresTerrain.includes(tileTerrain)) continue;
         const targets = abilityTargets(actor, ab, map, units, tile);
         for (const ttile of targets) {
           const target = unitAt(units, ttile.x, ttile.z);

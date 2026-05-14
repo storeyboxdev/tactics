@@ -8,9 +8,10 @@
  */
 
 import { StatusId } from './statuses';
+import { Terrain } from '../core/types';
 
 export type AbilityEffect =
-  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' }
+  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water' }
   | { kind: 'magic-heal'; spellPower: number }
   | { kind: 'physical-ranged-damage'; weaponPower: number;
       /** If set, the caster heals for floor(damage × drainPercent / 100) on a hit. Used by Thief's Mug. */
@@ -52,7 +53,7 @@ export type AbilityEffect =
    * tactical play. No MP cost; the math itself is the cost.
    */
   | { kind: 'math-skill'; stat: 'hp' | 'mp' | 'ct' | 'level'; divisor: number;
-      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' }
+      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water' }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -119,6 +120,13 @@ export interface Ability {
    * No-op on instant abilities.
    */
   castAirborne?: boolean;
+  /**
+   * Geomancer-style terrain gate: ability is only castable when the caster
+   * stands on one of the listed terrains. Omitted = no requirement. Skill
+   * menu and AI both consult this — same shape as Silence's blocksMagic
+   * gate, just data-driven rather than status-driven.
+   */
+  requiresTerrain?: Terrain[];
 }
 
 export const ABILITIES: Record<string, Ability> = {

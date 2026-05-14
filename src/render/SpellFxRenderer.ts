@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { BattleMap } from '../battle/Map';
 
-export type FxElement = 'fire' | 'ice' | 'bolt' | 'earth' | 'heal' | 'holy';
+export type FxElement = 'fire' | 'ice' | 'bolt' | 'earth' | 'heal' | 'holy' | 'water';
 
 interface ElementConfig {
   texture: THREE.Texture;
@@ -49,6 +49,7 @@ export class SpellFxRenderer {
       earth: makeEarthTexture(),
       heal:  makeHealTexture(),
       holy:  makeHolyTexture(),
+      water: makeWaterTexture(),
     };
   }
 
@@ -132,6 +133,7 @@ const ELEMENT_CONFIG: Record<FxElement, ElementConfig> = {
   earth: { texture: null!, duration: 0.32, startScale: 0.45, endScale: 0.95, yStart: 0.30, yEnd: 0.30, fadeStart: 0.55 },
   heal:  { texture: null!, duration: 0.42, startScale: 0.40, endScale: 0.80, yStart: 0.25, yEnd: 0.95, fadeStart: 0.45 },
   holy:  { texture: null!, duration: 0.50, startScale: 0.50, endScale: 1.40, yStart: 0.55, yEnd: 0.55, fadeStart: 0.45 },
+  water: { texture: null!, duration: 0.40, startScale: 0.40, endScale: 1.10, yStart: 0.35, yEnd: 0.50, fadeStart: 0.50 },
 };
 
 // ─── Procedural textures ────────────────────────────────────────────────────
@@ -246,6 +248,20 @@ function makeHolyTexture(): THREE.Texture {
   ctx.arc(cx, cy, 14, 0, Math.PI * 2);
   ctx.fill();
 
+  return canvasTex(c);
+}
+
+function makeWaterTexture(): THREE.Texture {
+  // Concentric ripples in a deep blue — distinct from ice's diamond shards.
+  const c = makeCanvas(32, 32);
+  const ctx = c.getContext('2d')!;
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#3a85d8';
+  ctx.beginPath(); ctx.arc(16, 16, 12, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#6cb0f0';
+  ctx.beginPath(); ctx.arc(16, 16,  8, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#a8d8ff';
+  ctx.beginPath(); ctx.arc(16, 16,  3, 0, Math.PI * 2); ctx.fill();
   return canvasTex(c);
 }
 

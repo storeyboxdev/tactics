@@ -309,6 +309,7 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
     ? learnedActivesInJob(actor.progression, jobId)
     : (JOB_DEFS[jobId]?.learnableActives ?? []);
   const silenced = actor.statuses.some(s => STATUS_DEFS[s.id].blocksMagic);
+  const terrain = map.getTile(actor.x, actor.z).terrain;
   return ids.map(id => {
     const ab = ABILITIES[id];
     let enabled = actor.mp >= ab.mpCost;
@@ -317,6 +318,8 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
     // Silence locks out magical-type abilities (FFT canon: Black/White/Time
     // magic, Summons, songs, dances, Math Skill — all type 'magical').
     if (silenced && ab.type === 'magical') enabled = false;
+    // Geomancer-style terrain gate: only castable on listed terrain types.
+    if (ab.requiresTerrain && !ab.requiresTerrain.includes(terrain)) enabled = false;
     return {
       id,
       label: skillLabel(ab),
