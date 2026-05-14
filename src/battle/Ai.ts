@@ -31,14 +31,27 @@ const ADJACENT: [number, number][] = [
   [ 0,-1],
 ];
 
-/** Flat status-application bonuses, regardless of target HP / CT. */
+/** Flat status-application bonuses, regardless of target HP / CT. Context-
+ *  sensitive ones (silence, regen) override this in scoreSingleTarget. */
 const STATUS_VALUE: Record<StatusId, number> = {
-  stop:   30,
-  sleep:  25,
-  haste:  20,
-  poison: 15,
-  slow:   10,
+  stop:      30,
+  sleep:     25,
+  haste:     20,
+  poison:    15,
+  slow:      10,
+  dont_act:  16,
+  dont_move: 16,
+  silence:   12,   // overridden: 2 if target has no magical learnables
+  regen:     20,   // overridden: 8 if target near full HP
 };
+
+/** Whether a unit has any magical-type ability available — used to gate
+ *  Silence's score (only worth casting on real casters). */
+function hasMagicalKit(u: Unit): boolean {
+  const ids = [...(JOB_DEFS[u.jobId]?.learnableActives ?? [])];
+  if (u.secondaryJobId) ids.push(...(JOB_DEFS[u.secondaryJobId]?.learnableActives ?? []));
+  return ids.some(id => ABILITIES[id]?.type === 'magical');
+}
 
 /**
  * Single-turn lookahead heuristic. For each tile the actor can end its move
@@ -54,7 +67,12 @@ const STATUS_VALUE: Record<StatusId, number> = {
 export class HeuristicAi implements EnemyController {
   decide(actor: Unit, map: BattleMap, units: readonly Unit[]): EnemyDecision {
     const plan = new MovePlan(actor, map, units);
-    const endTiles = plan.endTiles();
+    const cantMove = actor.hasStatus('dont_move');
+    const cantAct = actor.hasStatus('dont_act');
+    const silenced = actor.hasStatus('silence');
+    const endTiles = cantMove
+      ? [{ x: actor.x, z: actor.z, cost: 0 }]
+      : plan.endTiles();
     const learnable = JOB_DEFS[actor.jobId]?.learnableActives ?? [];
 
     let bestScore = -Infinity;
@@ -72,14 +90,15 @@ export class HeuristicAi implements EnemyController {
     };
 
     for (const tile of endTiles) {
+      consider(tile, null);
+      if (cantAct) continue;
+
       // Basic-attack candidates (adjacent enemies).
       const adjacentEnemies: Unit[] = [];
       for (const [dx, dz] of ADJACENT) {
         const t = unitAt(units, tile.x + dx, tile.z + dz);
         if (t && t.team !== actor.team) adjacentEnemies.push(t);
       }
-
-      consider(tile, null);
       for (const target of adjacentEnemies) {
         consider(tile, { kind: 'attack', targetId: target.id });
       }
@@ -88,6 +107,7 @@ export class HeuristicAi implements EnemyController {
       for (const abId of learnable) {
         const ab = ABILITIES[abId];
         if (actor.mp < ab.mpCost) continue;
+        if (silenced && ab.type === 'magical') continue;
         const targets = abilityTargets(actor, ab, map, units, tile);
         for (const ttile of targets) {
           const target = unitAt(units, ttile.x, ttile.z);
@@ -164,7 +184,9 @@ function scoreAbility(
 function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMap): number {
   switch (ab.effect.kind) {
     case 'inflict-status': {
-      const base = STATUS_VALUE[ab.effect.statusId] ?? 0;
+      let base = STATUS_VALUE[ab.effect.statusId] ?? 0;
+      if (ab.effect.statusId === 'silence' && !hasMagicalKit(target)) base = 2;
+      if (ab.effect.statusId === 'regen' && target.hp > target.hpMax * 0.5) base = 8;
       const p = magicStatusHitChance(actor, target, ab.effect.baseAccuracy) / 100;
       return base * p;
     }

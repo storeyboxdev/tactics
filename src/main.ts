@@ -268,10 +268,12 @@ function activateNext() {
 
 function showActionMenu() {
   if (!currentActor) return;
+  const restrained = currentActor.statuses.find(s => STATUS_DEFS[s.id].blocksMove);
+  const muzzled    = currentActor.statuses.find(s => STATUS_DEFS[s.id].blocksAct);
   hud.showActionMenu({
-    canMove: !hasMoved,
-    canAct:  !hasActed,
-    skillGroups: actionMenuGroupsFor(currentActor),
+    canMove: !hasMoved && !restrained,
+    canAct:  !hasActed && !muzzled,
+    skillGroups: muzzled ? [] : actionMenuGroupsFor(currentActor),
     onMove:   () => beginMove(),
     onAttack: () => beginAttack(),
     onItem:   () => beginItem(),
@@ -306,11 +308,15 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
   const ids = actor.progression
     ? learnedActivesInJob(actor.progression, jobId)
     : (JOB_DEFS[jobId]?.learnableActives ?? []);
+  const silenced = actor.statuses.some(s => STATUS_DEFS[s.id].blocksMagic);
   return ids.map(id => {
     const ab = ABILITIES[id];
     let enabled = actor.mp >= ab.mpCost;
     // Mimic disables when the mime's team has no recorded action to copy.
     if (ab.effect.kind === 'mimic' && !lastActions.get(actor.team)) enabled = false;
+    // Silence locks out magical-type abilities (FFT canon: Black/White/Time
+    // magic, Summons, songs, dances, Math Skill — all type 'magical').
+    if (silenced && ab.type === 'magical') enabled = false;
     return {
       id,
       label: skillLabel(ab),

@@ -10,7 +10,9 @@
  * Future: Regen, Don't Move, Don't Act, Charm, Berserk, Silence, Petrify.
  */
 
-export type StatusId = 'poison' | 'slow' | 'haste' | 'sleep' | 'stop';
+export type StatusId =
+  | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
+  | 'regen' | 'silence' | 'dont_move' | 'dont_act';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -35,6 +37,8 @@ export interface StatusDef {
   blocksMove?: boolean;
   /** True if the unit cannot Attack/Skill/Item. */
   blocksAct?: boolean;
+  /** True if the unit cannot cast magical-type abilities (Silence). */
+  blocksMagic?: boolean;
   /** Mutual-exclusion group key — applying a new status in the same group replaces the existing one. */
   group?: string;
 }
@@ -67,6 +71,28 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     expiry: { kind: 'duration', ticks: 16 },
     ctMultiplier: 0,
     blocksTurn: true,
+  },
+  regen: {
+    id: 'regen', name: 'Regen', short: 'REG', color: 0x66c2a5,
+    expiry: { kind: 'duration', ticks: 32 },
+    hpPerTick: -4,
+  },
+  silence: {
+    id: 'silence', name: 'Silence', short: 'SIL', color: 0x9aa0a6,
+    expiry: { kind: 'duration', ticks: 32 },
+    blocksMagic: true,
+  },
+  dont_move: {
+    id: 'dont_move', name: "Don't Move", short: 'DMV', color: 0xc4763e,
+    expiry: { kind: 'duration', ticks: 24 },
+    blocksMove: true,
+    group: 'restraint',
+  },
+  dont_act: {
+    id: 'dont_act', name: "Don't Act", short: 'DAC', color: 0xa83a3a,
+    expiry: { kind: 'duration', ticks: 24 },
+    blocksAct: true,
+    group: 'restraint',
   },
 };
 
