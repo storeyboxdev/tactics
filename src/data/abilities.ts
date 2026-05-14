@@ -505,11 +505,23 @@ export const ABILITIES: Record<string, Ability> = {
   },
 
   // ─── Geomancer ────────────────────────────────────────────────────────────
+  // Pebble Blast is the catch-all baseline (no terrain requirement). The
+  // terrain-gated strikes below let the Geomancer read the battlefield
+  // and pick stronger options when standing on the right ground.
   pebble_blast: {
     id: 'pebble_blast', name: 'Pebble Blast',
     jpCost: 150, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
     effect: { kind: 'magic-damage', spellPower: 8, element: 'earth' },
     area: { radius: 1 },  // 5-tile cross around the target
+  },
+  hell_ivy: {
+    // Vines rise from grass to crush the target. FFT canon includes a Don't
+    // Move proc; we ship pure damage first and revisit chained statuses
+    // in a follow-up plan.
+    id: 'hell_ivy', name: 'Hell Ivy',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 10, element: 'earth' },
+    requiresTerrain: ['grass'],
   },
 
   // ─── Thief ────────────────────────────────────────────────────────────────
