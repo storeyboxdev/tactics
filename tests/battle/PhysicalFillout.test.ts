@@ -63,6 +63,26 @@ describe('applyStatShift: PA / MA / Speed (per-battle by default)', () => {
   });
 });
 
+describe('Archer: Aim tiers', () => {
+  it('Archer learns Aim+1, Charge+2, Aim+3 in CT order', () => {
+    const archer = JOB_DEFS.archer.learnableActives;
+    expect(archer).toEqual(['aim_plus_1', 'charge_2', 'aim_plus_3']);
+  });
+
+  it('Aim tiers trade charge time for weaponPower', () => {
+    const a1 = ABILITIES.aim_plus_1.effect;
+    const c2 = ABILITIES.charge_2.effect;
+    const a3 = ABILITIES.aim_plus_3.effect;
+    if (a1.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    if (c2.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    if (a3.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(a1.weaponPower).toBeLessThan(c2.weaponPower);
+    expect(c2.weaponPower).toBeLessThan(a3.weaponPower);
+    expect(ABILITIES.aim_plus_1.chargeTime).toBeLessThan(ABILITIES.charge_2.chargeTime);
+    expect(ABILITIES.charge_2.chargeTime).toBeLessThan(ABILITIES.aim_plus_3.chargeTime);
+  });
+});
+
 describe('Knight: Magic Break', () => {
   it('Knight learns Magic Break alongside Power/Speed Break', () => {
     const knight = JOB_DEFS.knight.learnableActives;

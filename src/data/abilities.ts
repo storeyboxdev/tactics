@@ -381,10 +381,24 @@ export const ABILITIES: Record<string, Ability> = {
   },
 
   // ─── Archer ───────────────────────────────────────────────────────────────
+  // Charge tiers trade charge time for damage. Aim+1 is a fast cheap shot
+  // (between Throw Stone and Charge+2), Aim+3 is the big windup. Same
+  // ranged-physical formula, no MP, no element — only the CT/WP curve
+  // changes. AI picks among them based on its threat / opportunity model.
+  aim_plus_1: {
+    id: 'aim_plus_1', name: 'Aim+1',
+    jpCost: 150, type: 'physical', range: 4, chargeTime: 1, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 5 },
+  },
   charge_2: {
     id: 'charge_2', name: 'Charge+2',
     jpCost: 200, type: 'physical', range: 4, chargeTime: 2, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 7 },
+  },
+  aim_plus_3: {
+    id: 'aim_plus_3', name: 'Aim+3',
+    jpCost: 350, type: 'physical', range: 4, chargeTime: 3, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 9 },
   },
 
   // ─── Samurai (Draw Out) ───────────────────────────────────────────────────

@@ -109,7 +109,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ pa: 6, ma: 3, speed: 11, jump: 2, evasion: 15 }),
     mult:   { hp: 100, mp: 100, pa: 120, ma:  60, speed: 110 },
     growth: { hp:   5, mp:   2, pa:   6, ma:   2, speed:   2 },
-    learnableActives: ['charge_2'],
+    learnableActives: ['aim_plus_1', 'charge_2', 'aim_plus_3'],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
 
