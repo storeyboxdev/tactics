@@ -12,6 +12,20 @@ describe('Geomancer terrain-strike kit: schema gate', () => {
   });
 });
 
+describe('Wind Slash (stone)', () => {
+  it('Geomancer learns Wind Slash', () => {
+    expect(JOB_DEFS.geomancer.learnableActives).toContain('wind_slash');
+  });
+
+  it('Wind Slash is a stone-gated non-elemental strike', () => {
+    const ab = ABILITIES.wind_slash;
+    expect(ab.requiresTerrain).toEqual(['stone']);
+    expect(ab.range).toBe(4);
+    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(ab.effect.element).toBeUndefined();
+  });
+});
+
 describe('Local Quake (dirt)', () => {
   it('Geomancer learns Local Quake', () => {
     expect(JOB_DEFS.geomancer.learnableActives).toContain('local_quake');

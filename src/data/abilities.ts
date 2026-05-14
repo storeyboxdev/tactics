@@ -534,6 +534,16 @@ export const ABILITIES: Record<string, Ability> = {
     area: { radius: 1 },
     requiresTerrain: ['dirt'],
   },
+  wind_slash: {
+    // Non-elemental kinetic strike — the Geomancer reads stone's hard
+    // edges and rebounds them as a cutting wind. No element tag means no
+    // resistance ever helps the target; the trade is no element-weakness
+    // exploit either. Same shape as Hell Ivy otherwise.
+    id: 'wind_slash', name: 'Wind Slash',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 10 },
+    requiresTerrain: ['stone'],
+  },
 
   // ─── Thief ────────────────────────────────────────────────────────────────
   // FFT canon's Steal kit needs an equipment system we don't have yet. Mug
