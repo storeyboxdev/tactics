@@ -346,6 +346,24 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'physical', range: 3, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 3 },
   },
+  accumulate: {
+    // FFT-canonical Squire identity: spend a turn priming for +1 PA. The
+    // gain expires at battle end (stat-shift persistent: false). baseAcc
+    // 200 with self target means it always lands. Range 0 keeps it as a
+    // pure self-buff.
+    id: 'accumulate', name: 'Accumulate',
+    jpCost: 100, type: 'physical', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'stat-shift', stat: 'pa', amount: 1,
+              targetTeam: 'ally', baseAccuracy: 200, persistent: false },
+  },
+  yell: {
+    // Range 1 ally-Speed buff — bark out orders to a frontline ally so they
+    // get their next turn sooner. Same single-point bump as Accumulate.
+    id: 'yell', name: 'Yell',
+    jpCost: 150, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'stat-shift', stat: 'speed', amount: 1,
+              targetTeam: 'ally', baseAccuracy: 200, persistent: false },
+  },
 
   // ─── Archer ───────────────────────────────────────────────────────────────
   charge_2: {

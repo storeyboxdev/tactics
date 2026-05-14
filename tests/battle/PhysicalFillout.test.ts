@@ -3,6 +3,8 @@ import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import { applyStatShift } from '../../src/battle/ActionResolver';
+import { ABILITIES } from '../../src/data/abilities';
+import { JOB_DEFS } from '../../src/data/jobs';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1,
@@ -58,5 +60,30 @@ describe('applyStatShift: PA / MA / Speed (per-battle by default)', () => {
     const b = makeUnit('b', 'player', 1, 0, FACING_W, { faith: 60 });
     expect(() => applyStatShift(a, b, 'faith', 5, false)).not.toThrow();
     expect(b.faith).toBe(65);
+  });
+});
+
+describe('Squire: Accumulate + Yell', () => {
+  it('Squire learns Accumulate and Yell', () => {
+    expect(JOB_DEFS.squire.learnableActives).toContain('accumulate');
+    expect(JOB_DEFS.squire.learnableActives).toContain('yell');
+  });
+
+  it('Accumulate is a non-persistent self PA buff', () => {
+    const eff = ABILITIES.accumulate.effect;
+    if (eff.kind !== 'stat-shift') throw new Error('bad fixture');
+    expect(eff.stat).toBe('pa');
+    expect(eff.amount).toBe(1);
+    expect(eff.persistent).toBe(false);
+    expect(ABILITIES.accumulate.range).toBe(0); // self-only
+  });
+
+  it('Yell is a non-persistent ally Speed buff at range 1', () => {
+    const eff = ABILITIES.yell.effect;
+    if (eff.kind !== 'stat-shift') throw new Error('bad fixture');
+    expect(eff.stat).toBe('speed');
+    expect(eff.amount).toBe(1);
+    expect(eff.persistent).toBe(false);
+    expect(ABILITIES.yell.range).toBe(1);
   });
 });
