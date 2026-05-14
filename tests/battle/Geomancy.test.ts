@@ -27,11 +27,12 @@ describe('Water Ball (water) + Will-O-Wisp (sand)', () => {
     expect(ab.effect.statusId).toBe('slow');
   });
 
-  it('Will-O-Wisp is sand-gated, fire-elemental', () => {
+  it('Will-O-Wisp is sand-gated, fire-elemental, chains Sleep', () => {
     const ab = ABILITIES.will_o_wisp;
     expect(ab.requiresTerrain).toEqual(['sand']);
-    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    if (ab.effect.kind !== 'damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.element).toBe('fire');
+    expect(ab.effect.statusId).toBe('sleep');
   });
 
   it('Geomancer has a strike for every terrain plus the catch-all', () => {

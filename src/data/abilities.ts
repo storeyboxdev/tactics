@@ -574,11 +574,13 @@ export const ABILITIES: Record<string, Ability> = {
   will_o_wisp: {
     // Heat-shimmer manifests above sand as a roaming flame. Slightly
     // lower power than the others (sand maps tend to be open, so the
-    // range itself is the value). Fire element so future fire-resistant
-    // enemies will shrug it off.
+    // range itself is the value). Fire damage plus a Sleep proc — the
+    // mirage-warmth lulls the target into unconsciousness until they
+    // take damage and snap out of it.
     id: 'will_o_wisp', name: 'Will-O-Wisp',
     jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
-    effect: { kind: 'magic-damage', spellPower: 9, element: 'fire' },
+    effect: { kind: 'damage-and-status', spellPower: 9, element: 'fire',
+              statusId: 'sleep', statusBaseAcc: 80 },
     requiresTerrain: ['sand'],
   },
 
