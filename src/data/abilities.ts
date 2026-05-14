@@ -459,10 +459,41 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 150, type: 'physical', range: 2, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 5 },
   },
+  earth_slash: {
+    // FFT-canonical sweeping wave — far reach (5), modest power. The Monk
+    // strikes the ground and a wave travels out to the target tile. Same
+    // physical-ranged formula as Wave Fist, just longer.
+    id: 'earth_slash', name: 'Earth Slash',
+    jpCost: 250, type: 'physical', range: 5, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 5 },
+  },
   chakra: {
     id: 'chakra', name: 'Chakra',
     jpCost: 500, type: 'magical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'magic-heal', spellPower: 6 },
+  },
+  stigma_magic: {
+    // Self-centered radius-2 cure-status. The Monk channels through their
+    // own body to purge negative statuses on every ally in the cross.
+    // Same status list as Esuna / Remedy. Type 'magical' so Silence blocks
+    // it (FFT canon: the Monk is briefly channeling magic, not punching).
+    id: 'stigma_magic', name: 'Stigma Magic',
+    jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
+    effect: { kind: 'cure-status',
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act'],
+              targetTeam: 'ally', baseAccuracy: 180 },
+    area: { radius: 2 },
+  },
+  revive_monk: {
+    // Monk's hands-on revive — melee range, no MP, brings the target back
+    // at 50% HP (same restore as White Mage's Raise, lower restore than
+    // medical-grade Chemist Phoenix Down's 25%? wait no — Raise is 50%,
+    // Phoenix Down 25%). Monk slots between them: 50% restore but melee-
+    // only, so positioning matters. Physical type keeps it usable under
+    // Silence.
+    id: 'revive_monk', name: 'Revive',
+    jpCost: 500, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'revive', hpPercent: 50 },
   },
 
   // ─── Geomancer ────────────────────────────────────────────────────────────

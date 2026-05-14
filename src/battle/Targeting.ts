@@ -74,8 +74,13 @@ export function abilityTargets(
   const ox = from?.x ?? actor.x;
   const oz = from?.z ?? actor.z;
 
+  // Single-target cure-status filters out clean targets (no point picking a
+  // healthy ally). AoE cure-status (Stigma Magic) skips the filter — the
+  // cast lands anywhere in range; the AoE itself decides who actually
+  // benefits.
   const cureStatuses: readonly string[] | null =
-    ability.effect.kind === 'cure-status' ? ability.effect.statuses : null;
+    ability.effect.kind === 'cure-status' && !ability.area
+      ? ability.effect.statuses : null;
 
   const out: { x: number; z: number }[] = [];
   for (let dx = -ability.range; dx <= ability.range; dx++) {

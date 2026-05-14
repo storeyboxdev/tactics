@@ -63,6 +63,39 @@ describe('applyStatShift: PA / MA / Speed (per-battle by default)', () => {
   });
 });
 
+describe('Monk: Earth Slash + Stigma Magic + Revive', () => {
+  it('Monk learns all five abilities in order', () => {
+    expect(JOB_DEFS.monk.learnableActives).toEqual([
+      'wave_fist', 'earth_slash', 'chakra', 'stigma_magic', 'revive_monk',
+    ]);
+  });
+
+  it('Earth Slash has longer range than Wave Fist with same power', () => {
+    expect(ABILITIES.earth_slash.range).toBeGreaterThan(ABILITIES.wave_fist.range);
+    const es = ABILITIES.earth_slash.effect;
+    const wf = ABILITIES.wave_fist.effect;
+    if (es.kind !== 'physical-ranged-damage' || wf.kind !== 'physical-ranged-damage') {
+      throw new Error('bad fixture');
+    }
+    expect(es.weaponPower).toBe(wf.weaponPower);
+  });
+
+  it('Stigma Magic is a radius-2 self-centered cure-status AoE', () => {
+    const ab = ABILITIES.stigma_magic;
+    expect(ab.range).toBe(0);
+    expect(ab.area?.radius).toBe(2);
+    expect(ab.effect.kind).toBe('cure-status');
+  });
+
+  it("Monk's Revive restores 50% HP at melee", () => {
+    const ab = ABILITIES.revive_monk;
+    expect(ab.range).toBe(1);
+    expect(ab.type).toBe('physical');
+    if (ab.effect.kind !== 'revive') throw new Error('bad fixture');
+    expect(ab.effect.hpPercent).toBe(50);
+  });
+});
+
 describe('Archer: Aim tiers', () => {
   it('Archer learns Aim+1, Charge+2, Aim+3 in CT order', () => {
     const archer = JOB_DEFS.archer.learnableActives;
