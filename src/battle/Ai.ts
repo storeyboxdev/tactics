@@ -190,6 +190,12 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
       const p = magicStatusHitChance(actor, target, ab.effect.baseAccuracy) / 100;
       return base * p;
     }
+    case 'cure-status': {
+      const curable = ab.effect.statuses.filter(s => target.hasStatus(s)).length;
+      if (curable === 0) return 0;
+      const p = magicStatusHitChance(actor, target, ab.effect.baseAccuracy) / 100;
+      return 8 * curable * p;
+    }
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
       return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);

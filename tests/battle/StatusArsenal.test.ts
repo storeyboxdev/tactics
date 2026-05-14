@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
-  Unit, UnitDef, UnitStats, FACING_E, Facing, Team,
+  Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import { TurnSystem } from '../../src/battle/TurnSystem';
+import { resolveCureStatus } from '../../src/battle/ActionResolver';
 import { STATUS_DEFS } from '../../src/data/statuses';
+
+const rngHit = () => 0;          // always passes hit roll
+const rngMiss = () => 0.999;     // always fails when chance < 100
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 30, pa: 5, ma: 8, speed: 10, move: 4, jump: 1,
@@ -51,5 +55,39 @@ describe('Status arsenal: new statuses', () => {
   it('Silence carries the blocksMagic flag on its StatusDef', () => {
     expect(STATUS_DEFS.silence.blocksMagic).toBe(true);
     expect(STATUS_DEFS.poison.blocksMagic).toBeUndefined();
+  });
+});
+
+describe('Status arsenal: resolveCureStatus', () => {
+  it('removes only the listed statuses from a target', () => {
+    const caster = makeUnit('c', 'player', 0, 0, FACING_E, { faith: 100 });
+    const target = makeUnit('t', 'player', 1, 0, FACING_W, { faith: 100 });
+    target.addStatus('poison');
+    target.addStatus('slow');
+    target.addStatus('silence'); // not in the cure list — must persist
+    const out = resolveCureStatus(caster, target, ['poison', 'slow'], 200, rngHit);
+    expect(out.hit).toBe(true);
+    expect(out.removed.sort()).toEqual(['poison', 'slow']);
+    expect(target.hasStatus('poison')).toBe(false);
+    expect(target.hasStatus('slow')).toBe(false);
+    expect(target.hasStatus('silence')).toBe(true);
+  });
+
+  it('returns hit=true / removed=[] when target has none of the listed statuses', () => {
+    const caster = makeUnit('c', 'player', 0, 0, FACING_E, { faith: 100 });
+    const target = makeUnit('t', 'player', 1, 0, FACING_W, { faith: 100 });
+    const out = resolveCureStatus(caster, target, ['poison'], 200, rngHit);
+    expect(out.hit).toBe(true);
+    expect(out.removed).toEqual([]);
+  });
+
+  it('faith-scaled miss leaves all statuses in place', () => {
+    const caster = makeUnit('c', 'player', 0, 0, FACING_E, { faith: 10 });
+    const target = makeUnit('t', 'player', 1, 0, FACING_W, { faith: 10 });
+    target.addStatus('poison');
+    const out = resolveCureStatus(caster, target, ['poison'], 50, rngMiss);
+    expect(out.hit).toBe(false);
+    expect(out.removed).toEqual([]);
+    expect(target.hasStatus('poison')).toBe(true);
   });
 });

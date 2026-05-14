@@ -57,6 +57,13 @@ export function abilityTargets(
   } else if (ability.effect.kind === 'magic-heal') {
     allowAlly = true;
     allowSelf = true;
+  } else if (ability.effect.kind === 'cure-status') {
+    // Cure-status acts like a heal — alive allies (and self) only. Tile must
+    // contain an ally who has ≥1 of the listed statuses; a clean target is
+    // not a valid pick.
+    allowAlly = true;
+    allowSelf = true;
+    allowEnemy = ability.effect.targetTeam === 'any';
   } else if (isRevive) {
     // KO'd allies only — self can't revive itself even at allowSelf=true.
     allowAlly = true;
@@ -66,6 +73,9 @@ export function abilityTargets(
 
   const ox = from?.x ?? actor.x;
   const oz = from?.z ?? actor.z;
+
+  const cureStatuses: readonly string[] | null =
+    ability.effect.kind === 'cure-status' ? ability.effect.statuses : null;
 
   const out: { x: number; z: number }[] = [];
   for (let dx = -ability.range; dx <= ability.range; dx++) {
@@ -94,6 +104,8 @@ export function abilityTargets(
       } else {
         if (!allowEnemy) continue;
       }
+      // Cure-status: skip targets with none of the listed statuses to clean up.
+      if (cureStatuses && !cureStatuses.some(s => u.statuses.some(x => x.id === s))) continue;
       out.push({ x, z });
     }
   }
@@ -158,6 +170,10 @@ export function affectedUnits(
   } else if (eff.kind === 'magic-heal') {
     allowAlly = true;
     allowSelf = true;
+  } else if (eff.kind === 'cure-status') {
+    allowAlly = true;
+    allowSelf = true;
+    allowEnemy = eff.targetTeam === 'any';
   } else if (isRevive) {
     allowAlly = true;
   } else {

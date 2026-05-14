@@ -9,7 +9,7 @@ import {
 } from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
-  resolveRevive, applyStatShift, applyBreak, facingTowards,
+  resolveRevive, resolveCureStatus, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -678,6 +678,22 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     hud.showFloatingMiss(target);
     return false;
   }
+  if (eff.kind === 'cure-status') {
+    const out = resolveCureStatus(actor, target, eff.statuses, eff.baseAccuracy);
+    if (!out.hit) {
+      hud.log(`${ab.name}: ${target.name} resists`);
+      hud.showFloatingMiss(target);
+      return false;
+    }
+    if (out.removed.length === 0) {
+      hud.log(`${ab.name}: ${target.name} (no effect)`);
+      return false;
+    }
+    const names = out.removed.map(id => STATUS_DEFS[id].name).join(', ');
+    hud.log(`${ab.name}: ${target.name} cured of ${names}`);
+    spellFx.burst(target, 'heal', () => {});
+    return false;
+  }
   if (eff.kind === 'stat-shift') {
     const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
     if (rollHit(chance, Math.random)) {
@@ -809,6 +825,13 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
       const projected = Math.max(1, Math.min(100, target[eff.stat] + eff.amount));
       const arrow = eff.amount > 0 ? '↑' : '↓';
       return `${target.name}: ${eff.stat.toUpperCase()} ${target[eff.stat]} ${arrow} ${projected} @ ${hit}%`;
+    }
+    case 'cure-status': {
+      const removable = eff.statuses.filter(s => target.hasStatus(s));
+      if (removable.length === 0) return `${target.name}: (no curable status)`;
+      const names = removable.map(s => STATUS_DEFS[s].short).join('/');
+      const hit = magicStatusHitChance(actor, target, eff.baseAccuracy);
+      return `${target.name}: cure ${names} @ ${hit}%`;
     }
     default:
       return null;

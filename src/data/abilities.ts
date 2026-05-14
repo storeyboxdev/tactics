@@ -52,6 +52,14 @@ export type AbilityEffect =
    * clamped to [0, 100].
    */
   | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
+  /**
+   * Remove any of `statuses` currently active on the target. One faith-scaled
+   * roll (`baseAccuracy × casterFaith/100 × targetFaith/100`) gates the whole
+   * cast — on success every listed status the target has is removed. Cannot
+   * revive a KO'd unit; targeting filters to alive allies who have ≥1 of the
+   * listed statuses.
+   */
+  | { kind: 'cure-status'; statuses: StatusId[]; targetTeam: 'ally' | 'any'; baseAccuracy: number }
   // Passive: reactions trigger when the unit is hit.
   | { kind: 'reaction-counter' }
   | { kind: 'reaction-auto-potion'; amount: number }

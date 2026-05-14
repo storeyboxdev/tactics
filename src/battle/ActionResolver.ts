@@ -1,6 +1,7 @@
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
 import { ABILITIES } from '../data/abilities';
+import { StatusId } from '../data/statuses';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
 
@@ -374,6 +375,33 @@ export function resolveSpell(
     }
   }
   return out;
+}
+
+// ─── Cure-status (Esuna, Remedy) ────────────────────────────────────────────
+
+export interface CureStatusOutcome {
+  caster: Unit;
+  target: Unit;
+  hit: boolean;
+  /** Statuses actually removed (intersection of requested set and target's active statuses). */
+  removed: StatusId[];
+}
+
+export function resolveCureStatus(
+  caster: Unit,
+  target: Unit,
+  statuses: readonly StatusId[],
+  baseAccuracy: number,
+  rng: Rng = Math.random,
+): CureStatusOutcome {
+  const chance = magicStatusHitChance(caster, target, baseAccuracy);
+  const hit = rollHit(chance, rng);
+  if (!hit) return { caster, target, hit: false, removed: [] };
+  const removed: StatusId[] = [];
+  for (const id of statuses) {
+    if (target.removeStatus(id)) removed.push(id);
+  }
+  return { caster, target, hit: true, removed };
 }
 
 // ─── Ranged physical (Charge, Wave Fist, Throw) ─────────────────────────────
