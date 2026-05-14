@@ -108,6 +108,17 @@ export function magicStatusHitChance(caster: Unit, target: Unit, baseAccuracy: n
 }
 
 /**
+ * Attacker's PA after status modifiers. Berserk multiplies it by 1.5 (FFT
+ * canon — pure physical rage, no magic boost). Used by every basic-attack
+ * formula (melee + ranged) so the prediction and resolution stay in sync.
+ */
+export function effectivePa(attacker: Unit): number {
+  let pa = attacker.pa;
+  if (attacker.hasStatus('berserk')) pa = Math.floor(pa * 1.5);
+  return pa;
+}
+
+/**
  * Caster's MA after equipped supports. Magic Attack Up multiplies it (1.25
  * by default). Used by every magic-damage / magic-heal predictor and
  * resolver so the effective damage matches what the planner saw.
@@ -223,7 +234,7 @@ export function predictAttackDamage(
   const facing = relativeFacingFromPos(attackerPos, target);
   return {
     damage: computeAttackDamage({
-      pa: attacker.pa,
+      pa: effectivePa(attacker),
       weaponPower: PLACEHOLDER_WEAPON_POWER,
       attackerH: aH, targetH: tH,
       facing, randomMul: 1.0,
@@ -266,7 +277,7 @@ export function resolveAttack(
   }
 
   const baseDamage = computeAttackDamage({
-    pa: attacker.pa,
+    pa: effectivePa(attacker),
     weaponPower: PLACEHOLDER_WEAPON_POWER,
     attackerH: aH, targetH: tH,
     facing, randomMul,
@@ -510,7 +521,7 @@ export function predictRangedAttack(
   const facing = relativeFacing(attacker, target);
   return {
     damage: computeAttackDamage({
-      pa: attacker.pa, weaponPower,
+      pa: effectivePa(attacker), weaponPower,
       attackerH: aH, targetH: tH,
       facing, randomMul: 1.0,
     }),
@@ -548,7 +559,7 @@ export function resolveRangedAttack(
   }
 
   const baseDamage = computeAttackDamage({
-    pa: attacker.pa, weaponPower,
+    pa: effectivePa(attacker), weaponPower,
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });

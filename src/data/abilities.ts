@@ -293,6 +293,15 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 500, type: 'magical', range: 3, chargeTime: 2, mpCost: 10,
     effect: { kind: 'inflict-status', statusId: 'dont_act', targetTeam: 'enemy', baseAccuracy: 110 },
   },
+  berserk_touch: {
+    // Melee Yin-Yang touch — locks the target into berserk mode for 32
+    // ticks. They'll auto-attack the nearest opposing-team unit each turn
+    // with +50% PA. Devastating against a player frontline; risky to cast
+    // on a low-PA enemy mage since they're useless rage-charging anyway.
+    id: 'berserk_touch', name: 'Berserk',
+    jpCost: 400, type: 'magical', range: 1, chargeTime: 0, mpCost: 8,
+    effect: { kind: 'inflict-status', statusId: 'berserk', targetTeam: 'enemy', baseAccuracy: 130 },
+  },
 
   // ─── White Mage ───────────────────────────────────────────────────────────
   cure: {
@@ -354,7 +363,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -378,7 +387,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
 
@@ -511,7 +520,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },

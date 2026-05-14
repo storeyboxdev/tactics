@@ -13,7 +13,8 @@
 export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
-  | 'reraise' | 'death_sentence';
+  | 'reraise' | 'death_sentence'
+  | 'berserk';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -113,6 +114,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     id: 'death_sentence', name: 'Death Sentence', short: 'DST', color: 0x8a0000,
     expiry: { kind: 'duration', ticks: 24 },
     koOnExpire: true,
+  },
+  berserk: {
+    // The unit's turn is forced into a basic-attack on the nearest opposing-
+    // team unit. +50% PA on the attack (applied via effectivePa). No menu,
+    // no abilities — pure swing. Affects both teams equally; a berserked
+    // player Squire is a problem you have to cure.
+    id: 'berserk', name: 'Berserk', short: 'BSK', color: 0xc8602a,
+    expiry: { kind: 'duration', ticks: 32 },
   },
 };
 

@@ -45,6 +45,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   regen:     20,   // overridden: 8 if target near full HP
   reraise:   30,   // strong prophylactic on a frontline ally
   death_sentence: 50,  // 24-tick guaranteed KO when it lands
+  berserk:   20,   // forces enemy to waste turns chasing; +50% PA is the bite
 };
 
 /** Whether a unit has any magical-type ability available — used to gate

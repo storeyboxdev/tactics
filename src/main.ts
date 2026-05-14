@@ -256,6 +256,15 @@ function activateNext() {
   hasMoved = false;
   hasActed = false;
   refreshHud();
+
+  // AI-override statuses (Berserk, Confuse) take the turn from both teams.
+  // Runs alternate logic instead of player menu / standard AI.
+  if (actor.hasStatus('berserk')) {
+    hud.setStatus(`${actor.name} is Berserk!`);
+    setTimeout(() => runOverrideTurn(actor), 600);
+    return;
+  }
+
   if (actor.team === 'player') {
     hud.setStatus(`${actor.name}'s turn (${actor.jobId}) — choose an action`);
     showActionMenu();
@@ -1196,6 +1205,88 @@ function enemyAutoTurn(actor: Unit) {
   } else {
     finishTurn();
   }
+}
+
+/**
+ * Berserk / Confuse turn handler. Runs for either team — the affected
+ * unit's normal turn flow (player menu or standard AI) is bypassed and
+ * this routine drives a forced basic-attack instead.
+ *
+ * Berserk targets the closest opposing-team unit (a rage-blind charge).
+ * Confuse targets a random alive unit other than the actor — could
+ * easily hit one of the actor's own allies.
+ */
+function runOverrideTurn(actor: Unit) {
+  const target = actor.hasStatus('berserk')
+    ? nearestOpponent(actor)
+    : randomAliveOther(actor);
+
+  if (!target) {
+    turns.endTurn(actor, { moved: false, acted: false });
+    activateNext();
+    return;
+  }
+
+  const plan = new MovePlan(actor, map, units);
+  const endTile = closestEndTileTo(plan, target);
+  const moved = endTile.x !== actor.x || endTile.z !== actor.z;
+  const adjacentToTarget =
+    Math.abs(endTile.x - target.x) + Math.abs(endTile.z - target.z) === 1;
+
+  const finish = () => {
+    let acted = false;
+    if (adjacentToTarget && target.isAlive && actor.isAlive) {
+      actor.facing = facingTowards(actor.x, actor.z, target.x, target.z);
+      const out = resolveAttack(actor, target, map);
+      logAttack(out);
+      playAttackVisual(out);
+      awardForAttack(out);
+      acted = true;
+    }
+    turns.endTurn(actor, { moved, acted });
+    applySupportTurnEnd(actor);
+    refreshHud();
+    activateNext();
+  };
+
+  if (moved) {
+    const path = plan.pathTo(endTile.x, endTile.z);
+    input.setAnimating(true);
+    unitRenderer.startMove(actor, path, () => {
+      input.setAnimating(false);
+      applyMovementEndHook(actor);
+      setTimeout(finish, 180);
+    });
+  } else {
+    finish();
+  }
+}
+
+function nearestOpponent(actor: Unit): Unit | null {
+  let best: Unit | null = null;
+  let bestD = Infinity;
+  for (const u of units) {
+    if (!u.isAlive || u.team === actor.team || u === actor) continue;
+    const d = Math.abs(u.x - actor.x) + Math.abs(u.z - actor.z);
+    if (d < bestD) { bestD = d; best = u; }
+  }
+  return best;
+}
+
+function randomAliveOther(actor: Unit): Unit | null {
+  const candidates = units.filter(u => u !== actor && u.isAlive);
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function closestEndTileTo(plan: MovePlan, target: Unit): { x: number; z: number } {
+  let best = { x: plan.unit.x, z: plan.unit.z };
+  let bestD = Math.abs(plan.unit.x - target.x) + Math.abs(plan.unit.z - target.z);
+  for (const tile of plan.endTiles()) {
+    const d = Math.abs(tile.x - target.x) + Math.abs(tile.z - target.z);
+    if (d < bestD) { bestD = d; best = { x: tile.x, z: tile.z }; }
+  }
+  return best;
 }
 
 function refreshHud() {
