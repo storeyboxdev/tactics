@@ -63,6 +63,23 @@ describe('applyStatShift: PA / MA / Speed (per-battle by default)', () => {
   });
 });
 
+describe('Knight: Magic Break', () => {
+  it('Knight learns Magic Break alongside Power/Speed Break', () => {
+    const knight = JOB_DEFS.knight.learnableActives;
+    expect(knight).toContain('power_break');
+    expect(knight).toContain('speed_break');
+    expect(knight).toContain('magic_break');
+  });
+
+  it('Magic Break is an ma debuff at melee range', () => {
+    const eff = ABILITIES.magic_break.effect;
+    if (eff.kind !== 'debuff') throw new Error('bad fixture');
+    expect(eff.stat).toBe('ma');
+    expect(eff.amount).toBe(2);
+    expect(ABILITIES.magic_break.range).toBe(1);
+  });
+});
+
 describe('Squire: Accumulate + Yell', () => {
   it('Squire learns Accumulate and Yell', () => {
     expect(JOB_DEFS.squire.learnableActives).toContain('accumulate');

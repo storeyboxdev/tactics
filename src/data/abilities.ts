@@ -142,6 +142,21 @@ export const ABILITIES: Record<string, Ability> = {
     mpCost: 0,
     effect: { kind: 'debuff', stat: 'speed', amount: 2 },
   },
+  magic_break: {
+    // Third Knight Break — same mechanic as Power/Speed but on the magic
+    // axis. Lands an enemy Black Mage in a much worse position: their Fire
+    // and Ice spells visibly drop in damage on the next cast. Same melee
+    // range and 300 JP cost slots it between Power Break (200) and Speed
+    // Break (400) in learning order.
+    id: 'magic_break',
+    name: 'Magic Break',
+    jpCost: 300,
+    type: 'physical',
+    range: 1,
+    chargeTime: 0,
+    mpCost: 0,
+    effect: { kind: 'debuff', stat: 'ma', amount: 2 },
+  },
   fire: {
     id: 'fire',
     name: 'Fire',
