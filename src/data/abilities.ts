@@ -544,6 +544,26 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'magic-damage', spellPower: 10 },
     requiresTerrain: ['stone'],
   },
+  water_ball: {
+    // A blast of frigid water — requires the Geomancer to actually stand
+    // on water, so pairs naturally with Float (Time Mage movement) or
+    // shallow-approach maps. Range 4 single-target. 'water' element
+    // is a cosmetic tag until resistance lands.
+    id: 'water_ball', name: 'Water Ball',
+    jpCost: 300, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 10, element: 'water' },
+    requiresTerrain: ['water'],
+  },
+  will_o_wisp: {
+    // Heat-shimmer manifests above sand as a roaming flame. Slightly
+    // lower power than the others (sand maps tend to be open, so the
+    // range itself is the value). Fire element so future fire-resistant
+    // enemies will shrug it off.
+    id: 'will_o_wisp', name: 'Will-O-Wisp',
+    jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 9, element: 'fire' },
+    requiresTerrain: ['sand'],
+  },
 
   // ─── Thief ────────────────────────────────────────────────────────────────
   // FFT canon's Steal kit needs an equipment system we don't have yet. Mug

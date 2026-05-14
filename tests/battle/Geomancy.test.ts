@@ -12,6 +12,35 @@ describe('Geomancer terrain-strike kit: schema gate', () => {
   });
 });
 
+describe('Water Ball (water) + Will-O-Wisp (sand)', () => {
+  it('Geomancer learns Water Ball and Will-O-Wisp', () => {
+    const geo = JOB_DEFS.geomancer.learnableActives;
+    expect(geo).toContain('water_ball');
+    expect(geo).toContain('will_o_wisp');
+  });
+
+  it('Water Ball is water-gated, water-elemental', () => {
+    const ab = ABILITIES.water_ball;
+    expect(ab.requiresTerrain).toEqual(['water']);
+    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(ab.effect.element).toBe('water');
+  });
+
+  it('Will-O-Wisp is sand-gated, fire-elemental', () => {
+    const ab = ABILITIES.will_o_wisp;
+    expect(ab.requiresTerrain).toEqual(['sand']);
+    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    expect(ab.effect.element).toBe('fire');
+  });
+
+  it('Geomancer has a strike for every terrain plus the catch-all', () => {
+    const geo = JOB_DEFS.geomancer.learnableActives;
+    expect(geo).toEqual([
+      'pebble_blast', 'hell_ivy', 'local_quake', 'wind_slash', 'water_ball', 'will_o_wisp',
+    ]);
+  });
+});
+
 describe('Wind Slash (stone)', () => {
   it('Geomancer learns Wind Slash', () => {
     expect(JOB_DEFS.geomancer.learnableActives).toContain('wind_slash');

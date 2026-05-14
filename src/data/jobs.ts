@@ -180,7 +180,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     baseStats: stat({ hp: 55, mp: 18, pa: 6, ma: 6, jump: 2, evasion: 15 }),
     mult:   { hp: 110, mp: 180, pa: 120, ma: 120, speed: 100 },
     growth: { hp:   6, mp:   5, pa:   5, ma:   5, speed:   1 },
-    learnableActives: ['pebble_blast', 'hell_ivy', 'local_quake', 'wind_slash'],
+    learnableActives: ['pebble_blast', 'hell_ivy', 'local_quake', 'wind_slash', 'water_ball', 'will_o_wisp'],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
   lancer: {
