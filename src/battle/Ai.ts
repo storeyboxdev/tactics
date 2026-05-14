@@ -119,8 +119,13 @@ export class HeuristicAi implements EnemyController {
           const target = unitAt(units, ttile.x, ttile.z);
           if (!target) continue;
           if (ab.effect.kind === 'inflict-status' && target.hasStatus(ab.effect.statusId)) continue;
-          // Heals are only worth casting when the ally is missing HP.
+          // Heals are only worth casting when the ally is missing the resource.
           if (ab.effect.kind === 'magic-heal' && target.hp >= target.hpMax) continue;
+          if (ab.effect.kind === 'flat-heal') {
+            const hpFull = !ab.effect.hp || target.hp >= target.hpMax;
+            const mpFull = !ab.effect.mp || target.mp >= target.mpMax;
+            if (hpFull && mpFull) continue;
+          }
           consider(tile, { kind: 'ability', abilityId: abId, targetId: target.id });
         }
       }
@@ -221,6 +226,12 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
     case 'magic-heal': {
       const pred = predictHeal(actor, target, ab.effect.spellPower);
       return Math.min(pred.amount, target.hpMax - target.hp);
+    }
+    case 'flat-heal': {
+      let score = 0;
+      if (ab.effect.hp) score += Math.min(ab.effect.hp, target.hpMax - target.hp);
+      if (ab.effect.mp) score += Math.min(ab.effect.mp, target.mpMax - target.mp);
+      return score;
     }
     case 'debuff': {
       const facing = relativeFacing(actor, target);

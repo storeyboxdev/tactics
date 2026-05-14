@@ -9,7 +9,8 @@ import {
 } from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
-  resolveRevive, resolveCureStatus, resolveDamageAndStatus, applyStatShift, applyBreak, facingTowards,
+  resolveRevive, resolveCureStatus, resolveDamageAndStatus, resolveFlatHeal,
+  applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -660,6 +661,17 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     spellFx.burst(target, 'heal', () => {});
     return false; // heals never grant EXP
   }
+  if (eff.kind === 'flat-heal') {
+    const out = resolveFlatHeal(actor, target, eff.hp, eff.mp);
+    const parts: string[] = [];
+    if (out.hpRestored > 0) parts.push(`+${out.hpRestored} HP`);
+    if (out.mpRestored > 0) parts.push(`+${out.mpRestored} MP`);
+    hud.log(`${ab.name}: ${actor.name} → ${target.name} ${parts.join(', ') || '(no effect)'}`);
+    if (out.hpRestored > 0 || out.mpRestored > 0) {
+      spellFx.burst(target, 'heal', () => {});
+    }
+    return false; // heals never grant EXP
+  }
   if (eff.kind === 'revive') {
     const out = resolveRevive(actor, target, eff.hpPercent);
     if (out.amount > 0) {
@@ -834,6 +846,17 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
       const pred = predictHeal(actor, target, eff.spellPower);
       const filled = Math.min(pred.amount, target.hpMax - target.hp);
       return `${target.name}: +${filled} HP`;
+    }
+    case 'flat-heal': {
+      const hpNeed = target.hpMax - target.hp;
+      const mpNeed = target.mpMax - target.mp;
+      const hpEff = eff.hp ? Math.min(eff.hp, hpNeed) : 0;
+      const mpEff = eff.mp ? Math.min(eff.mp, mpNeed) : 0;
+      const parts: string[] = [];
+      if (eff.hp) parts.push(`+${hpEff} HP`);
+      if (eff.mp) parts.push(`+${mpEff} MP`);
+      if (parts.length === 0) return `${target.name}: (no effect)`;
+      return `${target.name}: ${parts.join(' / ')}`;
     }
     case 'revive': {
       const restored = Math.max(1, Math.floor(target.hpMax * eff.hpPercent / 100));

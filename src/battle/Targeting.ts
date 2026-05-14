@@ -54,7 +54,7 @@ export function abilityTargets(
     allowEnemy = t === 'enemy' || t === 'any';
     allowAlly  = t === 'ally'  || t === 'any';
     allowSelf  = t === 'ally'  || t === 'any';
-  } else if (ability.effect.kind === 'magic-heal') {
+  } else if (ability.effect.kind === 'magic-heal' || ability.effect.kind === 'flat-heal') {
     allowAlly = true;
     allowSelf = true;
   } else if (ability.effect.kind === 'cure-status') {
@@ -172,7 +172,7 @@ export function affectedUnits(
     allowEnemy = t === 'enemy' || t === 'any';
     allowAlly  = t === 'ally'  || t === 'any';
     allowSelf  = t === 'ally'  || t === 'any';
-  } else if (eff.kind === 'magic-heal') {
+  } else if (eff.kind === 'magic-heal' || eff.kind === 'flat-heal') {
     allowAlly = true;
     allowSelf = true;
   } else if (eff.kind === 'cure-status') {

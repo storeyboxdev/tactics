@@ -626,6 +626,39 @@ export function resolveHeal(
   return { caster, target, amount: target.hp - before };
 }
 
+// ─── Flat heal (Hi-Potion, Ether) ───────────────────────────────────────────
+
+export interface FlatHealOutcome {
+  user: Unit;
+  target: Unit;
+  hpRestored: number;
+  mpRestored: number;
+}
+
+/**
+ * Item-style restore: heals a fixed HP and/or MP amount, capped at the
+ * target's max. Ignores caster stats — the item does the healing, not
+ * the user. No RNG, no hit roll. Either field can be omitted; a
+ * Hi-Potion is hp-only, an Ether is mp-only.
+ */
+export function resolveFlatHeal(
+  user: Unit, target: Unit, hp?: number, mp?: number,
+): FlatHealOutcome {
+  let hpRestored = 0;
+  let mpRestored = 0;
+  if (hp && hp > 0 && target.hp < target.hpMax) {
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + hp);
+    hpRestored = target.hp - before;
+  }
+  if (mp && mp > 0 && target.mp < target.mpMax) {
+    const before = target.mp;
+    target.mp = Math.min(target.mpMax, target.mp + mp);
+    mpRestored = target.mp - before;
+  }
+  return { user, target, hpRestored, mpRestored };
+}
+
 // ─── Revive (Raise / Phoenix Down) ──────────────────────────────────────────
 
 export interface ReviveOutcome {

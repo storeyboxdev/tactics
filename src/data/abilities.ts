@@ -13,6 +13,13 @@ import { Terrain } from '../core/types';
 export type AbilityEffect =
   | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water' }
   | { kind: 'magic-heal'; spellPower: number }
+  /**
+   * Flat HP / MP restore — Chemist Items, mostly. Heals a fixed amount
+   * regardless of caster stats (FFT-canonical: the item does the healing,
+   * not the user). Both fields optional so one ability can heal HP only,
+   * MP only, or both. Capped at target's max for each.
+   */
+  | { kind: 'flat-heal'; hp?: number; mp?: number }
   | { kind: 'physical-ranged-damage'; weaponPower: number;
       /** If set, the caster heals for floor(damage × drainPercent / 100) on a hit. Used by Thief's Mug. */
       drainPercent?: number }
@@ -399,6 +406,23 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'cure-status',
               statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
               targetTeam: 'ally', baseAccuracy: 160 },
+  },
+  hi_potion: {
+    // Stronger than the basic Item potion. Flat +50 HP regardless of
+    // Chemist stats — the item does the healing, not the user. Trades
+    // off against Cure: lower ceiling at high MA but no faith dependency
+    // and no Silence vulnerability.
+    id: 'hi_potion', name: 'Hi-Potion',
+    jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'flat-heal', hp: 50 },
+  },
+  ether: {
+    // The only MP-restore in the kit. +20 MP flat on a melee-range ally.
+    // Bails out a Black Mage who burned through their pool early or a
+    // White Mage who needs one more Cura. Capped at mpMax.
+    id: 'ether', name: 'Ether',
+    jpCost: 250, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'flat-heal', mp: 20 },
   },
 
   // ─── Squire ───────────────────────────────────────────────────────────────
