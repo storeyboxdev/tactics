@@ -22,13 +22,21 @@ export type AbilityEffect =
    */
   | { kind: 'revive'; hpPercent: number }
   /**
-   * Mediator's Talk Skill: shift the target's `faith` or `bravery` by
-   * `amount` (positive = up, negative = down). Result clamps to [1, 100].
-   * Player-unit shifts also sync to UnitProgression so they survive between
-   * battles. Same faith-scaled hit roll as inflict-status.
+   * Shift one of the target's stats by `amount` (positive = up, negative =
+   * down). Result clamps to [1, 100]. Same faith-scaled hit roll as
+   * inflict-status.
+   *
+   * - `faith` / `bravery` are FFT "personality" stats — shifts default to
+   *   persistent, syncing to UnitProgression so they survive across battles.
+   * - `pa` / `ma` / `speed` are per-battle by default (FFT canon: Squire's
+   *   Accumulate raises PA only until the battle ends). Set
+   *   `persistent: true` to override.
    */
-  | { kind: 'stat-shift'; stat: 'faith' | 'bravery'; amount: number;
-      targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
+  | { kind: 'stat-shift';
+      stat: 'faith' | 'bravery' | 'pa' | 'ma' | 'speed';
+      amount: number;
+      targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number;
+      persistent?: boolean }
   /**
    * Mime: re-cast whatever the mime's own team did most recently. The caller
    * looks up the recorded (abilityId, target tile) and runs the standard

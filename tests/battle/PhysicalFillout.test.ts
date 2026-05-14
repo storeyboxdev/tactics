@@ -1,0 +1,62 @@
+import { describe, it, expect } from 'vitest';
+import {
+  Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
+} from '../../src/battle/Unit';
+import { applyStatShift } from '../../src/battle/ActionResolver';
+
+const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
+  hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1,
+  faith: 50, bravery: 50, evasion: 10,
+  ...over,
+});
+
+function makeUnit(id: string, team: Team, x = 0, z = 0, facing: Facing = FACING_E, over: Partial<UnitStats> = {}): Unit {
+  const def: UnitDef = { id, name: id, team, jobId: 'x', level: 1, stats: stats(over) };
+  return new Unit(def, x, z, facing);
+}
+
+describe('applyStatShift: PA / MA / Speed (per-battle by default)', () => {
+  it('shifts PA and does NOT touch UnitProgression', () => {
+    const a = makeUnit('a', 'player', 0, 0, FACING_E);
+    const b = makeUnit('b', 'player', 1, 0, FACING_W, { pa: 5 });
+    const out = applyStatShift(a, b, 'pa', 1);
+    expect(out.before).toBe(5);
+    expect(out.after).toBe(6);
+    expect(b.pa).toBe(6);
+    // No progression on test units, so the sync path is a no-op either way —
+    // but the function should not crash.
+    expect(b.progression).toBeFalsy();
+  });
+
+  it('shifts MA upward with the same clamp behavior as faith/bravery', () => {
+    const a = makeUnit('a', 'player', 0, 0, FACING_E);
+    const b = makeUnit('b', 'player', 1, 0, FACING_W, { ma: 99 });
+    const out = applyStatShift(a, b, 'ma', 5);
+    expect(out.after).toBe(100);     // clamped
+    expect(b.ma).toBe(100);
+  });
+
+  it('shifts Speed downward and floors at 1', () => {
+    const a = makeUnit('a', 'enemy', 0, 0, FACING_E);
+    const b = makeUnit('b', 'player', 1, 0, FACING_W, { speed: 3 });
+    const out = applyStatShift(a, b, 'speed', -10);
+    expect(out.after).toBe(1);
+    expect(b.speed).toBe(1);
+  });
+
+  it('faith/bravery still clamp the same way (regression)', () => {
+    const a = makeUnit('a', 'player', 0, 0, FACING_E);
+    const b = makeUnit('b', 'player', 1, 0, FACING_W, { faith: 95 });
+    applyStatShift(a, b, 'faith', 10);
+    expect(b.faith).toBe(100);
+  });
+
+  it('explicit persistent=false on faith does not sync to progression', () => {
+    // No progression on test units; this just confirms the gate compiles and
+    // runs without throwing.
+    const a = makeUnit('a', 'player', 0, 0, FACING_E);
+    const b = makeUnit('b', 'player', 1, 0, FACING_W, { faith: 60 });
+    expect(() => applyStatShift(a, b, 'faith', 5, false)).not.toThrow();
+    expect(b.faith).toBe(65);
+  });
+});

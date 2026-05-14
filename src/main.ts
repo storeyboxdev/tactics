@@ -697,7 +697,7 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   if (eff.kind === 'stat-shift') {
     const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
     if (rollHit(chance, Math.random)) {
-      const out = applyStatShift(actor, target, eff.stat, eff.amount);
+      const out = applyStatShift(actor, target, eff.stat, eff.amount, eff.persistent);
       const arrow = eff.amount > 0 ? '↑' : '↓';
       hud.log(
         `${ab.name}: ${target.name} ${eff.stat.toUpperCase()} ` +

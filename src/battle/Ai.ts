@@ -214,6 +214,19 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
       const p = physicalHitChance(target, facing) / 100;
       return 6 * p;
     }
+    case 'stat-shift': {
+      const p = magicStatusHitChance(actor, target, ab.effect.baseAccuracy) / 100;
+      // Per-point weights: PA shifts swing damage most, MA next, then speed,
+      // then personality stats (faith/bravery move slowly). Self-buffs score
+      // a bit lower than enemy-debuffs of the same magnitude — attacking is
+      // usually still better than priming.
+      const PER_POINT: Record<typeof ab.effect.stat, number> = {
+        pa: 6, ma: 5, speed: 4, faith: 3, bravery: 3,
+      };
+      const isSelfBuff = target === actor && ab.effect.amount > 0;
+      const weight = PER_POINT[ab.effect.stat] * (isSelfBuff ? 0.5 : 1);
+      return weight * Math.abs(ab.effect.amount) * p;
+    }
     default:
       return 0;
   }

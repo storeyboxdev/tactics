@@ -562,27 +562,35 @@ export function resolveRevive(caster: Unit, target: Unit, hpPercent: number): Re
 
 // ─── Stat shifts (Mediator's Talk Skill) ────────────────────────────────────
 
+export type ShiftableStat = 'faith' | 'bravery' | 'pa' | 'ma' | 'speed';
+
 export interface StatShiftOutcome {
   user: Unit;
   target: Unit;
-  stat: 'faith' | 'bravery';
+  stat: ShiftableStat;
   before: number;
   after: number;
 }
 
 /**
- * Permanent faith/bravery shift. Mutates the live stat AND, for player units,
- * the UnitProgression so the change survives across battles. Clamps to
- * [1, 100] (FFT canon range — 0 and 100 are technically possible but the
- * floor of 1 keeps math safer).
+ * Shift one of the target's stats by `amount`, clamped to [1, 100].
+ *
+ * Persistence: faith/bravery default to persistent (FFT personality stats sync
+ * to UnitProgression so they survive across battles). pa/ma/speed default to
+ * per-battle only (FFT canon: Squire's Accumulate raises PA until battle end).
+ * Pass `persistent` explicitly to override.
  */
 export function applyStatShift(
-  user: Unit, target: Unit, stat: 'faith' | 'bravery', amount: number,
+  user: Unit, target: Unit, stat: ShiftableStat, amount: number,
+  persistent?: boolean,
 ): StatShiftOutcome {
   const before = target[stat];
   const after = Math.max(1, Math.min(100, before + amount));
   target[stat] = after;
-  if (target.progression) target.progression[stat] = after;
+  const shouldPersist = persistent ?? (stat === 'faith' || stat === 'bravery');
+  if (shouldPersist && target.progression && (stat === 'faith' || stat === 'bravery')) {
+    target.progression[stat] = after;
+  }
   return { user, target, stat, before, after };
 }
 
