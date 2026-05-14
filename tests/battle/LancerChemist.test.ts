@@ -102,6 +102,30 @@ describe('Lancer: High Jump', () => {
   });
 });
 
+describe('Lancer: Wide Jump', () => {
+  it('Lancer learns Wide Jump', () => {
+    expect(JOB_DEFS.lancer.learnableActives).toContain('wide_jump');
+  });
+
+  it('Wide Jump is an AoE Jump with lower per-target damage', () => {
+    const ab = ABILITIES.wide_jump;
+    expect(ab.area?.radius).toBe(1);
+    expect(ab.castAirborne).toBe(true);
+    const wj = ab.effect;
+    const j = ABILITIES.jump.effect;
+    if (wj.kind !== 'physical-ranged-damage' || j.kind !== 'physical-ranged-damage') {
+      throw new Error('bad fixture');
+    }
+    expect(wj.weaponPower).toBeLessThan(j.weaponPower);
+  });
+
+  it('all three Jump variants share castAirborne', () => {
+    for (const id of ['jump', 'high_jump', 'wide_jump']) {
+      expect(ABILITIES[id].castAirborne).toBe(true);
+    }
+  });
+});
+
 describe('Chemist catalog', () => {
   it('Chemist learns Hi-Potion and Ether', () => {
     expect(JOB_DEFS.chemist.learnableActives).toContain('hi_potion');

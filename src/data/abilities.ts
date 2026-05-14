@@ -535,6 +535,17 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 13 },
     castAirborne: true,
   },
+  wide_jump: {
+    // AoE variant — lands on a radius-1 cross around the target tile.
+    // Lower per-target damage (WP 7) than vanilla, but on a clustered
+    // 3-enemy formation the total damage exceeds a single Jump's hit.
+    // Same airborne mechanic; CT 6 sits between vanilla and High Jump.
+    id: 'wide_jump', name: 'Wide Jump',
+    jpCost: 600, type: 'physical', range: 4, chargeTime: 6, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 7 },
+    area: { radius: 1 },
+    castAirborne: true,
+  },
 
   // ─── Monk ─────────────────────────────────────────────────────────────────
   wave_fist: {
