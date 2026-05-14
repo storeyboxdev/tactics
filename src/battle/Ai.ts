@@ -202,6 +202,13 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
       return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
     }
+    case 'damage-and-status': {
+      const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
+      const damageScore = pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
+      const statusValue = STATUS_VALUE[ab.effect.statusId] ?? 0;
+      const statusChance = magicStatusHitChance(actor, target, ab.effect.statusBaseAcc) / 100;
+      return damageScore + statusValue * statusChance;
+    }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
       const p = pred.hitChance / 100;

@@ -9,7 +9,7 @@ import {
 } from './battle/Targeting';
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
-  resolveRevive, resolveCureStatus, applyStatShift, applyBreak, facingTowards,
+  resolveRevive, resolveCureStatus, resolveDamageAndStatus, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -633,6 +633,15 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
     return target.team === 'enemy' && out.damage > 0;
   }
+  if (eff.kind === 'damage-and-status') {
+    const out = resolveDamageAndStatus(actor, target, eff.spellPower, eff.statusId, eff.statusBaseAcc);
+    hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
+    spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+    if (out.statusApplied) {
+      hud.log(`  ↳ ${target.name} is now ${STATUS_DEFS[eff.statusId].name}`);
+    }
+    return target.team === 'enemy' && out.damage > 0;
+  }
   if (eff.kind === 'magic-heal') {
     const out = resolveHeal(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
@@ -796,6 +805,12 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, eff.spellPower);
       return formatDamageLine(target, pred.damage, null, pred.hitChance);
+    }
+    case 'damage-and-status': {
+      const pred = predictSpellDamage(actor, target, eff.spellPower);
+      const statusHit = magicStatusHitChance(actor, target, eff.statusBaseAcc);
+      const koTag = pred.damage >= target.hp ? ' → KO' : '';
+      return `${target.name}: ${pred.damage} dmg → ${STATUS_DEFS[eff.statusId].short} @ ${statusHit}%${koTag}`;
     }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, eff.weaponPower, map);

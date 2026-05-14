@@ -77,13 +77,14 @@ describe('Hell Ivy (grass)', () => {
     expect(geo).toContain('hell_ivy');
   });
 
-  it('Hell Ivy is a grass-gated earth strike', () => {
+  it('Hell Ivy is a grass-gated earth strike with chained Don\'t Move', () => {
     const ab = ABILITIES.hell_ivy;
     expect(ab.requiresTerrain).toEqual(['grass']);
     expect(ab.range).toBe(4);
     expect(ab.mpCost).toBe(0);
     expect(ab.chargeTime).toBe(0);
-    if (ab.effect.kind !== 'magic-damage') throw new Error('bad fixture');
+    if (ab.effect.kind !== 'damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.element).toBe('earth');
+    expect(ab.effect.statusId).toBe('dont_move');
   });
 });

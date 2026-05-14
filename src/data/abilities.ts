@@ -62,6 +62,19 @@ export type AbilityEffect =
    */
   | { kind: 'inflict-status'; statusId: StatusId; targetTeam: 'enemy' | 'ally' | 'any'; baseAccuracy: number }
   /**
+   * Geomancer-style hybrid: deal magic damage AND roll a separate faith-scaled
+   * status hit on the same target. Damage lands at normal RNG; status rolls
+   * independently after. KO short-circuits the status (can't paralyze a corpse).
+   * Auto-Potion still triggers on the damage component, same as `magic-damage`.
+   */
+  | { kind: 'damage-and-status';
+      spellPower: number;
+      element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water';
+      statusId: StatusId;
+      /** Y parameter — fed into the faith-scaled status-hit formula. */
+      statusBaseAcc: number;
+    }
+  /**
    * Remove any of `statuses` currently active on the target. One faith-scaled
    * roll (`baseAccuracy × casterFaith/100 × targetFaith/100`) gates the whole
    * cast — on success every listed status the target has is removed. Cannot
@@ -515,12 +528,14 @@ export const ABILITIES: Record<string, Ability> = {
     area: { radius: 1 },  // 5-tile cross around the target
   },
   hell_ivy: {
-    // Vines rise from grass to crush the target. FFT canon includes a Don't
-    // Move proc; we ship pure damage first and revisit chained statuses
-    // in a follow-up plan.
+    // Vines rise from grass and entangle the target — earth damage plus a
+    // faith-scaled Don't Move proc on hit (statusBaseAcc 80 ≈ 20-50% land
+    // rate depending on faith). FFT-canonical chained status; status rolls
+    // independently of damage, KO short-circuits.
     id: 'hell_ivy', name: 'Hell Ivy',
     jpCost: 250, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
-    effect: { kind: 'magic-damage', spellPower: 10, element: 'earth' },
+    effect: { kind: 'damage-and-status', spellPower: 10, element: 'earth',
+              statusId: 'dont_move', statusBaseAcc: 80 },
     requiresTerrain: ['grass'],
   },
   local_quake: {

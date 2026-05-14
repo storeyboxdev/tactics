@@ -377,6 +377,69 @@ export function resolveSpell(
   return out;
 }
 
+// ─── Damage + status (Geomancy strikes) ─────────────────────────────────────
+
+export interface DamageStatusOutcome {
+  caster: Unit;
+  target: Unit;
+  damage: number;
+  /** True if the status roll landed AND target survived the damage hit. */
+  statusApplied: boolean;
+  /** Auto-Potion reaction outcome (same as resolveSpell). */
+  autoPotion?: { user: Unit; amount: number };
+}
+
+/**
+ * Magic damage with a separate faith-scaled status roll on the same target.
+ * Two independent RNG draws: damage uses the standard 0.85–1.15 multiplier;
+ * status uses `magicStatusHitChance(caster, target, statusBaseAcc)`. If the
+ * damage KOs the target, the status roll is skipped — you can't paralyze a
+ * corpse. Auto-Potion fires on the damage component, identical to
+ * `resolveSpell`.
+ */
+export function resolveDamageAndStatus(
+  caster: Unit,
+  target: Unit,
+  spellPower: number,
+  statusId: StatusId,
+  statusBaseAcc: number,
+  rng: Rng = Math.random,
+): DamageStatusOutcome {
+  // Damage path — identical to resolveSpell.
+  const raw = computeSpellDamage({
+    ma: effectiveMa(caster),
+    spellPower,
+    casterFaith: caster.faith,
+    targetFaith: target.faith,
+    randomMul: 0.85 + rng() * 0.30,
+  });
+  const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
+  target.applyDamage(damage);
+  if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
+
+  const out: DamageStatusOutcome = { caster, target, damage, statusApplied: false };
+
+  // Auto-Potion reaction (mirrors resolveSpell).
+  if (target.isAlive && target.reaction) {
+    const ab = ABILITIES[target.reaction];
+    if (ab && ab.effect.kind === 'reaction-auto-potion') {
+      const before = target.hp;
+      target.hp = Math.min(target.hpMax, target.hp + ab.effect.amount);
+      out.autoPotion = { user: target, amount: target.hp - before };
+    }
+  }
+
+  // Status path — skipped if damage KO'd the target.
+  if (target.isAlive) {
+    const chance = magicStatusHitChance(caster, target, statusBaseAcc);
+    if (rollHit(chance, rng)) {
+      target.addStatus(statusId);
+      out.statusApplied = true;
+    }
+  }
+  return out;
+}
+
 // ─── Cure-status (Esuna, Remedy) ────────────────────────────────────────────
 
 export interface CureStatusOutcome {
