@@ -22,6 +22,8 @@ export interface DamageResult {
   dealt: number;
   hpRestored: number;
   braveGained: number;
+  /** True if a would-KO was interrupted by Reraise (HP restored, status consumed). */
+  reraised: boolean;
 }
 
 export interface UnitStats {
@@ -208,10 +210,20 @@ export class Unit {
    * reaction-side-effects so the orchestrator can log them.
    */
   applyDamage(amount: number): DamageResult {
-    if (amount <= 0) return { dealt: 0, hpRestored: 0, braveGained: 0 };
+    if (amount <= 0) return { dealt: 0, hpRestored: 0, braveGained: 0, reraised: false };
     const before = this.hp;
     this.hp = Math.max(0, this.hp - amount);
     const dealt = before - this.hp;
+
+    // Reraise interrupts a would-KO. Restore to 10% of hpMax and consume.
+    // Runs before koTimer starts so the unit never enters the KO sequence.
+    let reraised = false;
+    if (this.hp === 0 && this.hasStatus('reraise')) {
+      this.removeStatus('reraise');
+      this.hp = Math.max(1, Math.ceil(this.hpMax * 0.10));
+      reraised = true;
+    }
+
     if (this.hp === 0 && this.koTimer < 0) {
       this.koTimer = KO_COUNTDOWN_TURNS;
     }
@@ -239,7 +251,7 @@ export class Unit {
       if (this.progression) this.progression.bravery = this.bravery;
     }
 
-    return { dealt, hpRestored, braveGained };
+    return { dealt, hpRestored, braveGained, reraised };
   }
 
   /**

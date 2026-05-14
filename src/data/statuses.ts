@@ -12,7 +12,8 @@
 
 export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
-  | 'regen' | 'silence' | 'dont_move' | 'dont_act';
+  | 'regen' | 'silence' | 'dont_move' | 'dont_act'
+  | 'reraise';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -93,6 +94,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     expiry: { kind: 'duration', ticks: 24 },
     blocksAct: true,
     group: 'restraint',
+  },
+  reraise: {
+    // One-shot phoenix: when damage would KO the bearer, restore HP to
+    // ceil(hpMax × 10%) and consume the status. Permanent until triggered
+    // or dispelled. Buffs aren't on the cure-status target list, so Esuna
+    // won't strip it.
+    id: 'reraise', name: 'Reraise', short: 'RRZ', color: 0xf5c95a,
+    expiry: { kind: 'permanent' },
   },
 };
 

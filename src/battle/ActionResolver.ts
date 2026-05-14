@@ -15,6 +15,8 @@ export interface AttackOutcome {
   crit: boolean;
   counter?: CounterOutcome;
   autoPotion?: AutoPotionOutcome;
+  /** True if the target's Reraise fired to interrupt a would-KO. */
+  reraised?: boolean;
 }
 
 export interface CounterOutcome {
@@ -24,6 +26,8 @@ export interface CounterOutcome {
   facing: RelativeFacing;
   heightDiff: number;
   crit: boolean;
+  /** True if the victim's Reraise fired on the counter hit. */
+  reraised?: boolean;
 }
 
 export interface AutoPotionOutcome {
@@ -37,6 +41,8 @@ export interface SpellOutcome {
   damage: number;
   hit: boolean;
   autoPotion?: AutoPotionOutcome;
+  /** True if the target's Reraise fired to interrupt a would-KO. */
+  reraised?: boolean;
 }
 
 export interface PotionOutcome {
@@ -267,9 +273,12 @@ export function resolveAttack(
   });
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
-  target.applyDamage(damage);
+  const dmgResult = target.applyDamage(damage);
 
-  const out: AttackOutcome = { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit };
+  const out: AttackOutcome = {
+    attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit,
+    reraised: dmgResult.reraised,
+  };
 
   // Damage breaks Sleep — same as FFT.
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
@@ -298,7 +307,7 @@ function triggerReaction(
     out.counter = {
       counterer: target, victim: attacker,
       damage: counter.damage, facing: counter.facing, heightDiff: counter.heightDiff,
-      crit: counter.crit,
+      crit: counter.crit, reraised: counter.reraised,
     };
   } else if (eff.kind === 'reaction-auto-potion') {
     // Auto-Potion fires reliably (no bravery roll); heals up to hpMax.
@@ -360,10 +369,10 @@ export function resolveSpell(
     randomMul: 0.85 + rng() * 0.30,
   });
   const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
-  target.applyDamage(damage);
+  const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  const out: SpellOutcome = { caster, target, damage, hit: true };
+  const out: SpellOutcome = { caster, target, damage, hit: true, reraised: dmgResult.reraised };
   // Auto-Potion is the only reaction that fires on magic damage in our MVP set
   // (Counter is melee-only).
   if (target.isAlive && target.reaction) {
@@ -387,6 +396,8 @@ export interface DamageStatusOutcome {
   statusApplied: boolean;
   /** Auto-Potion reaction outcome (same as resolveSpell). */
   autoPotion?: { user: Unit; amount: number };
+  /** True if the target's Reraise fired to interrupt a would-KO. */
+  reraised?: boolean;
 }
 
 /**
@@ -414,10 +425,10 @@ export function resolveDamageAndStatus(
     randomMul: 0.85 + rng() * 0.30,
   });
   const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
-  target.applyDamage(damage);
+  const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  const out: DamageStatusOutcome = { caster, target, damage, statusApplied: false };
+  const out: DamageStatusOutcome = { caster, target, damage, statusApplied: false, reraised: dmgResult.reraised };
 
   // Auto-Potion reaction (mirrors resolveSpell).
   if (target.isAlive && target.reaction) {
@@ -479,6 +490,8 @@ export interface RangedAttackOutcome {
   crit: boolean;
   /** HP healed onto the attacker (Mug-style drain). 0 when no drain. */
   drained: number;
+  /** True if the target's Reraise fired to interrupt a would-KO. */
+  reraised?: boolean;
 }
 
 export interface RangedAttackPrediction {
@@ -541,7 +554,7 @@ export function resolveRangedAttack(
   });
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
-  target.applyDamage(damage);
+  const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
   // Drain: convert a percentage of the damage dealt into healing on the
@@ -554,7 +567,10 @@ export function resolveRangedAttack(
     drained = attacker.hp - before;
   }
 
-  return { attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit, drained };
+  return {
+    attacker, target, damage, heightDiff: aH - tH, facing,
+    hit: true, crit, drained, reraised: dmgResult.reraised,
+  };
 }
 
 // ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────

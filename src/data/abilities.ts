@@ -328,6 +328,16 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 350, type: 'magical', range: 4, chargeTime: 3, mpCost: 14,
     effect: { kind: 'revive', hpPercent: 50 },
   },
+  reraise: {
+    // White Mage's prophylactic phoenix. Cast on an ally and the Reraise
+    // status sits inert until they would KO — then it consumes itself,
+    // restoring ~10% hpMax. Expensive (MP 20) and slow (CT 3), but a single
+    // pre-cast on the frontline can swing a whole battle.
+    id: 'reraise', name: 'Reraise',
+    jpCost: 600, type: 'magical', range: 4, chargeTime: 3, mpCost: 20,
+    effect: { kind: 'inflict-status', statusId: 'reraise',
+              targetTeam: 'ally', baseAccuracy: 200 },
+  },
   regen: {
     // FFT-style Regen — ally inflict-status that ticks healing. Mirror the
     // shape of Haste (CT 2, MP 8, baseAcc 200) so the casting-economy

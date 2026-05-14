@@ -631,6 +631,7 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     const out = resolveSpell(actor, target, eff.spellPower);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+    if (out.reraised) logReraise(target);
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'damage-and-status') {
@@ -640,6 +641,7 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     if (out.statusApplied) {
       hud.log(`  ↳ ${target.name} is now ${STATUS_DEFS[eff.statusId].name}`);
     }
+    if (out.reraised) logReraise(target);
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'magic-heal') {
@@ -671,6 +673,7 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
       projectiles.fire(actor, target, () => {
         playSpellHitVisual(target);
         if (out.crit) hud.showFloatingCrit(target);
+        if (out.reraised) logReraise(target);
       });
     } else {
       hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
@@ -995,6 +998,7 @@ function logAttack(out: AttackOutcome) {
     (out.target.hp <= 0 ? ` — ${out.target.name} KO'd` : ''),
   );
   if (out.crit) hud.showFloatingCrit(out.target);
+  if (out.reraised) logReraise(out.target);
   if (out.counter) {
     const c = out.counter;
     const cCrit = c.crit ? ' ★CRIT' : '';
@@ -1004,10 +1008,18 @@ function logAttack(out: AttackOutcome) {
       (c.victim.hp <= 0 ? ` — ${c.victim.name} KO'd by counter` : ''),
     );
     if (c.crit) hud.showFloatingCrit(c.victim);
+    if (c.reraised) logReraise(c.victim);
   }
   if (out.autoPotion && out.autoPotion.amount > 0) {
     hud.log(`  ↳ ${out.autoPotion.user.name} Auto-Potion +${out.autoPotion.amount}`);
   }
+}
+
+/** Phoenix flash + log line when a unit's Reraise interrupts a would-KO. */
+function logReraise(target: Unit) {
+  hud.log(`  ✦ Reraise! ${target.name} is restored to ${target.hp} HP`);
+  spellFx.burst(target, 'heal', () => {});
+  hud.showFloatingAward(target, ['RERAISE']);
 }
 
 /** Called after the unit's turn cost is applied. Triggers passive support effects. */
