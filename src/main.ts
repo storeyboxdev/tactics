@@ -878,6 +878,13 @@ function aoePreviewLine(actor: Unit, ab: Ability, targets: Unit[]): string {
   if (eff.kind === 'debuff') {
     return `${targets.length} target${targets.length === 1 ? '' : 's'} (${names}): ${eff.stat.toUpperCase()} -${eff.amount}`;
   }
+  if (eff.kind === 'stat-shift') {
+    const arrow = eff.amount > 0 ? '↑' : '↓';
+    return `${targets.length} target${targets.length === 1 ? '' : 's'} (${names}): ${eff.stat.toUpperCase()} ${arrow}${Math.abs(eff.amount)}`;
+  }
+  if (eff.kind === 'cure-status') {
+    return `${targets.length} ally${targets.length === 1 ? '' : 's'} (${names}): cure any active status`;
+  }
   return `${targets.length} target${targets.length === 1 ? '' : 's'}`;
 }
 

@@ -617,6 +617,35 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'inflict-status', statusId: 'haste', targetTeam: 'ally', baseAccuracy: 200 },
     area: { radius: 2 },
   },
+  angel_song: {
+    // Party-wide Regen — chains -4 HP/tick over 32 ticks on every caught ally,
+    // including the Bard. Highest-impact song in the kit because the heal
+    // total compounds across the duration (potentially +128 per ally if it
+    // runs long). MP 14 — pricier than Cheer Song to reflect the value.
+    id: 'angel_song', name: 'Angel Song',
+    jpCost: 350, type: 'magical', range: 0, chargeTime: 3, mpCost: 14,
+    effect: { kind: 'inflict-status', statusId: 'regen', targetTeam: 'ally', baseAccuracy: 200 },
+    area: { radius: 2 },
+  },
+  battle_song: {
+    // Per-battle +1 PA on every caught ally. The Bard's offensive support
+    // — frontline allies hit harder for the rest of the fight. Non-
+    // persistent so the bump expires at battle end (stat-shift canon).
+    id: 'battle_song', name: 'Battle Song',
+    jpCost: 400, type: 'magical', range: 0, chargeTime: 3, mpCost: 12,
+    effect: { kind: 'stat-shift', stat: 'pa', amount: 1,
+              targetTeam: 'ally', baseAccuracy: 200, persistent: false },
+    area: { radius: 2 },
+  },
+  magic_song: {
+    // Per-battle +1 MA on every caught ally. Pairs with a White/Black Mage
+    // huddle. Same casting economy as Battle Song.
+    id: 'magic_song', name: 'Magic Song',
+    jpCost: 400, type: 'magical', range: 0, chargeTime: 3, mpCost: 12,
+    effect: { kind: 'stat-shift', stat: 'ma', amount: 1,
+              targetTeam: 'ally', baseAccuracy: 200, persistent: false },
+    area: { radius: 2 },
+  },
 
   // ─── Dancer ───────────────────────────────────────────────────────────────
   slow_dance: {
