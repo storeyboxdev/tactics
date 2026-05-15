@@ -6,8 +6,12 @@ import waterPondJson from '../../src/data/maps/water_pond.json';
 import highGroundJson from '../../src/data/maps/high_ground.json';
 import bridgeJson from '../../src/data/maps/bridge.json';
 import dunesJson from '../../src/data/maps/dunes.json';
+import ruinsJson from '../../src/data/maps/ruins.json';
 
-const ALL = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson, dunesJson];
+const ALL = [
+  grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson,
+  bridgeJson, dunesJson, ruinsJson,
+];
 
 describe('All map JSONs', () => {
   it('every map parses into a BattleMap without errors', () => {
@@ -67,5 +71,19 @@ describe('Dunes map', () => {
         expect(m.getTile(x, z).terrain, `(${x},${z})`).toBe('sand');
       }
     }
+  });
+});
+
+describe('Ruins map', () => {
+  const m = new BattleMap(ruinsJson as unknown as MapData);
+
+  it('has several tall stone pillars (h3+) studding the field', () => {
+    let pillars = 0;
+    for (let z = 0; z < m.depth; z++) {
+      for (let x = 0; x < m.width; x++) {
+        if (m.getTile(x, z).h >= 3) pillars++;
+      }
+    }
+    expect(pillars, 'pillar count').toBeGreaterThanOrEqual(5);
   });
 });
