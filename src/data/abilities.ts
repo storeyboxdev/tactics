@@ -107,8 +107,12 @@ export type AbilityEffect =
   | { kind: 'reaction-hp-restore'; thresholdPercent: number; hpPercent: number }
   /** Raises bravery by `amount` (clamped at 100) on every damage instance. */
   | { kind: 'reaction-brave-up'; amount: number }
+  /** Brave% chance to fully negate an incoming weapon attack (Blade Grasp). */
+  | { kind: 'reaction-blade-grasp' }
   // Passive: supports modify the unit between events.
   | { kind: 'support-mp-recovery'; amount: number }
+  /** Multiplies ability MP costs by `factor` (0.5 = halved — Half of MP). */
+  | { kind: 'support-half-mp'; factor: number }
   /** Multiplies JP earned per action by `factor` (e.g. 1.5 = +50%). */
   | { kind: 'support-jp-up'; factor: number }
   /** Multiplies the caster's effective MA on magic-damage / magic-heal casts. */
@@ -120,6 +124,8 @@ export type AbilityEffect =
   // Passive: movements modify movement / fire when moving.
   | { kind: 'movement-move-plus'; amount: number }
   | { kind: 'movement-hp-up'; amount: number }
+  /** Restores `amount` MP at the end of a move (Move-MP-Up). */
+  | { kind: 'movement-mp-up'; amount: number }
   /** Treats water tiles as passable for movement / pathing. */
   | { kind: 'movement-float' }
   /** Adds `amount` to the unit's effective jump stat (taller climbs allowed). */
@@ -993,6 +999,15 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'brave_up', name: 'Brave Up',
     jpCost: 400, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'reaction-brave-up', amount: 1 },
+  },
+  blade_grasp: {
+    // FFT-iconic — a Brave% chance to catch an incoming weapon attack bare-
+    // handed and take zero damage. Covers melee and ranged-physical (Throw,
+    // sword skills); magic ignores it. A high-Brave Samurai shrugs off
+    // roughly half of all weapon attacks.
+    id: 'blade_grasp', name: 'Blade Grasp',
+    jpCost: 800, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-blade-grasp' },
   },
 
   // ─── Support ──────────────────────────────────────────────────────────────

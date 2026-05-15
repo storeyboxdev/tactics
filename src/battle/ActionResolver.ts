@@ -20,6 +20,8 @@ export interface AttackOutcome {
   autoPotion?: AutoPotionOutcome;
   /** True if the target's Reraise fired to interrupt a would-KO. */
   reraised?: boolean;
+  /** True if the target's Blade Grasp caught the attack (damage negated to 0). */
+  bladeGrasp?: boolean;
 }
 
 export interface CounterOutcome {
@@ -319,22 +321,37 @@ export function resolveAttack(
     facing, randomMul,
   });
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
-  const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
+  // Blade Grasp: a Brave% roll fully negates the weapon attack.
+  const bladeGrasp = rollBladeGrasp(target, rng);
+  const damage = bladeGrasp ? 0 : Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
   const dmgResult = target.applyDamage(damage);
 
   const out: AttackOutcome = {
     attacker, target, damage, heightDiff: aH - tH, facing, hit: true, crit,
-    reraised: dmgResult.reraised,
+    reraised: dmgResult.reraised, bladeGrasp,
   };
 
   // Damage breaks Sleep — same as FFT.
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  if (allowCounter && target.isAlive && target.reaction) {
+  // A caught attack provokes no Counter — the target wasn't hit.
+  if (allowCounter && !bladeGrasp && target.isAlive && target.reaction) {
     triggerReaction(target, attacker, target.reaction, out, map, rng);
   }
 
   return out;
+}
+
+/**
+ * Blade Grasp reaction roll — true if the target has the reaction equipped
+ * and a Brave% roll lands. Only consumes an rng value when the reaction is
+ * actually present, so it doesn't perturb the dice for everyone else.
+ */
+function rollBladeGrasp(target: Unit, rng: Rng): boolean {
+  if (!target.reaction) return false;
+  const ab = ABILITIES[target.reaction];
+  if (ab?.effect.kind !== 'reaction-blade-grasp') return false;
+  return rng() * 100 < target.bravery;
 }
 
 /** Dispatches a target's equipped reaction. Mutates `out` to record any reaction outcome. */
@@ -539,6 +556,8 @@ export interface RangedAttackOutcome {
   drained: number;
   /** True if the target's Reraise fired to interrupt a would-KO. */
   reraised?: boolean;
+  /** True if the target's Blade Grasp caught the attack (damage negated to 0). */
+  bladeGrasp?: boolean;
 }
 
 export interface RangedAttackPrediction {
@@ -601,14 +620,16 @@ export function resolveRangedAttack(
     facing, randomMul,
   });
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
-  const damage = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
+  // Blade Grasp catches ranged weapon attacks (Throw, sword skills) too.
+  const bladeGrasp = rollBladeGrasp(target, rng);
+  const damage = bladeGrasp ? 0 : Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
   const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
   // Drain: convert a percentage of the damage dealt into healing on the
-  // attacker, capped at their hpMax. Misses drain nothing.
+  // attacker, capped at their hpMax. Misses (and caught attacks) drain nothing.
   let drained = 0;
-  if (drainPercent > 0) {
+  if (drainPercent > 0 && damage > 0) {
     const desired = Math.max(1, Math.floor(damage * drainPercent / 100));
     const before = attacker.hp;
     attacker.hp = Math.min(attacker.hpMax, attacker.hp + desired);
@@ -617,7 +638,7 @@ export function resolveRangedAttack(
 
   return {
     attacker, target, damage, heightDiff: aH - tH, facing,
-    hit: true, crit, drained, reraised: dmgResult.reraised,
+    hit: true, crit, drained, reraised: dmgResult.reraised, bladeGrasp,
   };
 }
 
@@ -633,6 +654,7 @@ export interface PhysicalDamageStatusOutcome {
   crit: boolean;
   statusApplied: boolean;
   reraised?: boolean;
+  bladeGrasp?: boolean;
 }
 
 export interface PhysicalDamageStatusPrediction {
@@ -657,7 +679,8 @@ export function resolvePhysicalDamageAndStatus(
 ): PhysicalDamageStatusOutcome {
   const r = resolveRangedAttack(attacker, target, weaponPower, map, rng, 0);
   let statusApplied = false;
-  if (r.hit && target.isAlive) {
+  // A caught attack (Blade Grasp) lands no status — the hit never connected.
+  if (r.hit && !r.bladeGrasp && target.isAlive) {
     const chance = magicStatusHitChance(attacker, target, statusBaseAcc);
     if (rollHit(chance, rng)) {
       target.addStatus(statusId);
@@ -668,6 +691,7 @@ export function resolvePhysicalDamageAndStatus(
     attacker, target,
     damage: r.damage, facing: r.facing, heightDiff: r.heightDiff,
     hit: r.hit, crit: r.crit, statusApplied, reraised: r.reraised,
+    bladeGrasp: r.bladeGrasp,
   };
 }
 

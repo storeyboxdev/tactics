@@ -712,6 +712,11 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     // Damage was applied synchronously in the resolver. The projectile is
     // a visual delay — when it lands, the per-target hurt anim and any
     // crit/miss toast fire so the timing reads as "shot → impact".
+    if (out.bladeGrasp) {
+      hud.log(`${ab.name}: ${target.name} catches it! (Blade Grasp)`);
+      projectiles.fire(actor, target, () => hud.showFloatingMiss(target));
+      return false;
+    }
     if (out.hit) {
       const critTag = out.crit ? ' ★CRIT' : '';
       hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
@@ -733,6 +738,11 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     const out = resolvePhysicalDamageAndStatus(
       actor, target, eff.weaponPower, eff.statusId, eff.statusBaseAcc, map,
     );
+    if (out.bladeGrasp) {
+      hud.log(`${ab.name}: ${target.name} catches it! (Blade Grasp)`);
+      projectiles.fire(actor, target, () => hud.showFloatingMiss(target));
+      return false;
+    }
     if (out.hit) {
       const critTag = out.crit ? ' ★CRIT' : '';
       hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
@@ -1076,6 +1086,11 @@ function logAttack(out: AttackOutcome) {
     hud.showFloatingMiss(out.target);
     return;
   }
+  if (out.bladeGrasp) {
+    hud.log(`${out.target.name} catches ${out.attacker.name}'s attack! (Blade Grasp)`);
+    hud.showFloatingMiss(out.target);
+    return;
+  }
   const critTag = out.crit ? ' ★CRIT' : '';
   hud.log(
     `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg${critTag} ` +
@@ -1138,7 +1153,8 @@ function applyMovementEndHook(unit: Unit) {
  */
 function playAttackVisual(out: AttackOutcome) {
   unitRenderer.playAttack(out.attacker, () => {
-    if (!out.hit) return; // miss: attacker swings, target unaffected
+    // miss or Blade Grasp catch: attacker swings, target unaffected
+    if (!out.hit || out.bladeGrasp) return;
     if (out.target.hp <= 0) unitRenderer.playKO(out.target);
     else unitRenderer.playHurt(out.target);
   });
