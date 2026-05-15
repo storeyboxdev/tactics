@@ -4,12 +4,14 @@ import { BattleMap } from '../battle/Map';
 const RANGE_COLOR  = 0x4f9fff;
 const HOVER_COLOR  = 0xffe14a;
 const ACTIVE_COLOR = 0xffe14a;
+const GOAL_COLOR   = 0x4fe07a;
 
 export class Cursor {
   readonly group = new THREE.Group();
 
   private readonly hoverMesh: THREE.Mesh;
   private readonly activeMesh: THREE.Mesh;
+  private readonly goalMesh: THREE.Mesh;
   private rangeMeshes: THREE.Mesh[] = [];
 
   constructor(private readonly map: BattleMap) {
@@ -28,6 +30,21 @@ export class Cursor {
     this.activeMesh.visible = false;
     this.activeMesh.renderOrder = 0;
     this.group.add(this.activeMesh);
+
+    // Escort-goal marker — a persistent green tile the escortee must reach.
+    this.goalMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.95, 0.95),
+      new THREE.MeshBasicMaterial({
+        color: GOAL_COLOR,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      }),
+    );
+    this.goalMesh.rotation.x = -Math.PI / 2;
+    this.goalMesh.visible = false;
+    this.goalMesh.renderOrder = 1;
+    this.group.add(this.goalMesh);
 
     // Hover indicator
     this.hoverMesh = new THREE.Mesh(
@@ -65,6 +82,13 @@ export class Cursor {
 
   clearActiveTile() {
     this.activeMesh.visible = false;
+  }
+
+  /** Mark the Escort objective's goal tile (persistent for the battle). */
+  setGoalTile(x: number, z: number) {
+    if (!this.map.inBounds(x, z)) return;
+    this.goalMesh.visible = true;
+    this.goalMesh.position.set(x + 0.5, this.map.topY(x, z) + 0.02, z + 0.5);
   }
 
   showRange(tiles: { x: number; z: number }[], color: number = RANGE_COLOR) {

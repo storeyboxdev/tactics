@@ -24,9 +24,10 @@ describe('pickObjective', () => {
 
   it('later battles can roll every objective kind', () => {
     expect(pickObjective(5, () => 0.0).kind).toBe('rout');
-    expect(pickObjective(5, () => 0.6).kind).toBe('regicide');
-    expect(pickObjective(5, () => 0.8).kind).toBe('survive');
-    expect(pickObjective(5, () => 0.99).kind).toBe('protect');
+    expect(pickObjective(5, () => 0.5).kind).toBe('regicide');
+    expect(pickObjective(5, () => 0.7).kind).toBe('survive');
+    expect(pickObjective(5, () => 0.85).kind).toBe('protect');
+    expect(pickObjective(5, () => 0.99).kind).toBe('escort');
   });
 });
 
@@ -133,5 +134,38 @@ describe('evaluateObjective — Protect', () => {
     vip.applyDamage(999);
     expect(buddy.isAlive).toBe(true);
     expect(evaluateObjective(protect, [vip, buddy, e])).toBe('enemy');
+  });
+});
+
+describe('evaluateObjective — Escort', () => {
+  const escort = { kind: 'escort' as const, goalX: 10, goalZ: 4 };
+
+  it('is unresolved while the escortee is alive, off-goal, enemies up', () => {
+    const e = makeUnit('e', 'player'); e.isEscortee = true; e.x = 2; e.z = 4;
+    const foe = makeUnit('foe', 'enemy');
+    expect(evaluateObjective(escort, [e, foe])).toBeNull();
+  });
+
+  it('player wins when the escortee stands on the goal tile', () => {
+    const e = makeUnit('e', 'player'); e.isEscortee = true;
+    e.x = 10; e.z = 4;
+    const foe = makeUnit('foe', 'enemy');
+    expect(evaluateObjective(escort, [e, foe])).toBe('player');
+  });
+
+  it('routing the enemy also wins, escortee anywhere', () => {
+    const e = makeUnit('e', 'player'); e.isEscortee = true; e.x = 0; e.z = 0;
+    const foe = makeUnit('foe', 'enemy');
+    foe.applyDamage(999);
+    expect(evaluateObjective(escort, [e, foe])).toBe('player');
+  });
+
+  it('losing the escortee fails the escort', () => {
+    const e = makeUnit('e', 'player'); e.isEscortee = true;
+    const buddy = makeUnit('buddy', 'player');
+    const foe = makeUnit('foe', 'enemy');
+    e.applyDamage(999);
+    expect(buddy.isAlive).toBe(true);
+    expect(evaluateObjective(escort, [e, buddy, foe])).toBe('enemy');
   });
 });

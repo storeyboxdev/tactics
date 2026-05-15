@@ -175,6 +175,24 @@ if (battleObjective.kind === 'protect') {
   const vip = allies[Math.floor(Math.random() * allies.length)];
   if (vip) vip.isProtected = true;
 }
+if (battleObjective.kind === 'escort') {
+  const allies = units.filter(u => u.team === 'player');
+  const escortee = allies[Math.floor(Math.random() * allies.length)];
+  if (escortee) escortee.isEscortee = true;
+  // Goal: the first passable tile on the far edge, scanning from mid-row out.
+  const mid = Math.floor(map.depth / 2);
+  const farX = map.width - 1;
+  for (let d = 0; d <= mid; d++) {
+    for (const z of [mid - d, mid + d]) {
+      if (z >= 0 && z < map.depth && map.isPassable(farX, z)) {
+        battleObjective.goalX = farX;
+        battleObjective.goalZ = z;
+        d = mid + 1; // break the outer loop
+        break;
+      }
+    }
+  }
+}
 
 const unitRenderer = new UnitRenderer(units, map);
 scene.add(unitRenderer.group);
@@ -1457,9 +1475,9 @@ function closestEndTileTo(plan: MovePlan, target: Unit): { x: number; z: number 
   return best;
 }
 
-/** The unit an objective banner names — the Regicide leader or Protect VIP. */
+/** The unit an objective banner names — Regicide leader, Protect VIP, or Escortee. */
 function objectiveUnitName(): string | null {
-  return units.find(u => u.isLeader || u.isProtected)?.name ?? null;
+  return units.find(u => u.isLeader || u.isProtected || u.isEscortee)?.name ?? null;
 }
 
 function refreshHud() {
@@ -1514,5 +1532,8 @@ hud.setStatus('Loading assets...');
     unitRenderer.applyTextures(loader),
   ]);
   hud.setObjective(objectiveLabel(battleObjective, objectiveUnitName()));
+  if (battleObjective.kind === 'escort') {
+    cursor.setGoalTile(battleObjective.goalX, battleObjective.goalZ);
+  }
   activateNext();
 })();

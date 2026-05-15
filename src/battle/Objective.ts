@@ -13,7 +13,8 @@ export type BattleObjective =
   | { kind: 'rout' }                       // defeat the entire enemy team (classic default)
   | { kind: 'regicide' }                   // defeat the designated enemy leader
   | { kind: 'survive'; ticks: number }     // outlast a CT-tick threshold
-  | { kind: 'protect' };                   // rout the enemy, but losing the VIP loses
+  | { kind: 'protect' }                    // rout the enemy, but losing the VIP loses
+  | { kind: 'escort'; goalX: number; goalZ: number }; // get the escortee to the goal tile
 
 /** True if `team` still has a unit that's alive and not petrified. */
 function teamStanding(units: readonly Unit[], team: Team): boolean {
@@ -49,6 +50,15 @@ export function evaluateObjective(
       if (!vip || !vip.isAlive) return 'enemy';
       return teamStanding(units, 'enemy') ? null : 'player';
     }
+    case 'escort': {
+      // Lose if the escortee falls; win on reaching the goal tile, or by
+      // routing the enemy (the path is clear either way).
+      const e = units.find(u => u.isEscortee);
+      if (!e || !e.isAlive) return 'enemy';
+      if (e.x === objective.goalX && e.z === objective.goalZ) return 'player';
+      if (!teamStanding(units, 'enemy')) return 'player';
+      return null;
+    }
   }
 }
 
@@ -68,6 +78,8 @@ export function objectiveLabel(
       return `Objective — Survive (${Math.max(0, objective.ticks - tick)} ticks left)`;
     case 'protect':
       return `Objective — Rout the enemy; protect${leaderName ? ` ${leaderName}` : ' the VIP'}`;
+    case 'escort':
+      return `Objective — Escort${leaderName ? ` ${leaderName}` : ' the unit'} to the goal`;
   }
 }
 
@@ -78,8 +90,10 @@ export function objectiveLabel(
 export function pickObjective(battleCount: number, rng: () => number = Math.random): BattleObjective {
   if (battleCount <= 0) return { kind: 'rout' };
   const r = rng();
-  if (r < 0.50) return { kind: 'rout' };
-  if (r < 0.70) return { kind: 'regicide' };
-  if (r < 0.85) return { kind: 'survive', ticks: 60 };
-  return { kind: 'protect' };
+  if (r < 0.45) return { kind: 'rout' };
+  if (r < 0.63) return { kind: 'regicide' };
+  if (r < 0.78) return { kind: 'survive', ticks: 60 };
+  if (r < 0.90) return { kind: 'protect' };
+  // Escort's goal tile is map-dependent — battle setup fills it in.
+  return { kind: 'escort', goalX: 0, goalZ: 0 };
 }

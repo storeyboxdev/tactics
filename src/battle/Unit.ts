@@ -115,6 +115,9 @@ export class Unit {
   /** Transient battle flag — true for the player VIP in a Protect
    *  objective. If this unit is KO'd, the battle is lost. */
   isProtected: boolean = false;
+  /** Transient battle flag — true for the unit that must reach the goal
+   *  tile in an Escort objective. KO'd → loss; on the goal → win. */
+  isEscortee: boolean = false;
 
   /**
    * True while a Jump-style ability is in flight. The unit is removed from
