@@ -5,8 +5,9 @@ import stoneCorridorJson from '../../src/data/maps/stone_corridor.json';
 import waterPondJson from '../../src/data/maps/water_pond.json';
 import highGroundJson from '../../src/data/maps/high_ground.json';
 import bridgeJson from '../../src/data/maps/bridge.json';
+import dunesJson from '../../src/data/maps/dunes.json';
 
-const ALL = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson];
+const ALL = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson, dunesJson];
 
 describe('All map JSONs', () => {
   it('every map parses into a BattleMap without errors', () => {
@@ -54,5 +55,17 @@ describe('Bridge map', () => {
     }
     expect(water, 'chasm has water tiles').toBeGreaterThan(0);
     expect(crossing, 'a dry crossing exists').toBeGreaterThan(0);
+  });
+});
+
+describe('Dunes map', () => {
+  const m = new BattleMap(dunesJson as unknown as MapData);
+
+  it('is sand terrain throughout', () => {
+    for (let z = 0; z < m.depth; z++) {
+      for (let x = 0; x < m.width; x++) {
+        expect(m.getTile(x, z).terrain, `(${x},${z})`).toBe('sand');
+      }
+    }
   });
 });

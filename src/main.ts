@@ -44,8 +44,9 @@ import stoneCorridorJson from './data/maps/stone_corridor.json';
 import waterPondJson from './data/maps/water_pond.json';
 import highGroundJson from './data/maps/high_ground.json';
 import bridgeJson from './data/maps/bridge.json';
+import dunesJson from './data/maps/dunes.json';
 
-const ALL_MAPS = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson];
+const ALL_MAPS = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson, dunesJson];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Renderer / scene setup

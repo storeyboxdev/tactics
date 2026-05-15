@@ -1,0 +1,43 @@
+{
+  "name": "Dunes",
+  "width": 15,
+  "height": 15,
+  "heights": [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1],
+    [1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1],
+    [1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  ],
+  "terrains": [
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"],
+    ["sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand","sand"]
+  ],
+  "spawns": {
+    "player": [[0, 6], [0, 7], [0, 8], [1, 7], [2, 7]],
+    "enemy":  [[14, 6], [14, 7], [14, 8], [13, 7], [12, 7]]
+  }
+}
