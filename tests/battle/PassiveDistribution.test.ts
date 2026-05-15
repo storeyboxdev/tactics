@@ -6,6 +6,7 @@ import { BattleMap, MapData } from '../../src/battle/Map';
 import {
   physicalHitChance, physicalHitChanceFrom, resolveAttack,
 } from '../../src/battle/ActionResolver';
+import { ABILITIES } from '../../src/data/abilities';
 import { JOB_DEFS } from '../../src/data/jobs';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
@@ -81,5 +82,47 @@ describe('Regenerator reaction', () => {
 
   it('Monk learns Regenerator', () => {
     expect(JOB_DEFS.monk.learnableReactions).toContain('regenerator');
+  });
+});
+
+describe('Passive distribution coverage', () => {
+  const jobs = Object.values(JOB_DEFS);
+
+  it('every job teaches at least one passive', () => {
+    for (const job of jobs) {
+      const total = job.learnableReactions.length
+        + job.learnableSupports.length
+        + job.learnableMovements.length;
+      expect(total, `${job.id} passive count`).toBeGreaterThan(0);
+    }
+  });
+
+  it('no passive ability is orphaned — each is taught by some job', () => {
+    const taught = new Set<string>();
+    for (const job of jobs) {
+      for (const id of job.learnableReactions) taught.add(id);
+      for (const id of job.learnableSupports)  taught.add(id);
+      for (const id of job.learnableMovements) taught.add(id);
+    }
+    for (const [id, ab] of Object.entries(ABILITIES)) {
+      if (ab.type === 'reaction' || ab.type === 'support' || ab.type === 'movement') {
+        expect(taught.has(id), `${id} (${ab.type}) is taught by no job`).toBe(true);
+      }
+    }
+  });
+
+  it('every taught passive id resolves to a real ability of the right type', () => {
+    const check = (ids: string[], kind: string) => {
+      for (const id of ids) {
+        const ab = ABILITIES[id];
+        expect(ab, `${id} exists`).toBeDefined();
+        expect(ab.type, `${id} type`).toBe(kind);
+      }
+    };
+    for (const job of jobs) {
+      check(job.learnableReactions, 'reaction');
+      check(job.learnableSupports, 'support');
+      check(job.learnableMovements, 'movement');
+    }
   });
 });

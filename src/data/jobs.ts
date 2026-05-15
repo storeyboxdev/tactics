@@ -85,7 +85,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 110, mp: 100, pa: 100, ma:  80, speed: 100 },
     growth: { hp:   6, mp:   3, pa:   5, ma:   4, speed:   1 },
     learnableActives: ['throw_stone', 'accumulate', 'yell'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['counter'], learnableSupports: [], learnableMovements: ['move_plus_1'],
   },
   chemist: {
     id: 'chemist', name: 'Chemist', weapon: 'dagger', armor: 'clothes',
@@ -94,7 +94,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  90, mp: 160, pa:  80, ma:  80, speed: 100 },
     growth: { hp:   4, mp:   6, pa:   3, ma:   4, speed:   1 },
     learnableActives: ['phoenix_down', 'remedy', 'hi_potion', 'ether'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['auto_potion'], learnableSupports: ['mp_recovery'], learnableMovements: ['move_plus_1'],
   },
 
   // ─── Tier 1: from Squire ──────────────────────────────────────────────────
@@ -105,7 +105,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 140, mp: 100, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   9, mp:   2, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['power_break', 'speed_break', 'magic_break', 'stasis_sword', 'lightning_stab'],
-    learnableReactions: ['hp_restore'], learnableSupports: ['defense_up'], learnableMovements: [],
+    learnableReactions: ['hp_restore', 'counter'], learnableSupports: ['defense_up'], learnableMovements: ['move_hp_up'],
   },
   archer: {
     id: 'archer', name: 'Archer', weapon: 'bow', armor: 'light_armor',
@@ -114,7 +114,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 100, pa: 120, ma:  60, speed: 110 },
     growth: { hp:   5, mp:   2, pa:   6, ma:   2, speed:   2 },
     learnableActives: ['aim_plus_1', 'charge_2', 'aim_plus_3'],
-    learnableReactions: [], learnableSupports: ['concentrate'], learnableMovements: [],
+    learnableReactions: ['counter'], learnableSupports: ['concentrate'], learnableMovements: ['move_plus_1'],
   },
 
   // ─── Tier 1: from Chemist ─────────────────────────────────────────────────
@@ -125,7 +125,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 240, pa:  60, ma: 140, speed:  90 },
     growth: { hp:   4, mp:   8, pa:   2, ma:   7, speed:   1 },
     learnableActives: ['cure', 'cura', 'curaja', 'raise', 'reraise', 'regen', 'esuna', 'holy'],
-    learnableReactions: [], learnableSupports: ['magic_defense_up'], learnableMovements: ['move_mp_up'],
+    learnableReactions: ['regenerator'], learnableSupports: ['magic_defense_up'], learnableMovements: ['move_mp_up'],
   },
   black_mage: {
     id: 'black_mage', name: 'Black Mage', weapon: 'rod', armor: 'robe',
@@ -134,7 +134,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  76, mp: 320, pa:  60, ma: 180, speed: 100 },
     growth: { hp:   3, mp:   9, pa:   2, ma:   9, speed:   1 },
     learnableActives: ['fire', 'bolt', 'ice', 'fire_2', 'bolt_2', 'ice_2', 'flare'],
-    learnableReactions: [], learnableSupports: ['magic_attack_up'], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['magic_attack_up'], learnableMovements: ['move_mp_up'],
   },
 
   // ─── Tier 2: physical branch ──────────────────────────────────────────────
@@ -145,7 +145,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 120, mp:  80, pa: 160, ma:  60, speed: 110 },
     growth: { hp:   9, mp:   2, pa:   9, ma:   2, speed:   2 },
     learnableActives: ['wave_fist', 'earth_slash', 'chakra', 'stigma_magic', 'revive_monk'],
-    learnableReactions: ['regenerator'], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['counter', 'regenerator'], learnableSupports: [], learnableMovements: ['move_hp_up'],
   },
   thief: {
     id: 'thief', name: 'Thief', weapon: 'dagger', armor: 'light_armor',
@@ -154,7 +154,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  90, mp:  80, pa: 100, ma:  60, speed: 130 },
     growth: { hp:   4, mp:   2, pa:   5, ma:   2, speed:   3 },
     learnableActives: ['mug', 'steal_heart'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: ['move_plus_2'],
+    learnableReactions: [], learnableSupports: ['concentrate'], learnableMovements: ['move_plus_2'],
   },
 
   // ─── Tier 2: magic branch ─────────────────────────────────────────────────
@@ -165,7 +165,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  80, mp: 280, pa:  60, ma: 160, speed: 100 },
     growth: { hp:   4, mp:   9, pa:   2, ma:   7, speed:   1 },
     learnableActives: ['haste', 'slow', 'stop'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: ['float'],
+    learnableReactions: [], learnableSupports: ['mp_recovery'], learnableMovements: ['float'],
   },
   oracle: {
     id: 'oracle', name: 'Oracle', weapon: 'pole', armor: 'robe',
@@ -174,7 +174,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  84, mp: 260, pa:  60, ma: 160, speed:  90 },
     growth: { hp:   4, mp:   8, pa:   2, ma:   7, speed:   1 },
     learnableActives: ['sleep', 'poison_spell', 'silence_song', 'paralyze', 'foxbird', 'berserk_touch', 'confuse', 'frog', 'petrify', 'zombie'],
-    learnableReactions: [], learnableSupports: ['magic_defense_up'], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['magic_defense_up'], learnableMovements: ['move_mp_up'],
   },
 
   // ─── Tier 3: physical specialists ─────────────────────────────────────────
@@ -185,7 +185,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 110, mp: 180, pa: 120, ma: 120, speed: 100 },
     growth: { hp:   6, mp:   5, pa:   5, ma:   5, speed:   1 },
     learnableActives: ['pebble_blast', 'hell_ivy', 'local_quake', 'wind_slash', 'water_ball', 'will_o_wisp'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['counter'], learnableSupports: [], learnableMovements: ['move_hp_up'],
   },
   lancer: {
     id: 'lancer', name: 'Lancer', weapon: 'spear', armor: 'heavy_armor',
@@ -194,7 +194,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 130, mp: 120, pa: 140, ma:  60, speed:  90 },
     growth: { hp:   8, mp:   3, pa:   7, ma:   2, speed:   1 },
     learnableActives: ['jump', 'high_jump', 'wide_jump'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: ['jump_plus_1', 'jump_plus_2'],
+    learnableReactions: ['hp_restore'], learnableSupports: ['defense_up'], learnableMovements: ['jump_plus_1', 'jump_plus_2'],
   },
 
   // ─── Tier 3: magic specialists ────────────────────────────────────────────
@@ -205,7 +205,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  90, mp: 200, pa:  80, ma: 100, speed: 100 },
     growth: { hp:   5, mp:   6, pa:   3, ma:   5, speed:   1 },
     learnableActives: ['praise', 'insult', 'solution', 'preach', 'death_sentence', 'charm'],
-    learnableReactions: [], learnableSupports: ['jp_up'], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['jp_up'], learnableMovements: ['move_plus_1'],
   },
   summoner: {
     id: 'summoner', name: 'Summoner', weapon: 'rod', armor: 'robe',
@@ -214,7 +214,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  76, mp: 360, pa:  60, ma: 200, speed:  90 },
     growth: { hp:   3, mp:   9, pa:   2, ma:  10, speed:   1 },
     learnableActives: ['summon_ifrit', 'summon_shiva', 'summon_ramuh'],
-    learnableReactions: [], learnableSupports: ['half_of_mp'], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['half_of_mp', 'magic_attack_up'], learnableMovements: ['move_mp_up'],
   },
 
   // ─── Tier 4: elite ────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 130, mp: 120, pa: 140, ma: 100, speed: 100 },
     growth: { hp:   8, mp:   4, pa:   7, ma:   5, speed:   1 },
     learnableActives: ['asura', 'koutetsu', 'murasame', 'kiyomori', 'chirijiraden'],
-    learnableReactions: ['blade_grasp'], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['blade_grasp', 'counter'], learnableSupports: ['defense_up'], learnableMovements: [],
   },
   ninja: {
     // Throw is a thin slice of the FFT Ninja kit — just one thrown weapon, no
@@ -243,7 +243,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 100, pa: 140, ma:  60, speed: 140 },
     growth: { hp:   5, mp:   2, pa:   8, ma:   2, speed:   3 },
     learnableActives: ['throw_shuriken', 'throw_knife', 'throw_spear', 'throw_bomb', 'poison_shuriken'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['blade_grasp'], learnableSupports: ['concentrate'], learnableMovements: ['move_plus_2'],
   },
   calculator: {
     id: 'calculator', name: 'Calculator', weapon: 'staff', armor: 'robe',
@@ -255,7 +255,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  80, mp: 240, pa:  60, ma: 140, speed:  80 },
     growth: { hp:   3, mp:   8, pa:   2, ma:   8, speed:   1 },
     learnableActives: ['math_lvl_3', 'math_lvl_4', 'math_ct_5'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['mp_recovery'], learnableMovements: ['move_mp_up'],
   },
 
   // ─── Tier 5: gendered & mime (deepest unlocks) ────────────────────────────
@@ -266,7 +266,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 220, pa:  80, ma: 120, speed:  90 },
     growth: { hp:   4, mp:   7, pa:   3, ma:   6, speed:   1 },
     learnableActives: ['cheer_song', 'angel_song', 'battle_song', 'magic_song'],
-    learnableReactions: ['brave_up'], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['brave_up'], learnableSupports: ['jp_up'], learnableMovements: ['move_plus_1'],
   },
   dancer: {
     id: 'dancer', name: 'Dancer', weapon: 'cloth', armor: 'clothes',
@@ -275,7 +275,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 220, pa:  80, ma: 120, speed:  90 },
     growth: { hp:   5, mp:   5, pa:   6, ma:   4, speed:   1 },
     learnableActives: ['slow_dance', 'polka_polka', 'witch_hunt', 'wiznaibus', 'disillusion'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['regenerator'], learnableSupports: [], learnableMovements: ['move_plus_1'],
   },
   mime: {
     id: 'mime', name: 'Mime', weapon: 'knuckle', armor: 'clothes',
@@ -292,6 +292,6 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
     growth: { hp:   5, mp:   5, pa:   5, ma:   5, speed:   1 },
     learnableActives: ['mimic'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: ['move_plus_1'],
   },
 };
