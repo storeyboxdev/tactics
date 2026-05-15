@@ -4,6 +4,7 @@ import { ABILITIES } from '../data/abilities';
 import { StatusId } from '../data/statuses';
 import { JOB_DEFS } from '../data/jobs';
 import { WEAPONS } from '../data/weapons';
+import { ARMOR } from '../data/armor';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
 
@@ -149,27 +150,44 @@ export function effectiveMa(caster: Unit): number {
   return caster.ma;
 }
 
-/**
- * Multiplier on incoming physical damage from the target's equipped support
- * (Defense Up = 0.75). Returns 1.0 when no defensive support is equipped.
- */
-export function effectiveDefenseFactor(target: Unit): number {
-  if (!target.support) return 1;
-  const ab = ABILITIES[target.support];
-  if (ab?.effect.kind === 'support-defense-up') return ab.effect.factor;
-  return 1;
+/** Incoming-physical-damage multiplier from the target's job armor.
+ *  1.0 for unknown/armorless jobs (synthetic test fixtures). */
+export function armorPhysicalFactor(unit: Unit): number {
+  const armorId = JOB_DEFS[unit.jobId]?.armor;
+  return (armorId ? ARMOR[armorId] : undefined)?.physicalFactor ?? 1;
+}
+
+/** Incoming-magic-damage multiplier from the target's job armor. */
+export function armorMagicalFactor(unit: Unit): number {
+  const armorId = JOB_DEFS[unit.jobId]?.armor;
+  return (armorId ? ARMOR[armorId] : undefined)?.magicalFactor ?? 1;
 }
 
 /**
- * Multiplier on incoming magic damage from the target's equipped support
- * (Magic Defense Up = 0.75). Returns 1.0 otherwise. Heals never use this —
- * they aren't damage.
+ * Multiplier on incoming physical damage — the target's job armor and the
+ * Defense Up support stack multiplicatively. Returns 1.0 when neither
+ * applies (e.g. an armorless synthetic-job test unit with no support).
+ */
+export function effectiveDefenseFactor(target: Unit): number {
+  let factor = armorPhysicalFactor(target);
+  if (target.support) {
+    const ab = ABILITIES[target.support];
+    if (ab?.effect.kind === 'support-defense-up') factor *= ab.effect.factor;
+  }
+  return factor;
+}
+
+/**
+ * Multiplier on incoming magic damage — job armor and the Magic Defense Up
+ * support stack multiplicatively. Heals never use this — they aren't damage.
  */
 export function effectiveMagicDefenseFactor(target: Unit): number {
-  if (!target.support) return 1;
-  const ab = ABILITIES[target.support];
-  if (ab?.effect.kind === 'support-magic-defense-up') return ab.effect.factor;
-  return 1;
+  let factor = armorMagicalFactor(target);
+  if (target.support) {
+    const ab = ABILITIES[target.support];
+    if (ab?.effect.kind === 'support-magic-defense-up') factor *= ab.effect.factor;
+  }
+  return factor;
 }
 
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
@@ -249,13 +267,14 @@ export function predictAttackDamage(
   const aH = map.getTile(attackerPos.x, attackerPos.z).h;
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacingFromPos(attackerPos, target);
+  const raw = computeAttackDamage({
+    pa: effectivePa(attacker),
+    weaponPower: effectiveWeaponPower(attacker),
+    attackerH: aH, targetH: tH,
+    facing, randomMul: 1.0,
+  });
   return {
-    damage: computeAttackDamage({
-      pa: effectivePa(attacker),
-      weaponPower: effectiveWeaponPower(attacker),
-      attackerH: aH, targetH: tH,
-      facing, randomMul: 1.0,
-    }),
+    damage: Math.max(1, Math.floor(raw * effectiveDefenseFactor(target))),
     facing,
     heightDiff: aH - tH,
     hitChance: physicalHitChance(target, facing),
@@ -536,12 +555,13 @@ export function predictRangedAttack(
   const aH = map.getTile(attacker.x, attacker.z).h;
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacing(attacker, target);
+  const raw = computeAttackDamage({
+    pa: effectivePa(attacker), weaponPower,
+    attackerH: aH, targetH: tH,
+    facing, randomMul: 1.0,
+  });
   return {
-    damage: computeAttackDamage({
-      pa: effectivePa(attacker), weaponPower,
-      attackerH: aH, targetH: tH,
-      facing, randomMul: 1.0,
-    }),
+    damage: Math.max(1, Math.floor(raw * effectiveDefenseFactor(target))),
     facing,
     heightDiff: aH - tH,
     hitChance: physicalHitChance(target, facing),
