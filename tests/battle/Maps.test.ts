@@ -4,8 +4,9 @@ import grasslandJson from '../../src/data/maps/grassland.json';
 import stoneCorridorJson from '../../src/data/maps/stone_corridor.json';
 import waterPondJson from '../../src/data/maps/water_pond.json';
 import highGroundJson from '../../src/data/maps/high_ground.json';
+import bridgeJson from '../../src/data/maps/bridge.json';
 
-const ALL = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson];
+const ALL = [grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson, bridgeJson];
 
 describe('All map JSONs', () => {
   it('every map parses into a BattleMap without errors', () => {
@@ -36,5 +37,22 @@ describe('All map JSONs', () => {
         expect(row.length).toBe(data.width);
       }
     }
+  });
+});
+
+describe('Bridge map', () => {
+  const m = new BattleMap(bridgeJson as unknown as MapData);
+
+  it('has a water chasm and a passable crossing through it', () => {
+    let water = 0;
+    let crossing = 0;
+    for (let z = 0; z < m.depth; z++) {
+      for (let x = 6; x <= 8; x++) {            // the chasm columns
+        if (m.getTile(x, z).terrain === 'water') water++;
+        else if (m.isPassable(x, z)) crossing++;
+      }
+    }
+    expect(water, 'chasm has water tiles').toBeGreaterThan(0);
+    expect(crossing, 'a dry crossing exists').toBeGreaterThan(0);
   });
 });
