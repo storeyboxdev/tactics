@@ -60,6 +60,63 @@ describe('HeuristicAi', () => {
   });
 });
 
+describe('HeuristicAi — objective-aware targeting', () => {
+  // e at (3,2) is adjacent to a foe on each side. Both foes face away from e,
+  // so both attacks are symmetric back-strikes — the only thing that can
+  // break the tie is the win-critical priority bonus.
+  function twoSidedSetup(hp: number) {
+    const map = new BattleMap(flatMap(7, 5));
+    const e = makeUnit('e', 'enemy', 3, 2, FACING_W, { move: 0 });
+    const right = makeUnit('right', 'player', 4, 2, FACING_E, { hp, evasion: 0 });
+    const left = makeUnit('left', 'player', 2, 2, FACING_W, { hp, evasion: 0 });
+    return { map, e, right, left };
+  }
+
+  it('with no win-critical unit, the symmetric tie falls to the first-considered foe', () => {
+    const { map, e, right, left } = twoSidedSetup(100);
+    const d = new HeuristicAi().decide(e, map, [e, right, left]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('right');
+  });
+
+  it('hunts the Protect VIP over an equal ordinary foe', () => {
+    const { map, e, right, left } = twoSidedSetup(100);
+    left.isProtected = true;
+    const d = new HeuristicAi().decide(e, map, [e, right, left]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('left');
+  });
+
+  it('an Escort escortee draws the same priority as a Protect VIP', () => {
+    const { map, e, right, left } = twoSidedSetup(100);
+    left.isEscortee = true;
+    const d = new HeuristicAi().decide(e, map, [e, right, left]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('left');
+  });
+
+  it('takes the kill on the win-critical unit when both foes are equally KO-able', () => {
+    const { map, e, right, left } = twoSidedSetup(5);
+    left.isProtected = true;
+    const d = new HeuristicAi().decide(e, map, [e, right, left]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('left');
+  });
+
+  it('the whole line converges on the VIP — closes toward it past a nearer foe', () => {
+    // e cannot reach either foe this turn. The nearer foe is to the W, the
+    // VIP far to the E. Win-critical pull overrides "nearest" — e moves E.
+    const map = new BattleMap(flatMap(13, 5));
+    const e = makeUnit('e', 'enemy', 5, 2, FACING_E, { move: 3 });
+    const near = makeUnit('near', 'player', 0, 2, FACING_W);
+    const vip = makeUnit('vip', 'player', 11, 2, FACING_W);
+    vip.isProtected = true;
+    const d = new HeuristicAi().decide(e, map, [e, near, vip]);
+    expect(d.action).toBeNull();
+    expect(d.movePath[d.movePath.length - 1]).toEqual({ x: 8, z: 2 });
+  });
+});
+
 describe('HeuristicAi — abilities', () => {
   it('an enemy Time Mage casts Haste on a friendly target', () => {
     // Time Mage with MP, ally adjacent, no player in range — best play is to

@@ -53,6 +53,19 @@ const STATUS_VALUE: Record<StatusId, number> = {
   undead:    12,   // conditional — only pays off once the target is "healed"
 };
 
+/** A player unit whose death ends the battle in the enemy's favour — the
+ *  Protect VIP or the Escort escortee. The AI hunts these. */
+function isWinCritical(u: Unit): boolean {
+  return u.isProtected || u.isEscortee;
+}
+
+/** Score bonus for an enemy action that damages a win-critical target. A
+ *  lethal hit ends the battle, so it dwarfs every other consideration. */
+function winCriticalBonus(target: Unit, lethal: boolean): number {
+  if (!isWinCritical(target)) return 0;
+  return lethal ? 300 : 25;
+}
+
 /** Whether a unit has any magical-type ability available — used to gate
  *  Silence's score (only worth casting on real casters). */
 function hasMagicalKit(u: Unit): boolean {
@@ -158,8 +171,10 @@ function scoreOption(
     if (target) {
       const pred = predictAttackDamage(actor, target, map, endTile);
       const p = pred.hitChance / 100;
+      const lethal = target.hp - pred.damage <= 0;
       s += pred.damage * p;
-      if (target.hp - pred.damage <= 0) s += 100 * p;
+      if (lethal) s += 100 * p;
+      s += winCriticalBonus(target, lethal) * p;
     }
   } else {
     s += scoreAbility(action, units, actor, map);
@@ -215,11 +230,13 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
     }
     case 'magic-damage': {
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
-      return pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
+      const lethal = target.hp - pred.damage <= 0;
+      return pred.damage + (lethal ? 100 : 0) + winCriticalBonus(target, lethal);
     }
     case 'damage-and-status': {
       const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
-      const damageScore = pred.damage + (target.hp - pred.damage <= 0 ? 100 : 0);
+      const lethal = target.hp - pred.damage <= 0;
+      const damageScore = pred.damage + (lethal ? 100 : 0) + winCriticalBonus(target, lethal);
       const statusValue = STATUS_VALUE[ab.effect.statusId] ?? 0;
       const statusChance = magicStatusHitChance(actor, target, ab.effect.statusBaseAcc) / 100;
       return damageScore + statusValue * statusChance;
@@ -227,7 +244,9 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
     case 'physical-damage-and-status': {
       const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
       const p = pred.hitChance / 100;
-      const damageScore = pred.damage * p + (target.hp - pred.damage <= 0 ? 100 * p : 0);
+      const lethal = target.hp - pred.damage <= 0;
+      const damageScore = pred.damage * p + (lethal ? 100 * p : 0)
+        + winCriticalBonus(target, lethal) * p;
       const statusValue = STATUS_VALUE[ab.effect.statusId] ?? 0;
       const statusChance = magicStatusHitChance(actor, target, ab.effect.statusBaseAcc) / 100;
       // Status only lands if the physical hit lands — compound the chances.
@@ -236,7 +255,8 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
       const p = pred.hitChance / 100;
-      return pred.damage * p + (target.hp - pred.damage <= 0 ? 100 * p : 0);
+      const lethal = target.hp - pred.damage <= 0;
+      return pred.damage * p + (lethal ? 100 * p : 0) + winCriticalBonus(target, lethal) * p;
     }
     case 'magic-heal': {
       const pred = predictHeal(actor, target, ab.effect.spellPower);
@@ -276,12 +296,18 @@ function manhattan(a: { x: number; z: number }, b: { x: number; z: number }): nu
 }
 
 function nearestOpponent(actor: Unit, fromTile: { x: number; z: number }, units: readonly Unit[]): Unit | null {
+  // A win-critical opponent (Protect VIP / Escort escortee) pulls the actor
+  // toward it ahead of any nearer ordinary foe — this collapses the whole
+  // enemy line onto the objective unit, not just the units already in reach.
   let best: Unit | null = null;
   let bestD = Infinity;
+  let bestCrit: Unit | null = null;
+  let bestCritD = Infinity;
   for (const u of units) {
     if (u.team === actor.team || !u.isAlive) continue;
     const d = manhattan(fromTile, u);
     if (d < bestD) { bestD = d; best = u; }
+    if (isWinCritical(u) && d < bestCritD) { bestCritD = d; bestCrit = u; }
   }
-  return best;
+  return bestCrit ?? best;
 }
