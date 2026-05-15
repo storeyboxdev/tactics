@@ -584,6 +584,65 @@ export function resolveRangedAttack(
   };
 }
 
+// ─── Physical damage + status (Knight Sword Skills) ─────────────────────────
+
+export interface PhysicalDamageStatusOutcome {
+  attacker: Unit;
+  target: Unit;
+  damage: number;
+  facing: RelativeFacing;
+  heightDiff: number;
+  hit: boolean;
+  crit: boolean;
+  statusApplied: boolean;
+  reraised?: boolean;
+}
+
+export interface PhysicalDamageStatusPrediction {
+  damage: number;
+  facing: RelativeFacing;
+  heightDiff: number;
+  hitChance: number;
+  critChance: number;
+  statusHit: number;
+}
+
+/**
+ * Holy-Knight sword skill: ranged physical damage plus an independent
+ * faith-scaled status roll. Composes on top of `resolveRangedAttack` so
+ * the damage math stays single-sourced. The status rolls only when the
+ * physical hit lands and the target survives it.
+ */
+export function resolvePhysicalDamageAndStatus(
+  attacker: Unit, target: Unit,
+  weaponPower: number, statusId: StatusId, statusBaseAcc: number,
+  map: BattleMap, rng: Rng = Math.random,
+): PhysicalDamageStatusOutcome {
+  const r = resolveRangedAttack(attacker, target, weaponPower, map, rng, 0);
+  let statusApplied = false;
+  if (r.hit && target.isAlive) {
+    const chance = magicStatusHitChance(attacker, target, statusBaseAcc);
+    if (rollHit(chance, rng)) {
+      target.addStatus(statusId);
+      statusApplied = true;
+    }
+  }
+  return {
+    attacker, target,
+    damage: r.damage, facing: r.facing, heightDiff: r.heightDiff,
+    hit: r.hit, crit: r.crit, statusApplied, reraised: r.reraised,
+  };
+}
+
+export function predictPhysicalDamageAndStatus(
+  attacker: Unit, target: Unit,
+  weaponPower: number, statusBaseAcc: number, map: BattleMap,
+): PhysicalDamageStatusPrediction {
+  const pred = predictRangedAttack(attacker, target, weaponPower, map);
+  const statusHit = magicStatusHitChance(attacker, target, statusBaseAcc);
+  return { ...pred, statusHit };
+}
+
 // ─── Magic heal (Cure, Cura, Chakra) ────────────────────────────────────────
 
 export interface HealOutcome {

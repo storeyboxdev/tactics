@@ -10,6 +10,7 @@ import {
 import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   resolveRevive, resolveCureStatus, resolveDamageAndStatus, resolveFlatHeal,
+  resolvePhysicalDamageAndStatus, predictPhysicalDamageAndStatus,
   applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
@@ -703,6 +704,27 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     }
     return target.team === 'enemy' && out.hit;
   }
+  if (eff.kind === 'physical-damage-and-status') {
+    const out = resolvePhysicalDamageAndStatus(
+      actor, target, eff.weaponPower, eff.statusId, eff.statusBaseAcc, map,
+    );
+    if (out.hit) {
+      const critTag = out.crit ? ' ★CRIT' : '';
+      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg${critTag} (${out.facing})`);
+      projectiles.fire(actor, target, () => {
+        playSpellHitVisual(target);
+        if (out.crit) hud.showFloatingCrit(target);
+        if (out.reraised) logReraise(target);
+      });
+      if (out.statusApplied) {
+        hud.log(`  ↳ ${target.name} is now ${STATUS_DEFS[eff.statusId].name}`);
+      }
+    } else {
+      hud.log(`${ab.name}: ${actor.name} misses ${target.name}`);
+      projectiles.fire(actor, target, () => hud.showFloatingMiss(target));
+    }
+    return target.team === 'enemy' && out.hit;
+  }
   if (eff.kind === 'inflict-status') {
     const chance = magicStatusHitChance(actor, target, eff.baseAccuracy);
     if (rollHit(chance, Math.random)) {
@@ -836,6 +858,11 @@ function singleTargetPreview(actor: Unit, ab: Ability, target: Unit): string | n
       const statusHit = magicStatusHitChance(actor, target, eff.statusBaseAcc);
       const koTag = pred.damage >= target.hp ? ' → KO' : '';
       return `${target.name}: ${pred.damage} dmg → ${STATUS_DEFS[eff.statusId].short} @ ${statusHit}%${koTag}`;
+    }
+    case 'physical-damage-and-status': {
+      const pred = predictPhysicalDamageAndStatus(actor, target, eff.weaponPower, eff.statusBaseAcc, map);
+      const koTag = pred.damage >= target.hp ? ' → KO' : '';
+      return `${target.name}: ${pred.damage} dmg @ ${pred.hitChance}% → ${STATUS_DEFS[eff.statusId].short} @ ${pred.statusHit}%${koTag}`;
     }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, eff.weaponPower, map);

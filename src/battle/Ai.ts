@@ -218,6 +218,15 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
       const statusChance = magicStatusHitChance(actor, target, ab.effect.statusBaseAcc) / 100;
       return damageScore + statusValue * statusChance;
     }
+    case 'physical-damage-and-status': {
+      const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
+      const p = pred.hitChance / 100;
+      const damageScore = pred.damage * p + (target.hp - pred.damage <= 0 ? 100 * p : 0);
+      const statusValue = STATUS_VALUE[ab.effect.statusId] ?? 0;
+      const statusChance = magicStatusHitChance(actor, target, ab.effect.statusBaseAcc) / 100;
+      // Status only lands if the physical hit lands — compound the chances.
+      return damageScore + statusValue * statusChance * p;
+    }
     case 'physical-ranged-damage': {
       const pred = predictRangedAttack(actor, target, ab.effect.weaponPower, map);
       const p = pred.hitChance / 100;

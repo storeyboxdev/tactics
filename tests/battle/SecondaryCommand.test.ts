@@ -12,7 +12,7 @@ describe('Secondary Command — learned-actives composition', () => {
   it('a Knight with Black Mage secondary surfaces both kits once both are learned', () => {
     const u = bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'knight' });
     // Bootstrap pre-learns the starting (primary) job's actives.
-    expect(learnedActivesInJob(u.progression, 'knight')).toEqual(['power_break', 'speed_break', 'magic_break']);
+    expect(learnedActivesInJob(u.progression, 'knight')).toEqual(['power_break', 'speed_break', 'magic_break', 'stasis_sword']);
     // Black Mage isn't unlocked yet — even with JP, can't learn its skills.
     awardJp(u.progression, 'black_mage', 200);
     expect(learn(u.progression, 'black_mage', 'fire')).toBe(false);
@@ -26,7 +26,7 @@ describe('Secondary Command — learned-actives composition', () => {
     const secondary = u.secondaryJobId
       ? learnedActivesInJob(u.progression, u.secondaryJobId)
       : [];
-    expect(primary).toEqual(['power_break', 'speed_break', 'magic_break']);
+    expect(primary).toEqual(['power_break', 'speed_break', 'magic_break', 'stasis_sword']);
     expect(secondary).toEqual(['fire']);
   });
 

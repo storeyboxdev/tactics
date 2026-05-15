@@ -82,6 +82,17 @@ export type AbilityEffect =
       statusBaseAcc: number;
     }
   /**
+   * Holy-Knight-style sword skill: physical-ranged damage AND an independent
+   * faith-scaled status roll. Same shape as the magical `damage-and-status`
+   * but with `weaponPower` (PA × facing × height formula) instead of
+   * `spellPower`. The status only rolls if the physical hit lands.
+   */
+  | { kind: 'physical-damage-and-status';
+      weaponPower: number;
+      statusId: StatusId;
+      statusBaseAcc: number;
+    }
+  /**
    * Remove any of `statuses` currently active on the target. One faith-scaled
    * roll (`baseAccuracy × casterFaith/100 × targetFaith/100`) gates the whole
    * cast — on success every listed status the target has is removed. Cannot
@@ -184,6 +195,16 @@ export const ABILITIES: Record<string, Ability> = {
     chargeTime: 0,
     mpCost: 0,
     effect: { kind: 'debuff', stat: 'ma', amount: 2 },
+  },
+  stasis_sword: {
+    // Holy-Knight sword skill — a ranged physical wave that strikes for
+    // moderate damage and rolls a faith-scaled Stop. When the status
+    // lands, the target's CT freezes for 16 ticks: a full turn-cycle
+    // removed from the fight.
+    id: 'stasis_sword', name: 'Stasis Sword',
+    jpCost: 400, type: 'physical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 6,
+              statusId: 'stop', statusBaseAcc: 70 },
   },
   fire: {
     id: 'fire',
