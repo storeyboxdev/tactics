@@ -60,11 +60,13 @@ const ENEMY_TIERS: Array<readonly string[]> = [
     'white_mage', 'black_mage', 'time_mage', 'oracle',
     'geomancer', 'lancer', 'mediator', 'summoner',
     'samurai', 'ninja', 'calculator', 'bard', 'dancer', 'mime',
-    'goblin', 'chocobo', 'red_panther',
+    'goblin', 'chocobo', 'red_panther', 'bomb',
   ],
 ];
 
-function poolFor(battleCount: number): readonly string[] {
+/** The enemy job/monster pool eligible for a battle at `battleCount`. Exported
+ *  so tests can assert tier composition directly. */
+export function poolFor(battleCount: number): readonly string[] {
   if (battleCount >= 6) return ENEMY_TIERS[3];
   if (battleCount >= 4) return ENEMY_TIERS[2];
   if (battleCount >= 2) return ENEMY_TIERS[1];

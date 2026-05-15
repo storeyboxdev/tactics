@@ -100,8 +100,8 @@ describe('pickEnemyJobs — tier ramp', () => {
 
   it('battle 6 reaches the full pool', () => {
     const jobs = pickEnemyJobs(6, 5, rng1);
-    // rng1 picks the last entry of the full pool: 'red_panther'.
-    expect(jobs).toContain('red_panther');
+    // rng1 picks the last entry of the full pool: 'bomb'.
+    expect(jobs).toContain('bomb');
   });
 
   it('always includes at least one squire as a sanity baseline', () => {

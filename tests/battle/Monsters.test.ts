@@ -6,7 +6,7 @@ import { effectiveWeaponPower, PLACEHOLDER_WEAPON_POWER } from '../../src/battle
 import { JOB_DEFS, PLAYABLE_JOB_IDS, isPlayableJob } from '../../src/data/jobs';
 import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
-import { pickEnemyJobs } from '../../src/core/Bootstrap';
+import { poolFor } from '../../src/core/Bootstrap';
 
 const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb'];
 
@@ -76,28 +76,24 @@ describe('Monster bestiary', () => {
 });
 
 describe('Monster spawning', () => {
-  // rng → 0.999 always picks the last element of the tier pool, where each
-  // tier's newest monster sits.
-  const pickLast = () => 0.999;
-
-  it('Goblins can spawn from battle 2 (tier 1)', () => {
-    const jobs = pickEnemyJobs(2, 4, pickLast);
-    expect(jobs).toContain('goblin');
+  it('Goblins enter the pool by battle 2', () => {
+    expect(poolFor(2)).toContain('goblin');
+    expect(poolFor(0)).not.toContain('goblin');
   });
 
-  it('Chocobos join the pool by battle 4 (tier 2)', () => {
-    const jobs = pickEnemyJobs(4, 4, pickLast);
-    expect(jobs).toContain('chocobo');
+  it('Chocobos join by battle 4', () => {
+    expect(poolFor(4)).toContain('chocobo');
+    expect(poolFor(2)).not.toContain('chocobo');
   });
 
-  it('Red Panthers appear in the full pool at battle 6+', () => {
-    const jobs = pickEnemyJobs(6, 4, pickLast);
-    expect(jobs).toContain('red_panther');
+  it('Red Panther and Bomb appear in the full pool at battle 6+', () => {
+    const full = poolFor(6);
+    expect(full).toContain('red_panther');
+    expect(full).toContain('bomb');
   });
 
-  it('the first battle (0) is still monster-free — pure Squires', () => {
-    const jobs = pickEnemyJobs(0, 5, Math.random);
-    expect(jobs.every(j => j === 'squire')).toBe(true);
+  it('the first battle (0) pool is pure Squires — monster-free', () => {
+    expect(poolFor(0)).toEqual(['squire']);
   });
 
   it('a spawned monster id builds a valid enemy unit profile', () => {
