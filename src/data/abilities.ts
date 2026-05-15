@@ -725,6 +725,16 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 4, drainPercent: 50 },
   },
+  steal_heart: {
+    // FFT-canonical Steal Heart — no damage, just a melee Charm roll.
+    // The Thief slips close and turns an enemy against its own team.
+    // Distinct from Mediator's Charm: melee + physical (works through
+    // Silence) vs the Mediator's ranged magical cast. The rest of the
+    // Steal kit (weapon/armor/etc.) waits on the equipment inventory.
+    id: 'steal_heart', name: 'Steal Heart',
+    jpCost: 300, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'inflict-status', statusId: 'charm', targetTeam: 'enemy', baseAccuracy: 75 },
+  },
 
   // ─── Ninja (Throw) ────────────────────────────────────────────────────────
   // Each throw is a standalone free, instant physical technique — the

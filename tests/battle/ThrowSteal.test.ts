@@ -61,3 +61,18 @@ describe('Ninja special throws', () => {
     expect(eff.weaponPower).toBe(5);
   });
 });
+
+describe("Thief's Steal Heart", () => {
+  it('Thief learns Mug and Steal Heart', () => {
+    expect(JOB_DEFS.thief.learnableActives).toEqual(['mug', 'steal_heart']);
+  });
+
+  it('Steal Heart is a melee, physical, no-damage Charm', () => {
+    const ab = ABILITIES.steal_heart;
+    expect(ab.range).toBe(1);
+    expect(ab.type).toBe('physical');
+    if (ab.effect.kind !== 'inflict-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('charm');
+    expect(ab.effect.targetTeam).toBe('enemy');
+  });
+});
