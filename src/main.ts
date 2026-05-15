@@ -23,6 +23,7 @@ import { LastActionLog } from './battle/LastAction';
 import { computeDisplayStats } from './battle/Stats';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
+import { WEAPONS } from './data/weapons';
 import { STATUS_DEFS } from './data/statuses';
 import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
@@ -271,7 +272,10 @@ function activateNext() {
   }
 
   if (actor.team === 'player') {
-    hud.setStatus(`${actor.name}'s turn (${actor.jobId}) — choose an action`);
+    const weaponId = JOB_DEFS[actor.jobId]?.weapon;
+    const weaponName = weaponId ? WEAPONS[weaponId]?.name : undefined;
+    const kit = weaponName ? `${actor.jobId}, ${weaponName}` : actor.jobId;
+    hud.setStatus(`${actor.name}'s turn (${kit}) — choose an action`);
     showActionMenu();
     beginMove(); // default into Move targeting; player can switch via menu
   } else {
