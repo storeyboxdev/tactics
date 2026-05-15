@@ -44,6 +44,7 @@ describe('Monster bestiary', () => {
   it('each monster has exactly one signature ability', () => {
     expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle']);
     expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster']);
+    expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure']);
   });
 
   it('isPlayableJob excludes monsters, includes real jobs', () => {
@@ -120,5 +121,12 @@ describe('Monster signature abilities', () => {
     expect(ab.range).toBe(1);
     if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.statusId).toBe('dont_move');
+  });
+
+  it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {
+    const ab = ABILITIES.choco_cure;
+    if (ab.effect.kind !== 'flat-heal') throw new Error('bad fixture');
+    expect(ab.effect.hp).toBe(30);
+    expect(ab.effect.mp).toBeUndefined();
   });
 });
