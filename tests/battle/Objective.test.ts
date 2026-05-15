@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   Unit, UnitDef, UnitStats, FACING_E, Facing, Team,
 } from '../../src/battle/Unit';
-import { pickObjective, evaluateObjective } from '../../src/battle/Objective';
+import { pickObjective, evaluateObjective, pickLeaderIndex } from '../../src/battle/Objective';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 0, pa: 5, ma: 5, speed: 10, move: 4, jump: 1,
@@ -28,6 +28,24 @@ describe('pickObjective', () => {
     expect(pickObjective(5, () => 0.7).kind).toBe('survive');
     expect(pickObjective(5, () => 0.85).kind).toBe('protect');
     expect(pickObjective(5, () => 0.99).kind).toBe('escort');
+  });
+});
+
+describe('pickLeaderIndex', () => {
+  it('picks the enemy farthest from the player line', () => {
+    const players = [{ x: 0, z: 0 }, { x: 0, z: 1 }];
+    const enemies = [
+      { x: 2, z: 0 },   // near the players
+      { x: 9, z: 4 },   // farthest — should be the leader
+      { x: 5, z: 2 },   // mid
+    ];
+    expect(pickLeaderIndex(enemies, players)).toBe(1);
+  });
+
+  it('breaks ties to the lowest index', () => {
+    const players = [{ x: 0, z: 0 }];
+    const enemies = [{ x: 5, z: 0 }, { x: 5, z: 0 }];
+    expect(pickLeaderIndex(enemies, players)).toBe(0);
   });
 });
 

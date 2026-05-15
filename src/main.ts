@@ -21,7 +21,7 @@ import {
 } from './battle/Progression';
 import { LastActionLog } from './battle/LastAction';
 import { computeDisplayStats } from './battle/Stats';
-import { pickObjective, evaluateObjective, objectiveLabel } from './battle/Objective';
+import { pickObjective, evaluateObjective, objectiveLabel, pickLeaderIndex } from './battle/Objective';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
 import { WEAPONS } from './data/weapons';
@@ -162,7 +162,8 @@ enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
 const battleObjective = pickObjective(save?.battleCount ?? 0);
 if (battleObjective.kind === 'regicide') {
   const enemies = units.filter(u => u.team === 'enemy');
-  const leader = enemies[Math.floor(Math.random() * enemies.length)];
+  const players = units.filter(u => u.team === 'player');
+  const leader = enemies[pickLeaderIndex(enemies, players)];
   if (leader) {
     leader.isLeader = true;
     // A regicide target shouldn't just be the squishiest enemy — beef it.

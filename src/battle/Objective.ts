@@ -84,6 +84,27 @@ export function objectiveLabel(
 }
 
 /**
+ * Index of the enemy best suited to be the Regicide leader — the one
+ * farthest (summed manhattan) from the player line, so the boss starts
+ * behind its escorts rather than in the front rank. Ties break to the
+ * lowest index. Returns 0 for an empty enemy list.
+ */
+export function pickLeaderIndex(
+  enemies: readonly { x: number; z: number }[],
+  players: readonly { x: number; z: number }[],
+): number {
+  let bestIdx = 0;
+  let bestSum = -1;
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    let sum = 0;
+    for (const p of players) sum += Math.abs(e.x - p.x) + Math.abs(e.z - p.z);
+    if (sum > bestSum) { bestSum = sum; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
+/**
  * Roll the win condition for the next battle. Battle 0 is always Rout —
  * the first fight a player ever sees stays a clean, legible deathmatch.
  */
