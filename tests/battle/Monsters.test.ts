@@ -8,7 +8,7 @@ import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
 import { pickEnemyJobs } from '../../src/core/Bootstrap';
 
-const MONSTERS = ['goblin', 'chocobo', 'red_panther'];
+const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb'];
 
 function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
   const job = JOB_DEFS[jobId];

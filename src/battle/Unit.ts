@@ -106,6 +106,9 @@ export class Unit {
   koTimer: number = -1;
   /** Once true, the unit is gone — its tile clears, no revive possible. */
   crystallized: boolean = false;
+  /** Transient in-battle guard: set once a death-trigger (Bomb's Self-
+   *  Destruct) has fired, so a KO'd creature doesn't re-explode each turn. */
+  deathTriggerFired: boolean = false;
 
   /**
    * True while a Jump-style ability is in flight. The unit is removed from

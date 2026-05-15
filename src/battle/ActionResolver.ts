@@ -543,6 +543,34 @@ export function resolveDamageAndStatus(
   return out;
 }
 
+// ─── Death triggers (Bomb's Self-Destruct) ──────────────────────────────────
+
+export interface DeathTriggerOutcome {
+  source: Unit;
+  victims: { unit: Unit; dealt: number; reraised: boolean }[];
+}
+
+/**
+ * Resolve one unit's death trigger: flat `damage` to every alive unit
+ * (both teams, excluding the source) within Manhattan `radius` of the
+ * source's tile. Sets the source's `deathTriggerFired` guard so it can't
+ * fire twice. Damage routes through `applyDamage`, so Reraise and KO
+ * sequencing compose normally.
+ */
+export function resolveDeathTrigger(
+  source: Unit, radius: number, damage: number, units: readonly Unit[],
+): DeathTriggerOutcome {
+  source.deathTriggerFired = true;
+  const victims: DeathTriggerOutcome['victims'] = [];
+  for (const v of units) {
+    if (!v.isAlive || v === source) continue;
+    if (Math.abs(v.x - source.x) + Math.abs(v.z - source.z) > radius) continue;
+    const res = v.applyDamage(damage);
+    victims.push({ unit: v, dealt: res.dealt, reraised: res.reraised });
+  }
+  return { source, victims };
+}
+
 // ─── Cure-status (Esuna, Remedy) ────────────────────────────────────────────
 
 export interface CureStatusOutcome {

@@ -60,6 +60,9 @@ export interface JobDef {
   /** True for enemy-only creature "jobs" — excluded from the unlock tree,
    *  the roster/job-change UI, and any enumeration of playable jobs. */
   isMonster?: boolean;
+  /** If set, the unit's KO fires an explosion: flat `damage` to every
+   *  alive unit (both teams) within Manhattan `radius` of its tile. */
+  deathTrigger?: { radius: number; damage: number };
 }
 
 /**
@@ -329,6 +332,19 @@ export const JOB_DEFS: Record<string, JobDef> = {
     growth: { hp:   4, mp:   2, pa:   6, ma:   2, speed:   2 },
     learnableActives: ['blaster'],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
+  },
+  bomb: {
+    // A fragile floater whose whole identity is dying loud. No active kit —
+    // it basic-attacks while alive, then Self-Destructs on KO: a radius-1
+    // flat-35 blast that catches everyone nearby, both teams.
+    id: 'bomb', name: 'Bomb', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 38, pa: 5, ma: 3, speed: 9, move: 3, jump: 2, evasion: 5 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   4, mp:   2, pa:   4, ma:   2, speed:   1 },
+    learnableActives: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    deathTrigger: { radius: 1, damage: 35 },
   },
 };
 

@@ -11,7 +11,7 @@ import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   resolveRevive, resolveCureStatus, resolveDamageAndStatus, resolveFlatHeal,
   resolvePhysicalDamageAndStatus, predictPhysicalDamageAndStatus,
-  effectiveMpCost, applyStatShift, applyBreak, facingTowards,
+  resolveDeathTrigger, effectiveMpCost, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -229,10 +229,41 @@ function checkBattleEnd(): 'player' | 'enemy' | null {
   return null;
 }
 
+/**
+ * Fire any pending death triggers — currently only Bomb's Self-Destruct.
+ * A KO'd unit with a `deathTrigger` erupts: flat damage to every alive
+ * unit (both teams) within Manhattan radius of its tile. Loops so a blast
+ * that KOs another Bomb chain-detonates it; the `deathTriggerFired` flag
+ * keeps each creature firing exactly once.
+ */
+function resolveDeathTriggers() {
+  let fired = true;
+  while (fired) {
+    fired = false;
+    for (const bomb of units) {
+      if (bomb.isAlive || bomb.deathTriggerFired) continue;
+      const trig = JOB_DEFS[bomb.jobId]?.deathTrigger;
+      if (!trig) continue;
+      fired = true;
+      hud.log(`${bomb.name} explodes!`);
+      spellFx.burst({ x: bomb.x, z: bomb.z }, 'fire', () => {});
+      const out = resolveDeathTrigger(bomb, trig.radius, trig.damage, units);
+      for (const v of out.victims) {
+        hud.log(`  ↳ ${v.unit.name} takes ${v.dealt} from the blast`);
+        spellFx.burst({ x: v.unit.x, z: v.unit.z }, 'fire', () => playSpellHitVisual(v.unit));
+        if (v.reraised) logReraise(v.unit);
+      }
+    }
+  }
+}
+
 function activateNext() {
   if (battleOver) return;
   hud.clearActionMenu();
   input.cancel();
+  // Resolve any pending death triggers (Bomb's Self-Destruct) before the
+  // win/loss check — a dying Bomb's blast can KO the last unit on a team.
+  resolveDeathTriggers();
   const winner = checkBattleEnd();
   if (winner) {
     battleOver = true;
