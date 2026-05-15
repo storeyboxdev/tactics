@@ -11,7 +11,7 @@ import {
   AttackOutcome, resolveAttack, resolvePotion, resolveSpell, resolveRangedAttack, resolveHeal,
   resolveRevive, resolveCureStatus, resolveDamageAndStatus, resolveFlatHeal,
   resolvePhysicalDamageAndStatus, predictPhysicalDamageAndStatus,
-  applyStatShift, applyBreak, facingTowards,
+  effectiveMpCost, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
   physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
 } from './battle/ActionResolver';
@@ -339,7 +339,7 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
   const terrain = map.getTile(actor.x, actor.z).terrain;
   return ids.map(id => {
     const ab = ABILITIES[id];
-    let enabled = actor.mp >= ab.mpCost;
+    let enabled = actor.mp >= effectiveMpCost(actor, ab);
     // Mimic disables when the mime's team has no recorded action to copy.
     if (ab.effect.kind === 'mimic' && !lastActions.get(actor.team)) enabled = false;
     // Silence locks out magical-type abilities (FFT canon: Black/White/Time
@@ -349,7 +349,7 @@ function skillsFor(actor: Unit, jobId: string): SkillEntry[] {
     if (ab.requiresTerrain && !ab.requiresTerrain.includes(terrain)) enabled = false;
     return {
       id,
-      label: skillLabel(ab),
+      label: skillLabel(ab, actor),
       enabled,
       onPick: () => beginSkill(id),
     };
@@ -361,9 +361,10 @@ function jobLabel(jobId: string, role: 'primary' | 'secondary'): string {
   return `${name} (${role})`;
 }
 
-function skillLabel(ab: Ability): string {
+function skillLabel(ab: Ability, actor?: Unit): string {
   const tags: string[] = [];
-  if (ab.mpCost > 0)     tags.push(`${ab.mpCost}MP`);
+  const mp = actor ? effectiveMpCost(actor, ab) : ab.mpCost;
+  if (mp > 0)             tags.push(`${mp}MP`);
   if (ab.chargeTime > 0) tags.push(`CT${ab.chargeTime}`);
   return tags.length === 0 ? ab.name : `${ab.name} (${tags.join(', ')})`;
 }
@@ -449,7 +450,7 @@ function beginSkill(abilityId: string) {
   const unit = currentActor;
   const ab = ABILITIES[abilityId];
   if (!ab) return;
-  if (unit.mp < ab.mpCost) { hud.log(`${unit.name}: not enough MP for ${ab.name}`); return; }
+  if (unit.mp < effectiveMpCost(unit, ab)) { hud.log(`${unit.name}: not enough MP for ${ab.name}`); return; }
 
   // Mimic: replay the mime's team's most recent ability at the same target.
   // No targeting prompt — the original action's coords are reused.
@@ -481,7 +482,7 @@ function beginSkill(abilityId: string) {
       const target = unitAt(units, x, z);
       if (!target) return;
       unit.facing = facingTowards(unit.x, unit.z, target.x, target.z);
-      unit.mp = Math.max(0, unit.mp - ab.mpCost);
+      unit.mp = Math.max(0, unit.mp - effectiveMpCost(unit, ab));
 
       if (ab.chargeTime > 0) {
         const resolveTick = turns.tick + ab.chargeTime;
@@ -1261,9 +1262,9 @@ function enemyAutoTurn(actor: Unit) {
     } else if (decision.action?.kind === 'ability') {
       const target = units.find(u => u.id === decision.action!.targetId);
       const ab = ABILITIES[decision.action.abilityId];
-      if (target && ab && actor.mp >= ab.mpCost) {
+      if (target && ab && actor.mp >= effectiveMpCost(actor, ab)) {
         actor.facing = facingTowards(actor.x, actor.z, target.x, target.z);
-        actor.mp = Math.max(0, actor.mp - ab.mpCost);
+        actor.mp = Math.max(0, actor.mp - effectiveMpCost(actor, ab));
         if (ab.chargeTime > 0) {
           turns.schedule({
             caster: actor,

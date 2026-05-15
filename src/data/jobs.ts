@@ -214,7 +214,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp:  76, mp: 360, pa:  60, ma: 200, speed:  90 },
     growth: { hp:   3, mp:   9, pa:   2, ma:  10, speed:   1 },
     learnableActives: ['summon_ifrit', 'summon_shiva', 'summon_ramuh'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['half_of_mp'], learnableMovements: [],
   },
 
   // ─── Tier 4: elite ────────────────────────────────────────────────────────

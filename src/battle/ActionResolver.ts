@@ -1,6 +1,6 @@
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
-import { ABILITIES } from '../data/abilities';
+import { ABILITIES, Ability } from '../data/abilities';
 import { StatusId } from '../data/statuses';
 import { JOB_DEFS } from '../data/jobs';
 import { WEAPONS } from '../data/weapons';
@@ -136,6 +136,21 @@ export function effectivePa(attacker: Unit): number {
   if (attacker.hasStatus('berserk')) pa = Math.floor(pa * 1.5);
   if (attacker.hasStatus('frog'))    pa = Math.floor(pa * 0.5);
   return pa;
+}
+
+/**
+ * An ability's MP cost after the caster's equipped support. Half of MP
+ * multiplies it by 0.5 (floored). Used at every cost site — the skill
+ * menu's affordability check, the AI's, and the actual deduction on cast.
+ */
+export function effectiveMpCost(unit: Unit, ability: Ability): number {
+  if (unit.support) {
+    const ab = ABILITIES[unit.support];
+    if (ab?.effect.kind === 'support-half-mp') {
+      return Math.floor(ability.mpCost * ab.effect.factor);
+    }
+  }
+  return ability.mpCost;
 }
 
 /**

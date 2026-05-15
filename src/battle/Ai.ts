@@ -5,7 +5,7 @@ import { unitAt, abilityTargets, affectedUnits } from './Targeting';
 import {
   predictAttackDamage, predictSpellDamage, predictHeal, predictRangedAttack,
   physicalHitChance, magicStatusHitChance, relativeFacing,
-  effectiveWeaponPower,
+  effectiveWeaponPower, effectiveMpCost,
 } from './ActionResolver';
 import { ABILITIES, Ability } from '../data/abilities';
 import { JOB_DEFS } from '../data/jobs';
@@ -117,7 +117,7 @@ export class HeuristicAi implements EnemyController {
       for (const abId of learnable) {
         if (frogged) break;   // a frogged unit can only basic-attack
         const ab = ABILITIES[abId];
-        if (actor.mp < ab.mpCost) continue;
+        if (actor.mp < effectiveMpCost(actor, ab)) continue;
         if (silenced && ab.type === 'magical') continue;
         if (ab.requiresTerrain && !ab.requiresTerrain.includes(tileTerrain)) continue;
         const targets = abilityTargets(actor, ab, map, units, tile);

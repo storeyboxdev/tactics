@@ -1079,6 +1079,14 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 500, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'movement-jump-plus', amount: 2 },
   },
+  half_of_mp: {
+    // Halves the MP cost of every ability the unit casts — a 24-MP summon
+    // becomes 12. Transformative for the steep-cost casters; Summoner,
+    // with the priciest kit in the game, is the natural home.
+    id: 'half_of_mp', name: 'Half of MP',
+    jpCost: 600, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-half-mp', factor: 0.5 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).

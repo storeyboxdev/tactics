@@ -3,7 +3,7 @@ import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import { BattleMap, MapData } from '../../src/battle/Map';
-import { resolveAttack, resolveSpell } from '../../src/battle/ActionResolver';
+import { resolveAttack, resolveSpell, effectiveMpCost } from '../../src/battle/ActionResolver';
 import { ABILITIES } from '../../src/data/abilities';
 import { JOB_DEFS } from '../../src/data/jobs';
 
@@ -74,5 +74,25 @@ describe('Blade Grasp reaction', () => {
     expect(ab.type).toBe('reaction');
     expect(ab.range).toBe(0);
     expect(ab.effect.kind).toBe('reaction-blade-grasp');
+  });
+});
+
+describe('Half of MP support', () => {
+  it('halves an ability MP cost (floored) for a unit with the support', () => {
+    const u = makeUnit('u', 'player');
+    u.support = 'half_of_mp';
+    // summon_ifrit costs 24 MP → 12
+    expect(effectiveMpCost(u, ABILITIES.summon_ifrit)).toBe(12);
+    // an odd cost floors: cure 6 → 3, fire 6 → 3; pick an odd one
+    expect(effectiveMpCost(u, ABILITIES.cura)).toBe(Math.floor(ABILITIES.cura.mpCost / 2));
+  });
+
+  it('returns the raw cost for a unit without the support', () => {
+    const u = makeUnit('u', 'player'); // no support
+    expect(effectiveMpCost(u, ABILITIES.summon_ifrit)).toBe(ABILITIES.summon_ifrit.mpCost);
+  });
+
+  it('Summoner learns Half of MP', () => {
+    expect(JOB_DEFS.summoner.learnableSupports).toContain('half_of_mp');
   });
 });
