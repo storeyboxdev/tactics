@@ -18,6 +18,7 @@ describe('computeDisplayStats', () => {
     // baseStats hp/mp/pa/ma/speed exactly. This is the calibration that makes
     // the M1–M10 numbers identical post-refactor for first-battle starters.
     for (const job of Object.values(JOB_DEFS)) {
+      if (job.isMonster) continue; // monsters use the raw-baseStats path, not display calibration
       const p = progFor(job.id);
       const d = computeDisplayStats(p, job.id);
       expect(d.hp,    `${job.id}.hp`   ).toBe(job.baseStats.hp);

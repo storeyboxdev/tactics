@@ -86,7 +86,8 @@ describe('Regenerator reaction', () => {
 });
 
 describe('Passive distribution coverage', () => {
-  const jobs = Object.values(JOB_DEFS);
+  // Monsters have no passive menu by design — exclude them.
+  const jobs = Object.values(JOB_DEFS).filter(j => !j.isMonster);
 
   it('every job teaches at least one passive', () => {
     for (const job of jobs) {

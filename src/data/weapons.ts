@@ -32,4 +32,6 @@ export const WEAPONS: Record<string, WeaponDef> = {
   spear:       { id: 'spear',       name: 'Spear',        weaponPower: 8 },
   sword:       { id: 'sword',       name: 'Sword',        weaponPower: 9 },
   katana:      { id: 'katana',      name: 'Katana',       weaponPower: 9 },
+  // Natural weapon — monsters' claws / beaks / fangs.
+  claw:        { id: 'claw',        name: 'Claw',         weaponPower: 6 },
 };

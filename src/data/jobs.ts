@@ -57,6 +57,9 @@ export interface JobDef {
   weapon: string;
   /** Signature armor id (see ARMOR) — drives incoming-damage reduction. */
   armor: string;
+  /** True for enemy-only creature "jobs" — excluded from the unlock tree,
+   *  the roster/job-change UI, and any enumeration of playable jobs. */
+  isMonster?: boolean;
 }
 
 /**
@@ -294,4 +297,46 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: ['mimic'],
     learnableReactions: [], learnableSupports: [], learnableMovements: ['move_plus_1'],
   },
+
+  // ─── Monsters ─────────────────────────────────────────────────────────────
+  // Enemy-only creature "jobs": isMonster excludes them from the unlock
+  // tree, the roster UI, and every playable-job enumeration. Phase 1
+  // monsters move and basic-attack only — no abilities, no passives.
+  // mult/growth are filler (enemies use the raw baseStats path).
+  goblin: {
+    id: 'goblin', name: 'Goblin', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 58, pa: 6, ma: 2, speed: 9, move: 3, jump: 1, evasion: 5 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   5, mp:   2, pa:   5, ma:   2, speed:   1 },
+    learnableActives: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+  },
+  chocobo: {
+    id: 'chocobo', name: 'Chocobo', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 52, pa: 5, ma: 2, speed: 13, move: 5, jump: 2, evasion: 15 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   5, mp:   2, pa:   4, ma:   2, speed:   2 },
+    learnableActives: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+  },
+  red_panther: {
+    id: 'red_panther', name: 'Red Panther', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 42, pa: 9, ma: 3, speed: 12, move: 5, jump: 2, evasion: 30 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   4, mp:   2, pa:   6, ma:   2, speed:   2 },
+    learnableActives: [],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+  },
 };
+
+/** All non-monster job ids — the jobs a player can actually be. */
+export const PLAYABLE_JOB_IDS: string[] =
+  Object.values(JOB_DEFS).filter(j => !j.isMonster).map(j => j.id);
+
+/** True if `jobId` is a real, player-selectable job (not an enemy monster). */
+export function isPlayableJob(jobId: string): boolean {
+  return !!JOB_DEFS[jobId] && !JOB_DEFS[jobId].isMonster;
+}

@@ -136,6 +136,7 @@ export function awardJp(p: UnitProgression, currentJobId: string, amount: number
 
   const newlyUnlocked: string[] = [];
   for (const job of Object.values(JOB_DEFS)) {
+    if (job.isMonster) continue;   // enemy-only — never unlockable by the player
     const target = ensureJobProgress(p, job.id);
     if (target.unlocked) continue;
     if (prereqsSatisfied(p, job.id)) {
