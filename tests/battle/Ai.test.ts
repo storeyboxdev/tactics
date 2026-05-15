@@ -117,6 +117,30 @@ describe('HeuristicAi — objective-aware targeting', () => {
   });
 });
 
+describe('HeuristicAi — cautious leader', () => {
+  it('a Regicide leader holds back from a trade an ordinary unit would take', () => {
+    // e is adjacent to a foe that hits twice as hard as e does. An ordinary
+    // unit takes the trade; the enemy leader — the player's kill-to-win
+    // target — weights its own safety far higher and declines to engage.
+    const map = new BattleMap(flatMap(6, 5));
+    const makeScene = () => {
+      const e = makeUnit('e', 'enemy', 0, 2, FACING_E, { pa: 5, move: 4 });
+      const foe = makeUnit('foe', 'player', 3, 2, FACING_E, { pa: 10, hp: 999, evasion: 0 });
+      return { e, foe };
+    };
+    const ai = new HeuristicAi();
+
+    const grunt = makeScene();
+    const gd = ai.decide(grunt.e, map, [grunt.e, grunt.foe]);
+    expect(gd.action?.kind).toBe('attack');
+
+    const boss = makeScene();
+    boss.e.isLeader = true;
+    const bd = ai.decide(boss.e, map, [boss.e, boss.foe]);
+    expect(bd.action).toBeNull();
+  });
+});
+
 describe('HeuristicAi — abilities', () => {
   it('an enemy Time Mage casts Haste on a friendly target', () => {
     // Time Mage with MP, ally adjacent, no player in range — best play is to

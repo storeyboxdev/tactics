@@ -180,13 +180,15 @@ function scoreOption(
     s += scoreAbility(action, units, actor, map);
   }
 
-  // Threat from adjacent opponents at this end-tile.
+  // Threat from adjacent opponents at this end-tile. A Regicide leader is
+  // the player's kill-to-win target, so it weights its own safety far more
+  // heavily — it screens behind its escorts instead of charging the line.
   let threat = 0;
   for (const u of units) {
     if (u.team === actor.team || !u.isAlive) continue;
     if (manhattan(endTile, u) === 1) threat += u.pa * effectiveWeaponPower(u);
   }
-  s -= threat * 0.3;
+  s -= threat * (actor.isLeader ? 0.7 : 0.3);
 
   return s;
 }
