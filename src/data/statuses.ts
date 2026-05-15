@@ -14,7 +14,7 @@ export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
   | 'reraise' | 'death_sentence'
-  | 'berserk' | 'confuse' | 'charm';
+  | 'berserk' | 'confuse' | 'charm' | 'frog';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -41,6 +41,9 @@ export interface StatusDef {
   blocksAct?: boolean;
   /** True if the unit cannot cast magical-type abilities (Silence). */
   blocksMagic?: boolean;
+  /** True if the unit cannot use abilities/items but CAN still basic-attack
+   *  and move (Frog). Distinct from blocksAct, which kills Attack too. */
+  blocksAbilities?: boolean;
   /** When the status's duration counter hits 0, KO the unit by routing lethal
    *  damage through applyDamage (so Reraise and on-damage reactions trigger). */
   koOnExpire?: boolean;
@@ -138,6 +141,15 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     // battle doesn't mis-resolve while the 24-tick duration runs.
     id: 'charm', name: 'Charm', short: 'CHM', color: 0xe85d9c,
     expiry: { kind: 'duration', ticks: 24 },
+  },
+  frog: {
+    // Transformed: the unit can still move and basic-attack, but can't use
+    // abilities or items (blocksAbilities) and its PA is halved (via
+    // effectivePa). A frogged mage simply can't cast — no separate MA
+    // penalty needed.
+    id: 'frog', name: 'Frog', short: 'FRG', color: 0x6fae3f,
+    expiry: { kind: 'duration', ticks: 24 },
+    blocksAbilities: true,
   },
 };
 

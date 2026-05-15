@@ -115,6 +115,7 @@ export function magicStatusHitChance(caster: Unit, target: Unit, baseAccuracy: n
 export function effectivePa(attacker: Unit): number {
   let pa = attacker.pa;
   if (attacker.hasStatus('berserk')) pa = Math.floor(pa * 1.5);
+  if (attacker.hasStatus('frog'))    pa = Math.floor(pa * 0.5);
   return pa;
 }
 

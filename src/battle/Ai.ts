@@ -48,6 +48,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   berserk:   20,   // forces enemy to waste turns chasing; +50% PA is the bite
   confuse:   22,   // random target hits any team — meaningful chance of self-team damage
   charm:     35,   // flips an enemy to attack its own team — enormous swing
+  frog:      22,   // shuts off the kit + halves PA, but the unit still chips
 };
 
 /** Whether a unit has any magical-type ability available — used to gate
@@ -75,6 +76,7 @@ export class HeuristicAi implements EnemyController {
     const cantMove = actor.hasStatus('dont_move');
     const cantAct = actor.hasStatus('dont_act');
     const silenced = actor.hasStatus('silence');
+    const frogged = actor.hasStatus('frog');
     const endTiles = cantMove
       ? [{ x: actor.x, z: actor.z, cost: 0 }]
       : plan.endTiles();
@@ -111,6 +113,7 @@ export class HeuristicAi implements EnemyController {
       // Ability candidates — gated by MP and "doesn't already have status".
       const tileTerrain = map.getTile(tile.x, tile.z).terrain;
       for (const abId of learnable) {
+        if (frogged) break;   // a frogged unit can only basic-attack
         const ab = ABILITIES[abId];
         if (actor.mp < ab.mpCost) continue;
         if (silenced && ab.type === 'magical') continue;

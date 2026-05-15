@@ -350,6 +350,15 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 500, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'inflict-status', statusId: 'confuse', targetTeam: 'enemy', baseAccuracy: 110 },
   },
+  frog: {
+    // Mystic transformation — for 24 ticks the target can move and basic-
+    // attack but can't use abilities or items, and its PA is halved. A
+    // frogged Black Mage is just a weak melee chip. CT 2 windup gives the
+    // enemy a chance to act before they shrink.
+    id: 'frog', name: 'Frog',
+    jpCost: 500, type: 'magical', range: 3, chargeTime: 2, mpCost: 12,
+    effect: { kind: 'inflict-status', statusId: 'frog', targetTeam: 'enemy', baseAccuracy: 100 },
+  },
 
   // ─── White Mage ───────────────────────────────────────────────────────────
   cure: {
@@ -411,7 +420,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -435,7 +444,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
   hi_potion: {
@@ -605,7 +614,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },

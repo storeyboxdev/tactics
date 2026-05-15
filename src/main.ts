@@ -284,10 +284,12 @@ function showActionMenu() {
   if (!currentActor) return;
   const restrained = currentActor.statuses.find(s => STATUS_DEFS[s.id].blocksMove);
   const muzzled    = currentActor.statuses.find(s => STATUS_DEFS[s.id].blocksAct);
+  // Frog: abilities/items gone, but Attack stays.
+  const frogged    = currentActor.statuses.some(s => STATUS_DEFS[s.id].blocksAbilities);
   hud.showActionMenu({
     canMove: !hasMoved && !restrained,
     canAct:  !hasActed && !muzzled,
-    skillGroups: muzzled ? [] : actionMenuGroupsFor(currentActor),
+    skillGroups: (muzzled || frogged) ? [] : actionMenuGroupsFor(currentActor),
     onMove:   () => beginMove(),
     onAttack: () => beginAttack(),
     onItem:   () => beginItem(),
