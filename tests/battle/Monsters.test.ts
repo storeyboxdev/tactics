@@ -5,6 +5,7 @@ import {
 import { effectiveWeaponPower, PLACEHOLDER_WEAPON_POWER } from '../../src/battle/ActionResolver';
 import { JOB_DEFS, PLAYABLE_JOB_IDS, isPlayableJob } from '../../src/data/jobs';
 import { WEAPONS } from '../../src/data/weapons';
+import { ABILITIES } from '../../src/data/abilities';
 import { pickEnemyJobs } from '../../src/core/Bootstrap';
 
 const MONSTERS = ['goblin', 'chocobo', 'red_panther'];
@@ -30,15 +31,19 @@ describe('Monster bestiary', () => {
     }
   });
 
-  it('monsters have no unlock prereqs and no learnable abilities', () => {
+  it('monsters have no unlock prereqs and no passive menu', () => {
     for (const id of MONSTERS) {
       const job = JOB_DEFS[id];
       expect(job.prereqs, `${id} prereqs`).toEqual([]);
-      expect(job.learnableActives, `${id} actives`).toEqual([]);
       expect(job.learnableReactions.length
         + job.learnableSupports.length
         + job.learnableMovements.length, `${id} passives`).toBe(0);
     }
+  });
+
+  it('each monster has exactly one signature ability', () => {
+    expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle']);
+    expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster']);
   });
 
   it('isPlayableJob excludes monsters, includes real jobs', () => {
@@ -98,6 +103,22 @@ describe('Monster spawning', () => {
     const goblin = monsterUnit('goblin');
     expect(goblin.isAlive).toBe(true);
     expect(goblin.team).toBe('enemy');
-    expect(JOB_DEFS[goblin.jobId].learnableActives).toEqual([]);
+    expect(JOB_DEFS[goblin.jobId].isMonster).toBe(true);
+  });
+});
+
+describe('Monster signature abilities', () => {
+  it("Goblin's Tackle is a range-1 physical-ranged strike above its claw", () => {
+    const ab = ABILITIES.goblin_tackle;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(ab.effect.weaponPower).toBeGreaterThan(WEAPONS.claw.weaponPower);
+  });
+
+  it("Red Panther's Blaster chains Don't Move via physical-damage-and-status", () => {
+    const ab = ABILITIES.blaster;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('dont_move');
   });
 });

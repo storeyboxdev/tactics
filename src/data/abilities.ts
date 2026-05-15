@@ -1114,6 +1114,34 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 300, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'movement-mp-up', amount: 4 },
   },
+
+  // ─── Monster signature moves ──────────────────────────────────────────────
+  // Enemy-only — monsters never learn via JP; these just sit in the monster
+  // JobDef's learnableActives for the AI to use.
+  goblin_tackle: {
+    // A committed body-slam — a melee strike clearly above the Goblin's
+    // claw (WP 6) basic attack.
+    id: 'goblin_tackle', name: 'Tackle',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 8 },
+  },
+  choco_cure: {
+    // Chocobos heal. A flat +30 HP restore — not magic-heal, since a
+    // Chocobo's MA is 2 and a faith-scaled heal would be worthless. An
+    // enemy team with a Chocobo has a healer to play around.
+    id: 'choco_cure', name: 'Choco Cure',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'flat-heal', hp: 30 },
+  },
+  blaster: {
+    // The Red Panther's pounce — damage plus a Don't Move chain that pins
+    // the prey in place. baseAcc 60 keeps the lockdown a real threat
+    // without being oppressive on a fast glass-cannon predator.
+    id: 'blaster', name: 'Blaster',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 7,
+              statusId: 'dont_move', statusBaseAcc: 60 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).
