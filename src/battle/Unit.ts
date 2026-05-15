@@ -24,6 +24,8 @@ export interface DamageResult {
   braveGained: number;
   /** True if a would-KO was interrupted by Reraise (HP restored, status consumed). */
   reraised: boolean;
+  /** True if the Regenerator reaction applied the Regen status on this hit. */
+  regenApplied: boolean;
 }
 
 export interface UnitStats {
@@ -210,7 +212,7 @@ export class Unit {
    * reaction-side-effects so the orchestrator can log them.
    */
   applyDamage(amount: number): DamageResult {
-    if (amount <= 0) return { dealt: 0, hpRestored: 0, braveGained: 0, reraised: false };
+    if (amount <= 0) return { dealt: 0, hpRestored: 0, braveGained: 0, reraised: false, regenApplied: false };
     const before = this.hp;
     this.hp = Math.max(0, this.hp - amount);
     const dealt = before - this.hp;
@@ -251,7 +253,14 @@ export class Unit {
       if (this.progression) this.progression.bravery = this.bravery;
     }
 
-    return { dealt, hpRestored, braveGained, reraised };
+    // Regenerator: surviving a hit grants (or refreshes) the Regen status.
+    let regenApplied = false;
+    if (eff?.kind === 'reaction-regenerator' && this.isAlive) {
+      this.addStatus('regen');
+      regenApplied = true;
+    }
+
+    return { dealt, hpRestored, braveGained, reraised, regenApplied };
   }
 
   /**

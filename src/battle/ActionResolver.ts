@@ -118,6 +118,19 @@ export function physicalHitChance(target: Unit, facing: RelativeFacing): number 
 }
 
 /**
+ * Physical hit % for a specific attacker against a target. Identical to
+ * `physicalHitChance` except that an attacker with the Concentrate support
+ * always hits (evasion ignored — chance forced to 100).
+ */
+export function physicalHitChanceFrom(attacker: Unit, target: Unit, facing: RelativeFacing): number {
+  if (attacker.support) {
+    const ab = ABILITIES[attacker.support];
+    if (ab?.effect.kind === 'support-concentrate') return 100;
+  }
+  return physicalHitChance(target, facing);
+}
+
+/**
  * Magic-status hit % = baseAccuracy × casterFaith/100 × targetFaith/100,
  * clamped to [0, 100]. Mirrors FFT's faith-scaled formula for inflict-status.
  */
@@ -294,7 +307,7 @@ export function predictAttackDamage(
     damage: Math.max(1, Math.floor(raw * effectiveDefenseFactor(target))),
     facing,
     heightDiff: aH - tH,
-    hitChance: physicalHitChance(target, facing),
+    hitChance: physicalHitChanceFrom(attacker, target, facing),
     critChance: CRIT_CHANCE_BY_FACING[facing],
   };
 }
@@ -321,7 +334,7 @@ export function resolveAttack(
   // same outcome they did before crits were a thing — hit at 50<chance,
   // crit at 50<5..15 = false, randomMul = 1.0. Existing damage assertions
   // stay valid.
-  const hit = rollHit(physicalHitChance(target, facing), rng);
+  const hit = rollHit(physicalHitChanceFrom(attacker, target, facing), rng);
   const crit = hit && rollCrit(facing, rng);
   const randomMul = 0.85 + rng() * 0.30;
 
@@ -598,7 +611,7 @@ export function predictRangedAttack(
     damage: Math.max(1, Math.floor(raw * effectiveDefenseFactor(target))),
     facing,
     heightDiff: aH - tH,
-    hitChance: physicalHitChance(target, facing),
+    hitChance: physicalHitChanceFrom(attacker, target, facing),
     critChance: CRIT_CHANCE_BY_FACING[facing],
   };
 }
@@ -618,7 +631,7 @@ export function resolveRangedAttack(
   const tH = map.getTile(target.x, target.z).h;
   const facing = relativeFacing(attacker, target);
 
-  const hit = rollHit(physicalHitChance(target, facing), rng);
+  const hit = rollHit(physicalHitChanceFrom(attacker, target, facing), rng);
   const crit = hit && rollCrit(facing, rng);
   const randomMul = 0.85 + rng() * 0.30;
 
@@ -897,7 +910,7 @@ export function applyBreak(
   rng: Rng = Math.random,
 ): BreakOutcome {
   const facing = relativeFacing(user, target);
-  if (!rollHit(physicalHitChance(target, facing), rng)) {
+  if (!rollHit(physicalHitChanceFrom(user, target, facing), rng)) {
     return { user, target, stat, amount: 0, hit: false };
   }
   const before = target[stat];

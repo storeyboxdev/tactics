@@ -114,7 +114,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 100, mp: 100, pa: 120, ma:  60, speed: 110 },
     growth: { hp:   5, mp:   2, pa:   6, ma:   2, speed:   2 },
     learnableActives: ['aim_plus_1', 'charge_2', 'aim_plus_3'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: [], learnableSupports: ['concentrate'], learnableMovements: [],
   },
 
   // ─── Tier 1: from Chemist ─────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export const JOB_DEFS: Record<string, JobDef> = {
     mult:   { hp: 120, mp:  80, pa: 160, ma:  60, speed: 110 },
     growth: { hp:   9, mp:   2, pa:   9, ma:   2, speed:   2 },
     learnableActives: ['wave_fist', 'earth_slash', 'chakra', 'stigma_magic', 'revive_monk'],
-    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    learnableReactions: ['regenerator'], learnableSupports: [], learnableMovements: [],
   },
   thief: {
     id: 'thief', name: 'Thief', weapon: 'dagger', armor: 'light_armor',

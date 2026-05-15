@@ -109,10 +109,14 @@ export type AbilityEffect =
   | { kind: 'reaction-brave-up'; amount: number }
   /** Brave% chance to fully negate an incoming weapon attack (Blade Grasp). */
   | { kind: 'reaction-blade-grasp' }
+  /** Gain the Regen status whenever the unit takes damage (Regenerator). */
+  | { kind: 'reaction-regenerator' }
   // Passive: supports modify the unit between events.
   | { kind: 'support-mp-recovery'; amount: number }
   /** Multiplies ability MP costs by `factor` (0.5 = halved — Half of MP). */
   | { kind: 'support-half-mp'; factor: number }
+  /** The unit's physical attacks ignore evasion — hit chance forced to 100. */
+  | { kind: 'support-concentrate' }
   /** Multiplies JP earned per action by `factor` (e.g. 1.5 = +50%). */
   | { kind: 'support-jp-up'; factor: number }
   /** Multiplies the caster's effective MA on magic-damage / magic-heal casts. */
@@ -1009,6 +1013,14 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 800, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'reaction-blade-grasp' },
   },
+  regenerator: {
+    // Whenever the unit takes damage and survives, it gains the Regen
+    // status — a self-renewing toughness. Stacks its way back from any
+    // chip damage; pairs naturally with high-HP frontliners.
+    id: 'regenerator', name: 'Regenerator',
+    jpCost: 400, type: 'reaction', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'reaction-regenerator' },
+  },
 
   // ─── Support ──────────────────────────────────────────────────────────────
   mp_recovery: {
@@ -1086,6 +1098,14 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'half_of_mp', name: 'Half of MP',
     jpCost: 600, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'support-half-mp', factor: 0.5 },
+  },
+  concentrate: {
+    // The unit's physical attacks ignore the target's evasion entirely —
+    // hit chance forced to 100%. Turns a dodgy Thief or Ninja into a
+    // guaranteed hit. Magic accuracy is untouched.
+    id: 'concentrate', name: 'Concentrate',
+    jpCost: 500, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'support-concentrate' },
   },
   move_mp_up: {
     // The MP mirror of Move HP Up — restore a little MP at the end of
