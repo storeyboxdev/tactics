@@ -158,7 +158,7 @@ enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
 })));
 
 // Battle objective — the win condition for this fight. Battle 0 is always
-// a Rout; later battles may roll Regicide (defeat a designated leader).
+// a Rout; later battles may roll Regicide / Survive / Protect.
 const battleObjective = pickObjective(save?.battleCount ?? 0);
 if (battleObjective.kind === 'regicide') {
   const enemies = units.filter(u => u.team === 'enemy');
@@ -169,6 +169,11 @@ if (battleObjective.kind === 'regicide') {
     leader.hpMax = Math.floor(leader.hpMax * 1.5);
     leader.hp = leader.hpMax;
   }
+}
+if (battleObjective.kind === 'protect') {
+  const allies = units.filter(u => u.team === 'player');
+  const vip = allies[Math.floor(Math.random() * allies.length)];
+  if (vip) vip.isProtected = true;
 }
 
 const unitRenderer = new UnitRenderer(units, map);
@@ -1452,6 +1457,11 @@ function closestEndTileTo(plan: MovePlan, target: Unit): { x: number; z: number 
   return best;
 }
 
+/** The unit an objective banner names — the Regicide leader or Protect VIP. */
+function objectiveUnitName(): string | null {
+  return units.find(u => u.isLeader || u.isProtected)?.name ?? null;
+}
+
 function refreshHud() {
   hud.setTurnOrder(turns.predictUpcoming(8), currentActor?.id ?? null);
   // Survive's banner counts down — keep it current.
@@ -1503,6 +1513,6 @@ hud.setStatus('Loading assets...');
     mapRenderer.applyTextures(loader),
     unitRenderer.applyTextures(loader),
   ]);
-  hud.setObjective(objectiveLabel(battleObjective, units.find(u => u.isLeader)?.name ?? null));
+  hud.setObjective(objectiveLabel(battleObjective, objectiveUnitName()));
   activateNext();
 })();

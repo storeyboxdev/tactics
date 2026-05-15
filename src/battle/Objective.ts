@@ -12,7 +12,8 @@ import { Unit, Team } from './Unit';
 export type BattleObjective =
   | { kind: 'rout' }                       // defeat the entire enemy team (classic default)
   | { kind: 'regicide' }                   // defeat the designated enemy leader
-  | { kind: 'survive'; ticks: number };    // outlast a CT-tick threshold
+  | { kind: 'survive'; ticks: number }     // outlast a CT-tick threshold
+  | { kind: 'protect' };                   // rout the enemy, but losing the VIP loses
 
 /** True if `team` still has a unit that's alive and not petrified. */
 function teamStanding(units: readonly Unit[], team: Team): boolean {
@@ -42,6 +43,12 @@ export function evaluateObjective(
       // hold out until the tick threshold.
       if (!teamStanding(units, 'enemy')) return 'player';
       return tick >= objective.ticks ? 'player' : null;
+    case 'protect': {
+      // Win like a Rout, but losing the VIP loses the battle outright.
+      const vip = units.find(u => u.isProtected);
+      if (!vip || !vip.isAlive) return 'enemy';
+      return teamStanding(units, 'enemy') ? null : 'player';
+    }
   }
 }
 
@@ -59,6 +66,8 @@ export function objectiveLabel(
       return `Objective — Defeat the leader${leaderName ? `: ${leaderName}` : ''}`;
     case 'survive':
       return `Objective — Survive (${Math.max(0, objective.ticks - tick)} ticks left)`;
+    case 'protect':
+      return `Objective — Rout the enemy; protect${leaderName ? ` ${leaderName}` : ' the VIP'}`;
   }
 }
 
@@ -69,7 +78,8 @@ export function objectiveLabel(
 export function pickObjective(battleCount: number, rng: () => number = Math.random): BattleObjective {
   if (battleCount <= 0) return { kind: 'rout' };
   const r = rng();
-  if (r < 0.60) return { kind: 'rout' };
-  if (r < 0.85) return { kind: 'regicide' };
-  return { kind: 'survive', ticks: 60 };
+  if (r < 0.50) return { kind: 'rout' };
+  if (r < 0.70) return { kind: 'regicide' };
+  if (r < 0.85) return { kind: 'survive', ticks: 60 };
+  return { kind: 'protect' };
 }

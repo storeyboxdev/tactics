@@ -112,6 +112,9 @@ export class Unit {
   /** Transient battle flag — true for the enemy leader in a Regicide
    *  objective. Killing this unit wins the battle outright. */
   isLeader: boolean = false;
+  /** Transient battle flag — true for the player VIP in a Protect
+   *  objective. If this unit is KO'd, the battle is lost. */
+  isProtected: boolean = false;
 
   /**
    * True while a Jump-style ability is in flight. The unit is removed from

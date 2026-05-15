@@ -22,10 +22,11 @@ describe('pickObjective', () => {
     }
   });
 
-  it('later battles can roll Regicide and Survive', () => {
+  it('later battles can roll every objective kind', () => {
     expect(pickObjective(5, () => 0.0).kind).toBe('rout');
-    expect(pickObjective(5, () => 0.7).kind).toBe('regicide');
-    expect(pickObjective(5, () => 0.99).kind).toBe('survive');
+    expect(pickObjective(5, () => 0.6).kind).toBe('regicide');
+    expect(pickObjective(5, () => 0.8).kind).toBe('survive');
+    expect(pickObjective(5, () => 0.99).kind).toBe('protect');
   });
 });
 
@@ -106,5 +107,31 @@ describe('evaluateObjective — Survive', () => {
     const e = makeUnit('e', 'enemy');
     p.applyDamage(999);
     expect(evaluateObjective(survive, [p, e], 59)).toBe('enemy');
+  });
+});
+
+describe('evaluateObjective — Protect', () => {
+  const protect = { kind: 'protect' as const };
+
+  it('is unresolved while the VIP lives and enemies stand', () => {
+    const vip = makeUnit('vip', 'player'); vip.isProtected = true;
+    const e = makeUnit('e', 'enemy');
+    expect(evaluateObjective(protect, [vip, e])).toBeNull();
+  });
+
+  it('player wins by routing the enemy with the VIP alive', () => {
+    const vip = makeUnit('vip', 'player'); vip.isProtected = true;
+    const e = makeUnit('e', 'enemy');
+    e.applyDamage(999);
+    expect(evaluateObjective(protect, [vip, e])).toBe('player');
+  });
+
+  it('losing the VIP loses the battle — even with other units up', () => {
+    const vip = makeUnit('vip', 'player'); vip.isProtected = true;
+    const buddy = makeUnit('buddy', 'player');
+    const e = makeUnit('e', 'enemy');
+    vip.applyDamage(999);
+    expect(buddy.isAlive).toBe(true);
+    expect(evaluateObjective(protect, [vip, buddy, e])).toBe('enemy');
   });
 });
