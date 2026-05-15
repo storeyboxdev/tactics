@@ -99,8 +99,10 @@ function buildEnemy(seed: EnemySeed): Unit {
   const job = JOB_DEFS[seed.jobId];
   if (!job) throw new Error(`unknown jobId: ${seed.jobId}`);
   const loadout = JOB_DEFAULT_LOADOUT[seed.jobId] ?? { reaction: null, support: null, movement: null };
+  // Monsters read better named after the creature ("Goblin" beats "E2").
+  const name = job.isMonster ? job.name : seed.name;
   const def: UnitDef = {
-    id: seed.id, name: seed.name, team: 'enemy',
+    id: seed.id, name, team: 'enemy',
     jobId: seed.jobId, level: 1, stats: { ...job.baseStats } as UnitStats,
     reaction: loadout.reaction, support: loadout.support, movement: loadout.movement,
   };

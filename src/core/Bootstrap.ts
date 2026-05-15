@@ -48,15 +48,19 @@ const ENEMY_TIERS: Array<readonly string[]> = [
   // 0 — first battle: pure mirror, full safety net.
   ['squire'],
   // 2 — basic Tier-1 jobs come in (chemists patch, knights bash, archers ping).
-  ['squire', 'chemist', 'knight', 'archer'],
-  // 4 — first wave of casters and rogues (sleep / poison / mug pressure).
-  ['squire', 'chemist', 'knight', 'archer', 'monk', 'thief', 'white_mage', 'black_mage', 'oracle'],
-  // 6 — full pool. Anything goes.
+  //     Goblins start prowling — the first monster the player meets.
+  ['squire', 'chemist', 'knight', 'archer', 'goblin'],
+  // 4 — first wave of casters and rogues (sleep / poison / mug pressure),
+  //     and Chocobos join the beast roster.
+  ['squire', 'chemist', 'knight', 'archer', 'monk', 'thief', 'white_mage', 'black_mage', 'oracle',
+   'goblin', 'chocobo'],
+  // 6 — full pool. Anything goes — every job and every monster.
   [
     'squire', 'chemist', 'knight', 'archer', 'monk', 'thief',
     'white_mage', 'black_mage', 'time_mage', 'oracle',
     'geomancer', 'lancer', 'mediator', 'summoner',
     'samurai', 'ninja', 'calculator', 'bard', 'dancer', 'mime',
+    'goblin', 'chocobo', 'red_panther',
   ],
 ];
 

@@ -5,6 +5,7 @@ import {
 import { effectiveWeaponPower, PLACEHOLDER_WEAPON_POWER } from '../../src/battle/ActionResolver';
 import { JOB_DEFS, PLAYABLE_JOB_IDS, isPlayableJob } from '../../src/data/jobs';
 import { WEAPONS } from '../../src/data/weapons';
+import { pickEnemyJobs } from '../../src/core/Bootstrap';
 
 const MONSTERS = ['goblin', 'chocobo', 'red_panther'];
 
@@ -65,5 +66,38 @@ describe('Monster bestiary', () => {
     expect(c.speed).toBeGreaterThan(g.speed);   // Chocobo darts
     expect(g.hp).toBeGreaterThan(p.hp);          // Goblin is the sturdy one
     expect(p.pa).toBeGreaterThan(g.pa);          // Panther hits hardest
+  });
+});
+
+describe('Monster spawning', () => {
+  // rng → 0.999 always picks the last element of the tier pool, where each
+  // tier's newest monster sits.
+  const pickLast = () => 0.999;
+
+  it('Goblins can spawn from battle 2 (tier 1)', () => {
+    const jobs = pickEnemyJobs(2, 4, pickLast);
+    expect(jobs).toContain('goblin');
+  });
+
+  it('Chocobos join the pool by battle 4 (tier 2)', () => {
+    const jobs = pickEnemyJobs(4, 4, pickLast);
+    expect(jobs).toContain('chocobo');
+  });
+
+  it('Red Panthers appear in the full pool at battle 6+', () => {
+    const jobs = pickEnemyJobs(6, 4, pickLast);
+    expect(jobs).toContain('red_panther');
+  });
+
+  it('the first battle (0) is still monster-free — pure Squires', () => {
+    const jobs = pickEnemyJobs(0, 5, Math.random);
+    expect(jobs.every(j => j === 'squire')).toBe(true);
+  });
+
+  it('a spawned monster id builds a valid enemy unit profile', () => {
+    const goblin = monsterUnit('goblin');
+    expect(goblin.isAlive).toBe(true);
+    expect(goblin.team).toBe('enemy');
+    expect(JOB_DEFS[goblin.jobId].learnableActives).toEqual([]);
   });
 });

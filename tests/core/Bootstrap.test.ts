@@ -88,18 +88,20 @@ describe('pickEnemyJobs — tier ramp', () => {
     expect(jobs.every(j => j === 'squire')).toBe(true);
   });
 
-  it('battle 2 widens to tier-1 jobs', () => {
+  it('battle 2 widens past pure Squires', () => {
     const jobs = pickEnemyJobs(2, 5, rng1);
-    // rng1 always picks the last entry of the tier-1 pool: 'archer'.
-    // Plus the always-included squire.
-    expect(jobs).toContain('archer');
+    // rng1 always picks the last entry of the tier-1 pool (a Goblin since
+    // monsters were appended). Plus the always-included squire.
+    expect(jobs).toContain('goblin');
     expect(jobs).toContain('squire');
+    // The tier widened — not every slot is a squire anymore.
+    expect(jobs.some(j => j !== 'squire')).toBe(true);
   });
 
-  it('battle 6 includes any of the 20 jobs', () => {
+  it('battle 6 reaches the full pool', () => {
     const jobs = pickEnemyJobs(6, 5, rng1);
-    // rng1 picks the last entry of the full pool: 'mime'.
-    expect(jobs).toContain('mime');
+    // rng1 picks the last entry of the full pool: 'red_panther'.
+    expect(jobs).toContain('red_panther');
   });
 
   it('always includes at least one squire as a sanity baseline', () => {
