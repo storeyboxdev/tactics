@@ -5,7 +5,7 @@ import { unitAt, abilityTargets, affectedUnits } from './Targeting';
 import {
   predictAttackDamage, predictSpellDamage, predictHeal, predictRangedAttack,
   physicalHitChance, magicStatusHitChance, relativeFacing,
-  PLACEHOLDER_WEAPON_POWER,
+  effectiveWeaponPower,
 } from './ActionResolver';
 import { ABILITIES, Ability } from '../data/abilities';
 import { JOB_DEFS } from '../data/jobs';
@@ -167,7 +167,7 @@ function scoreOption(
   let threat = 0;
   for (const u of units) {
     if (u.team === actor.team || !u.isAlive) continue;
-    if (manhattan(endTile, u) === 1) threat += u.pa * PLACEHOLDER_WEAPON_POWER;
+    if (manhattan(endTile, u) === 1) threat += u.pa * effectiveWeaponPower(u);
   }
   s -= threat * 0.3;
 

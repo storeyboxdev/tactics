@@ -2,6 +2,8 @@ import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
 import { ABILITIES } from '../data/abilities';
 import { StatusId } from '../data/statuses';
+import { JOB_DEFS } from '../data/jobs';
+import { WEAPONS } from '../data/weapons';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
 
@@ -69,9 +71,23 @@ const FACING_HIT_BONUS: Record<RelativeFacing, number> = {
   back:  20,
 };
 
+/** Fallback weapon-power for units whose job has no weapon (e.g. test
+ *  fixtures with a synthetic jobId). Real jobs resolve via WEAPONS. */
 export const PLACEHOLDER_WEAPON_POWER = 4;
 /** Placeholder weapon-accuracy until the equip system lands. */
 export const WEAPON_ACCURACY = 95;
+
+/**
+ * Weapon-power for a unit's basic Attack — looked up from its job's
+ * signature weapon. Falls back to PLACEHOLDER_WEAPON_POWER when the job
+ * is unknown or weaponless (synthetic test jobs), keeping legacy
+ * basic-attack damage assertions stable.
+ */
+export function effectiveWeaponPower(unit: Unit): number {
+  const weaponId = JOB_DEFS[unit.jobId]?.weapon;
+  const weapon = weaponId ? WEAPONS[weaponId] : undefined;
+  return weapon?.weaponPower ?? PLACEHOLDER_WEAPON_POWER;
+}
 
 /**
  * Per-facing crit chance for physical hits. Mirrors the FFT-style "back
@@ -236,7 +252,7 @@ export function predictAttackDamage(
   return {
     damage: computeAttackDamage({
       pa: effectivePa(attacker),
-      weaponPower: PLACEHOLDER_WEAPON_POWER,
+      weaponPower: effectiveWeaponPower(attacker),
       attackerH: aH, targetH: tH,
       facing, randomMul: 1.0,
     }),
@@ -279,7 +295,7 @@ export function resolveAttack(
 
   const baseDamage = computeAttackDamage({
     pa: effectivePa(attacker),
-    weaponPower: PLACEHOLDER_WEAPON_POWER,
+    weaponPower: effectiveWeaponPower(attacker),
     attackerH: aH, targetH: tH,
     facing, randomMul,
   });
