@@ -89,4 +89,16 @@ describe('Knight Sword Skill catalog', () => {
     expect(ab.effect.statusId).toBe('stop');
     expect(ab.effect.weaponPower).toBe(6);
   });
+
+  it('Knight learns Lightning Stab', () => {
+    expect(JOB_DEFS.knight.learnableActives).toContain('lightning_stab');
+  });
+
+  it('Lightning Stab chains Sleep on the same physical-damage-and-status shape', () => {
+    const ab = ABILITIES.lightning_stab;
+    expect(ab.range).toBe(3);
+    if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('sleep');
+    expect(ab.effect.weaponPower).toBe(6);
+  });
 });

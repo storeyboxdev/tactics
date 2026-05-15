@@ -206,6 +206,16 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-damage-and-status', weaponPower: 6,
               statusId: 'stop', statusBaseAcc: 70 },
   },
+  lightning_stab: {
+    // Sister sword skill to Stasis Sword — same ranged physical wave,
+    // same moderate damage, but the chained status is Sleep. Sleep lasts
+    // until the target next takes damage, so it shines when the rest of
+    // the party can leave the sleeper alone and focus elsewhere.
+    id: 'lightning_stab', name: 'Lightning Stab',
+    jpCost: 500, type: 'physical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 6,
+              statusId: 'sleep', statusBaseAcc: 70 },
+  },
   fire: {
     id: 'fire',
     name: 'Fire',

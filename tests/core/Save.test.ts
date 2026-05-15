@@ -49,7 +49,7 @@ describe('Save round-trip', () => {
     expect(r.jobId).toBe('knight');
     expect(r.reaction).toBe('counter');
     // Knight bootstraps with its full active list pre-learned.
-    expect(r.progression.jobs.knight.learnedAbilities).toEqual(['power_break', 'speed_break', 'magic_break', 'stasis_sword']);
+    expect(r.progression.jobs.knight.learnedAbilities).toEqual(['power_break', 'speed_break', 'magic_break', 'stasis_sword', 'lightning_stab']);
   });
 
   it('learnedAbilities round-trips as a string array', () => {
