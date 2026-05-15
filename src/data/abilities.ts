@@ -749,6 +749,24 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 400, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 10 },
   },
+  throw_bomb: {
+    // The cluster-clearer — a radius-1 cross AoE. Per-target damage is
+    // moderate (WP 6) but it catches everyone in the blast. Scales on the
+    // Ninja's PA; the "bomb" is flavor, no element tag.
+    id: 'throw_bomb', name: 'Throw Bomb',
+    jpCost: 350, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
+    area: { radius: 1 },
+  },
+  poison_shuriken: {
+    // A venom-tipped throw — ranged physical damage plus a faith-scaled
+    // poison roll. Lighter hit than a plain shuriken; the poison is the
+    // payoff.
+    id: 'poison_shuriken', name: 'Poison Shuriken',
+    jpCost: 300, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 5,
+              statusId: 'poison', statusBaseAcc: 70 },
+  },
 
   // ─── Summoner ─────────────────────────────────────────────────────────────
   // Espers identical in power and shape, differing only by element. The big

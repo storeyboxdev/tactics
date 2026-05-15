@@ -40,3 +40,24 @@ describe('Ninja Throw tier', () => {
     }
   });
 });
+
+describe('Ninja special throws', () => {
+  it('Ninja learns Throw Bomb and Poison Shuriken', () => {
+    const ninja = JOB_DEFS.ninja.learnableActives;
+    expect(ninja).toContain('throw_bomb');
+    expect(ninja).toContain('poison_shuriken');
+  });
+
+  it('Throw Bomb is a radius-1 AoE ranged-physical', () => {
+    const ab = ABILITIES.throw_bomb;
+    expect(ab.area?.radius).toBe(1);
+    expect(ab.effect.kind).toBe('physical-ranged-damage');
+  });
+
+  it('Poison Shuriken chains poison via physical-damage-and-status', () => {
+    const eff = ABILITIES.poison_shuriken.effect;
+    if (eff.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(eff.statusId).toBe('poison');
+    expect(eff.weaponPower).toBe(5);
+  });
+});
