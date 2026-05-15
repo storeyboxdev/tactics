@@ -96,3 +96,16 @@ describe('Half of MP support', () => {
     expect(JOB_DEFS.summoner.learnableSupports).toContain('half_of_mp');
   });
 });
+
+describe('Move-MP-Up movement', () => {
+  it('Move MP Up is a movement passive restoring MP', () => {
+    const ab = ABILITIES.move_mp_up;
+    expect(ab.type).toBe('movement');
+    if (ab.effect.kind !== 'movement-mp-up') throw new Error('bad fixture');
+    expect(ab.effect.amount).toBeGreaterThan(0);
+  });
+
+  it('White Mage learns Move MP Up', () => {
+    expect(JOB_DEFS.white_mage.learnableMovements).toContain('move_mp_up');
+  });
+});

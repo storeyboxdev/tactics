@@ -1145,6 +1145,11 @@ function applyMovementEndHook(unit: Unit) {
     unit.hp = Math.min(unit.hpMax, unit.hp + ab.effect.amount);
     if (unit.hp > before) hud.log(`${unit.name}: Move HP Up +${unit.hp - before}`);
   }
+  if (ab.effect.kind === 'movement-mp-up') {
+    const before = unit.mp;
+    unit.mp = Math.min(unit.mpMax, unit.mp + ab.effect.amount);
+    if (unit.mp > before) hud.log(`${unit.name}: Move MP Up +${unit.mp - before}`);
+  }
 }
 
 /**

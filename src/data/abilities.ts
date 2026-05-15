@@ -1087,6 +1087,13 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 600, type: 'support', range: 0, chargeTime: 0, mpCost: 0,
     effect: { kind: 'support-half-mp', factor: 0.5 },
   },
+  move_mp_up: {
+    // The MP mirror of Move HP Up — restore a little MP at the end of
+    // every move. Keeps a mobile caster's pool topped up between casts.
+    id: 'move_mp_up', name: 'Move MP Up',
+    jpCost: 300, type: 'movement', range: 0, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'movement-mp-up', amount: 4 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).
