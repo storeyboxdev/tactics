@@ -673,12 +673,22 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   }
   if (eff.kind === 'magic-heal') {
     const out = resolveHeal(actor, target, eff.spellPower);
+    if (out.undead) {
+      hud.log(`${ab.name}: ${target.name} is Undead — the light burns for ${out.amount}`);
+      playSpellHitVisual(target);
+      return target.team === 'enemy' && out.amount > 0;
+    }
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for +${out.amount} HP`);
     spellFx.burst(target, 'heal', () => {});
     return false; // heals never grant EXP
   }
   if (eff.kind === 'flat-heal') {
     const out = resolveFlatHeal(actor, target, eff.hp, eff.mp);
+    if (out.undead) {
+      hud.log(`${ab.name}: ${target.name} is Undead — the item burns for ${-out.hpRestored}`);
+      playSpellHitVisual(target);
+      return target.team === 'enemy' && out.hpRestored < 0;
+    }
     const parts: string[] = [];
     if (out.hpRestored > 0) parts.push(`+${out.hpRestored} HP`);
     if (out.mpRestored > 0) parts.push(`+${out.mpRestored} MP`);

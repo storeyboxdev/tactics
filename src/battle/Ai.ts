@@ -50,6 +50,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   charm:     35,   // flips an enemy to attack its own team — enormous swing
   frog:      22,   // shuts off the kit + halves PA, but the unit still chips
   petrify:   45,   // soft KO — just under Death Sentence's guaranteed 50
+  undead:    12,   // conditional — only pays off once the target is "healed"
 };
 
 /** Whether a unit has any magical-type ability available — used to gate

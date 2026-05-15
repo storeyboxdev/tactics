@@ -88,8 +88,11 @@ export class TurnSystem {
     for (const s of [...u.statuses]) {
       const def = STATUS_DEFS[s.id];
       if (def.hpPerTick) {
-        if (def.hpPerTick > 0) {
-          const { dealt } = u.applyDamage(def.hpPerTick);
+        // Undead flips a healing tick (Regen) into damage — the light burns.
+        const healingTick = def.hpPerTick < 0;
+        if (def.hpPerTick > 0 || (healingTick && u.hasStatus('undead'))) {
+          const amount = Math.abs(def.hpPerTick);
+          const { dealt } = u.applyDamage(amount);
           this.onTickEvent?.({ kind: 'status-damage', unit: u, statusId: s.id, amount: dealt, ko: u.hp <= 0 });
           if (u.hp <= 0) return; // dead — no further ticks this turn
         } else {

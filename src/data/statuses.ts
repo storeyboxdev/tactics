@@ -15,7 +15,7 @@ export type StatusId =
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
   | 'reraise' | 'death_sentence'
   | 'berserk' | 'confuse' | 'charm' | 'frog'
-  | 'petrify';
+  | 'petrify' | 'undead';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -159,6 +159,13 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     id: 'petrify', name: 'Petrify', short: 'PET', color: 0x9a9488,
     expiry: { kind: 'permanent' },
     blocksTurn: true,
+  },
+  undead: {
+    // Cursed flesh — healing flips to damage. resolveHeal / resolveFlatHeal
+    // and Regen ticks all deal damage to an undead target instead of
+    // restoring HP. The combo: Zombie a tanky enemy, then "heal" them.
+    id: 'undead', name: 'Undead', short: 'UND', color: 0x6b8f3a,
+    expiry: { kind: 'duration', ticks: 32 },
   },
 };
 

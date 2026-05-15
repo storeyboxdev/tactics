@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   Unit, UnitDef, UnitStats, FACING_E, Facing, Team,
 } from '../../src/battle/Unit';
+import { TurnSystem } from '../../src/battle/TurnSystem';
+import { resolveHeal, resolveFlatHeal, resolveRevive } from '../../src/battle/ActionResolver';
 import { ABILITIES } from '../../src/data/abilities';
 import { JOB_DEFS } from '../../src/data/jobs';
 import { STATUS_DEFS } from '../../src/data/statuses';
@@ -62,6 +64,83 @@ describe('Petrify status', () => {
       const eff = ABILITIES[id].effect;
       if (eff.kind !== 'cure-status') throw new Error('bad fixture');
       expect(eff.statuses).toContain('petrify');
+    }
+  });
+});
+
+describe('Undead status', () => {
+  it('resolveHeal damages an undead target instead of healing', () => {
+    const caster = makeUnit('c', 'player', { ma: 10, faith: 100 });
+    const target = makeUnit('t', 'enemy', { hp: 50, faith: 100 });
+    target.hpMax = 100;
+    target.hp = 50;
+    target.addStatus('undead');
+    const out = resolveHeal(caster, target, 14, () => 0.5);
+    expect(out.undead).toBe(true);
+    expect(out.amount).toBeGreaterThan(0);
+    expect(target.hp).toBeLessThan(50);
+  });
+
+  it('resolveHeal heals a normal (non-undead) target', () => {
+    const caster = makeUnit('c', 'player', { ma: 10, faith: 100 });
+    const target = makeUnit('t', 'player', { hp: 50, faith: 100 });
+    target.hpMax = 100;
+    target.hp = 50;
+    const out = resolveHeal(caster, target, 14, () => 0.5);
+    expect(out.undead).toBeFalsy();
+    expect(target.hp).toBeGreaterThan(50);
+  });
+
+  it('resolveFlatHeal flips the HP component on undead, leaves MP', () => {
+    const u = makeUnit('u', 'enemy', { hp: 80, mp: 5 });
+    u.hpMax = 100; u.hp = 80;
+    u.mpMax = 30;  u.mp = 5;
+    u.addStatus('undead');
+    const out = resolveFlatHeal(u, u, 50, 20);
+    expect(out.undead).toBe(true);
+    expect(out.hpRestored).toBeLessThan(0);  // damage, reported negative
+    expect(u.hp).toBeLessThan(80);
+    expect(out.mpRestored).toBe(20);          // MP component unaffected
+  });
+
+  it('Regen ticks damage an undead unit', () => {
+    const u = makeUnit('u', 'player', { hp: 60 });
+    u.hpMax = 100; u.hp = 60;
+    u.addStatus('regen');
+    u.addStatus('undead');
+    const fast = makeUnit('fast', 'player', { speed: 1000 });
+    const ts = new TurnSystem([u, fast]);
+    ts.advance();
+    expect(u.hp).toBeLessThan(60); // Regen burned instead of healed
+  });
+
+  it('revive still restores HP on an undead unit (no flip)', () => {
+    const caster = makeUnit('c', 'player');
+    const target = makeUnit('t', 'player', { hp: 100 });
+    target.hpMax = 100;
+    target.hp = 0;
+    target.addStatus('undead');
+    const out = resolveRevive(caster, target, 50);
+    expect(out.amount).toBeGreaterThan(0);
+    expect(target.hp).toBeGreaterThan(0);
+  });
+
+  it('Oracle learns Zombie', () => {
+    expect(JOB_DEFS.oracle.learnableActives).toContain('zombie');
+  });
+
+  it('Zombie inflicts the undead status on enemies', () => {
+    const eff = ABILITIES.zombie.effect;
+    if (eff.kind !== 'inflict-status') throw new Error('bad fixture');
+    expect(eff.statusId).toBe('undead');
+    expect(eff.targetTeam).toBe('enemy');
+  });
+
+  it('Esuna / Remedy / Stigma Magic cure undead', () => {
+    for (const id of ['esuna', 'remedy', 'stigma_magic']) {
+      const eff = ABILITIES[id].effect;
+      if (eff.kind !== 'cure-status') throw new Error('bad fixture');
+      expect(eff.statuses).toContain('undead');
     }
   });
 });

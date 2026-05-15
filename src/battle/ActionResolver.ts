@@ -686,6 +686,8 @@ export interface HealOutcome {
   caster: Unit;
   target: Unit;
   amount: number;
+  /** True if the target was Undead — `amount` was dealt as damage, not healed. */
+  undead?: boolean;
 }
 
 /**
@@ -717,6 +719,11 @@ export function resolveHeal(
     casterFaith: caster.faith, targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
+  // Undead: the light burns. Healing flips to damage.
+  if (target.hasStatus('undead')) {
+    const { dealt } = target.applyDamage(amount);
+    return { caster, target, amount: dealt, undead: true };
+  }
   const before = target.hp;
   target.hp = Math.min(target.hpMax, target.hp + amount);
   return { caster, target, amount: target.hp - before };
@@ -729,6 +736,8 @@ export interface FlatHealOutcome {
   target: Unit;
   hpRestored: number;
   mpRestored: number;
+  /** True if the target was Undead — the HP component was dealt as damage. */
+  undead?: boolean;
 }
 
 /**
@@ -736,23 +745,33 @@ export interface FlatHealOutcome {
  * target's max. Ignores caster stats — the item does the healing, not
  * the user. No RNG, no hit roll. Either field can be omitted; a
  * Hi-Potion is hp-only, an Ether is mp-only.
+ *
+ * Undead flips the HP component to damage (the MP component is unaffected —
+ * the curse is on flesh, not mana).
  */
 export function resolveFlatHeal(
   user: Unit, target: Unit, hp?: number, mp?: number,
 ): FlatHealOutcome {
   let hpRestored = 0;
   let mpRestored = 0;
-  if (hp && hp > 0 && target.hp < target.hpMax) {
-    const before = target.hp;
-    target.hp = Math.min(target.hpMax, target.hp + hp);
-    hpRestored = target.hp - before;
+  let undead = false;
+  if (hp && hp > 0) {
+    if (target.hasStatus('undead')) {
+      const { dealt } = target.applyDamage(hp);
+      hpRestored = -dealt;
+      undead = true;
+    } else if (target.hp < target.hpMax) {
+      const before = target.hp;
+      target.hp = Math.min(target.hpMax, target.hp + hp);
+      hpRestored = target.hp - before;
+    }
   }
   if (mp && mp > 0 && target.mp < target.mpMax) {
     const before = target.mp;
     target.mp = Math.min(target.mpMax, target.mp + mp);
     mpRestored = target.mp - before;
   }
-  return { user, target, hpRestored, mpRestored };
+  return { user, target, hpRestored, mpRestored, undead };
 }
 
 // ─── Revive (Raise / Phoenix Down) ──────────────────────────────────────────
