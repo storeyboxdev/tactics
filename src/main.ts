@@ -21,6 +21,7 @@ import {
 } from './battle/Progression';
 import { LastActionLog } from './battle/LastAction';
 import { computeDisplayStats } from './battle/Stats';
+import { pickObjective, evaluateObjective, objectiveLabel } from './battle/Objective';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
 import { WEAPONS } from './data/weapons';
@@ -156,6 +157,20 @@ enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
   id: `e${i + 1}`, name: `E${i + 1}`, jobId: enemyJobs[i], x, z,
 })));
 
+// Battle objective — the win condition for this fight. Battle 0 is always
+// a Rout; later battles may roll Regicide (defeat a designated leader).
+const battleObjective = pickObjective(save?.battleCount ?? 0);
+if (battleObjective.kind === 'regicide') {
+  const enemies = units.filter(u => u.team === 'enemy');
+  const leader = enemies[Math.floor(Math.random() * enemies.length)];
+  if (leader) {
+    leader.isLeader = true;
+    // A regicide target shouldn't just be the squishiest enemy — beef it.
+    leader.hpMax = Math.floor(leader.hpMax * 1.5);
+    leader.hp = leader.hpMax;
+  }
+}
+
 const unitRenderer = new UnitRenderer(units, map);
 scene.add(unitRenderer.group);
 
@@ -224,15 +239,10 @@ let hasActed = false;
 let battleOver = false;
 
 function checkBattleEnd(): 'player' | 'enemy' | null {
-  // Petrified units count as down — turned to stone, out of the fight
-  // unless someone cures them. A team with only petrified survivors loses.
-  const standing = (team: 'player' | 'enemy') =>
-    units.some(u => u.team === team && u.isAlive && !u.hasStatus('petrify'));
-  const playerAlive = standing('player');
-  const enemyAlive  = standing('enemy');
-  if (!enemyAlive)  return 'player';
-  if (!playerAlive) return 'enemy';
-  return null;
+  // Objective-aware: Rout needs the whole enemy team down, Regicide just the
+  // leader. Loss (player team wiped) is universal. Petrified units count as
+  // down inside evaluateObjective's standing check.
+  return evaluateObjective(battleObjective, units);
 }
 
 /**
@@ -1489,5 +1499,6 @@ hud.setStatus('Loading assets...');
     mapRenderer.applyTextures(loader),
     unitRenderer.applyTextures(loader),
   ]);
+  hud.setObjective(objectiveLabel(battleObjective, units.find(u => u.isLeader)?.name ?? null));
   activateNext();
 })();

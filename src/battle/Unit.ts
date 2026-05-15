@@ -109,6 +109,9 @@ export class Unit {
   /** Transient in-battle guard: set once a death-trigger (Bomb's Self-
    *  Destruct) has fired, so a KO'd creature doesn't re-explode each turn. */
   deathTriggerFired: boolean = false;
+  /** Transient battle flag — true for the enemy leader in a Regicide
+   *  objective. Killing this unit wins the battle outright. */
+  isLeader: boolean = false;
 
   /**
    * True while a Jump-style ability is in flight. The unit is removed from

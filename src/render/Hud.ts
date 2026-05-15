@@ -39,6 +39,7 @@ export interface SkillEntry {
 
 export class Hud {
   private readonly turnStripEl: HTMLDivElement;
+  private readonly objectiveEl: HTMLDivElement;
   private readonly statusEl: HTMLDivElement;
   private readonly logEl: HTMLDivElement;
   private readonly awardsEl: HTMLDivElement;
@@ -53,6 +54,11 @@ export class Hud {
       display: 'flex', gap: '6px',
     });
     root.appendChild(this.turnStripEl);
+
+    this.objectiveEl = makePanel({
+      top: '16px', left: '16px',
+    });
+    root.appendChild(this.objectiveEl);
 
     this.statusEl = makePanel({
       bottom: '16px', left: '16px',
@@ -143,6 +149,11 @@ export class Hud {
 
   setStatus(text: string): void {
     this.statusEl.textContent = text;
+  }
+
+  /** The persistent battle-objective banner (top-left). */
+  setObjective(text: string): void {
+    this.objectiveEl.textContent = text;
   }
 
   log(message: string): void {
