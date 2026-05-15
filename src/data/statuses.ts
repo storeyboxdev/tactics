@@ -14,7 +14,7 @@ export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
   | 'reraise' | 'death_sentence'
-  | 'berserk' | 'confuse';
+  | 'berserk' | 'confuse' | 'charm';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -129,6 +129,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     // accidentally bash their own White Mage. No PA boost — confuse is
     // disorientation, not rage.
     id: 'confuse', name: 'Confuse', short: 'CON', color: 0xa040c0,
+    expiry: { kind: 'duration', ticks: 24 },
+  },
+  charm: {
+    // The unit fights for the other side: its turn walks toward and
+    // basic-attacks its nearest FORMER ally. Still counts as its original
+    // team for the victory check (it's alive, just misbehaving) so the
+    // battle doesn't mis-resolve while the 24-tick duration runs.
+    id: 'charm', name: 'Charm', short: 'CHM', color: 0xe85d9c,
     expiry: { kind: 'duration', ticks: 24 },
   },
 };

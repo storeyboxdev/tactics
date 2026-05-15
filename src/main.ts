@@ -259,10 +259,12 @@ function activateNext() {
   hasActed = false;
   refreshHud();
 
-  // AI-override statuses (Berserk, Confuse) take the turn from both teams.
-  // Runs alternate logic instead of player menu / standard AI.
-  if (actor.hasStatus('berserk') || actor.hasStatus('confuse')) {
-    const label = actor.hasStatus('berserk') ? 'Berserk' : 'Confused';
+  // AI-override statuses (Berserk, Confuse, Charm) take the turn from both
+  // teams. Runs alternate logic instead of player menu / standard AI.
+  if (actor.hasStatus('berserk') || actor.hasStatus('confuse') || actor.hasStatus('charm')) {
+    const label = actor.hasStatus('berserk') ? 'Berserk'
+                : actor.hasStatus('charm')   ? 'Charmed'
+                : 'Confused';
     hud.setStatus(`${actor.name} is ${label}!`);
     setTimeout(() => runOverrideTurn(actor), 600);
     return;
@@ -1268,9 +1270,14 @@ function enemyAutoTurn(actor: Unit) {
  * easily hit one of the actor's own allies.
  */
 function runOverrideTurn(actor: Unit) {
-  const target = actor.hasStatus('berserk')
-    ? nearestOpponent(actor)
-    : randomAliveOther(actor);
+  let target: Unit | null;
+  if (actor.hasStatus('berserk')) {
+    target = nearestOpponent(actor);
+  } else if (actor.hasStatus('charm')) {
+    target = nearestAlly(actor);          // charmed → attacks its former team
+  } else {
+    target = randomAliveOther(actor);     // confuse → random
+  }
 
   if (!target) {
     turns.endTurn(actor, { moved: false, acted: false });
@@ -1318,6 +1325,17 @@ function nearestOpponent(actor: Unit): Unit | null {
   let bestD = Infinity;
   for (const u of units) {
     if (!u.isAlive || u.team === actor.team || u === actor) continue;
+    const d = Math.abs(u.x - actor.x) + Math.abs(u.z - actor.z);
+    if (d < bestD) { bestD = d; best = u; }
+  }
+  return best;
+}
+
+function nearestAlly(actor: Unit): Unit | null {
+  let best: Unit | null = null;
+  let bestD = Infinity;
+  for (const u of units) {
+    if (!u.isAlive || u.team !== actor.team || u === actor) continue;
     const d = Math.abs(u.x - actor.x) + Math.abs(u.z - actor.z);
     if (d < bestD) { bestD = d; best = u; }
   }

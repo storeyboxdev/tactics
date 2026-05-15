@@ -411,7 +411,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -435,7 +435,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
   hi_potion: {
@@ -605,7 +605,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },
@@ -852,6 +852,16 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 600, type: 'magical', range: 4, chargeTime: 0, mpCost: 0,
     effect: { kind: 'inflict-status', statusId: 'death_sentence',
               targetTeam: 'enemy', baseAccuracy: 70 },
+  },
+  charm: {
+    // The Mediator talks an enemy onto your side — for 24 ticks the target
+    // fights for the other team, basic-attacking its former allies. baseAcc
+    // 90 keeps it spotty (~22% at 50/50 faith); when it lands it can swing
+    // a whole battle, so it shouldn't land often.
+    id: 'charm', name: 'Charm',
+    jpCost: 700, type: 'magical', range: 4, chargeTime: 0, mpCost: 6,
+    effect: { kind: 'inflict-status', statusId: 'charm',
+              targetTeam: 'enemy', baseAccuracy: 90 },
   },
 
   // ─── Calculator (Math Skill) ──────────────────────────────────────────────
