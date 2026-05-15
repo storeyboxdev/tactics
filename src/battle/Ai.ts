@@ -49,6 +49,7 @@ const STATUS_VALUE: Record<StatusId, number> = {
   confuse:   22,   // random target hits any team — meaningful chance of self-team damage
   charm:     35,   // flips an enemy to attack its own team — enormous swing
   frog:      22,   // shuts off the kit + halves PA, but the unit still chips
+  petrify:   45,   // soft KO — just under Death Sentence's guaranteed 50
 };
 
 /** Whether a unit has any magical-type ability available — used to gate

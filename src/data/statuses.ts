@@ -14,7 +14,8 @@ export type StatusId =
   | 'poison' | 'slow' | 'haste' | 'sleep' | 'stop'
   | 'regen' | 'silence' | 'dont_move' | 'dont_act'
   | 'reraise' | 'death_sentence'
-  | 'berserk' | 'confuse' | 'charm' | 'frog';
+  | 'berserk' | 'confuse' | 'charm' | 'frog'
+  | 'petrify';
 
 export type StatusExpiry =
   | { kind: 'duration'; ticks: number }   // expires after N ticks
@@ -150,6 +151,14 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
     id: 'frog', name: 'Frog', short: 'FRG', color: 0x6fae3f,
     expiry: { kind: 'duration', ticks: 24 },
     blocksAbilities: true,
+  },
+  petrify: {
+    // Turned to stone — a soft KO. Turn auto-skipped (blocksTurn) and
+    // permanent until cured. checkBattleEnd treats a petrified unit as
+    // down: a team whose only survivors are petrified loses.
+    id: 'petrify', name: 'Petrify', short: 'PET', color: 0x9a9488,
+    expiry: { kind: 'permanent' },
+    blocksTurn: true,
   },
 };
 

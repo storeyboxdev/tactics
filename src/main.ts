@@ -216,8 +216,12 @@ let hasActed = false;
 let battleOver = false;
 
 function checkBattleEnd(): 'player' | 'enemy' | null {
-  const playerAlive = units.some(u => u.team === 'player' && u.isAlive);
-  const enemyAlive  = units.some(u => u.team === 'enemy'  && u.isAlive);
+  // Petrified units count as down — turned to stone, out of the fight
+  // unless someone cures them. A team with only petrified survivors loses.
+  const standing = (team: 'player' | 'enemy') =>
+    units.some(u => u.team === team && u.isAlive && !u.hasStatus('petrify'));
+  const playerAlive = standing('player');
+  const enemyAlive  = standing('enemy');
   if (!enemyAlive)  return 'player';
   if (!playerAlive) return 'enemy';
   return null;

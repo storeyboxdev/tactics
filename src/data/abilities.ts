@@ -359,6 +359,14 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 500, type: 'magical', range: 3, chargeTime: 2, mpCost: 12,
     effect: { kind: 'inflict-status', statusId: 'frog', targetTeam: 'enemy', baseAccuracy: 100 },
   },
+  petrify: {
+    // The heavy hex — turns the target to stone (a soft KO). CT 3 windup,
+    // steep MP, and a deliberately low baseAcc (60): a status that ends a
+    // unit's participation in the battle shouldn't land often.
+    id: 'petrify', name: 'Petrify',
+    jpCost: 800, type: 'magical', range: 3, chargeTime: 3, mpCost: 14,
+    effect: { kind: 'inflict-status', statusId: 'petrify', targetTeam: 'enemy', baseAccuracy: 60 },
+  },
 
   // ─── White Mage ───────────────────────────────────────────────────────────
   cure: {
@@ -420,7 +428,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'esuna', name: 'Esuna',
     jpCost: 400, type: 'magical', range: 4, chargeTime: 2, mpCost: 10,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog', 'petrify'],
               targetTeam: 'ally', baseAccuracy: 200 },
   },
 
@@ -444,7 +452,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'remedy', name: 'Remedy',
     jpCost: 200, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog', 'petrify'],
               targetTeam: 'ally', baseAccuracy: 160 },
   },
   hi_potion: {
@@ -614,7 +622,7 @@ export const ABILITIES: Record<string, Ability> = {
     id: 'stigma_magic', name: 'Stigma Magic',
     jpCost: 400, type: 'magical', range: 0, chargeTime: 0, mpCost: 6,
     effect: { kind: 'cure-status',
-              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog'],
+              statuses: ['poison', 'silence', 'sleep', 'slow', 'stop', 'dont_move', 'dont_act', 'death_sentence', 'berserk', 'confuse', 'charm', 'frog', 'petrify'],
               targetTeam: 'ally', baseAccuracy: 180 },
     area: { radius: 2 },
   },
