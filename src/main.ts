@@ -24,6 +24,7 @@ import { computeDisplayStats } from './battle/Stats';
 import { ABILITIES, Ability } from './data/abilities';
 import { JOB_DEFS } from './data/jobs';
 import { WEAPONS } from './data/weapons';
+import { ARMOR } from './data/armor';
 import { STATUS_DEFS } from './data/statuses';
 import { MapRenderer } from './render/MapRenderer';
 import { UnitRenderer } from './render/UnitRenderer';
@@ -272,9 +273,11 @@ function activateNext() {
   }
 
   if (actor.team === 'player') {
-    const weaponId = JOB_DEFS[actor.jobId]?.weapon;
-    const weaponName = weaponId ? WEAPONS[weaponId]?.name : undefined;
-    const kit = weaponName ? `${actor.jobId}, ${weaponName}` : actor.jobId;
+    const job = JOB_DEFS[actor.jobId];
+    const weaponName = job?.weapon ? WEAPONS[job.weapon]?.name : undefined;
+    const armorName  = job?.armor  ? ARMOR[job.armor]?.name   : undefined;
+    const gear = [weaponName, armorName].filter(Boolean).join(' / ');
+    const kit = gear ? `${actor.jobId} · ${gear}` : actor.jobId;
     hud.setStatus(`${actor.name}'s turn (${kit}) — choose an action`);
     showActionMenu();
     beginMove(); // default into Move targeting; player can switch via menu
