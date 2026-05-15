@@ -141,6 +141,58 @@ describe('HeuristicAi — cautious leader', () => {
   });
 });
 
+describe('HeuristicAi — bodyguard screening', () => {
+  const mh = (a: { x: number; z: number }, b: { x: number; z: number }) =>
+    Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
+
+  // guard at (5,1); leader at (8,2); player threat at (0,2). The leader–
+  // threat screening line is row z=2, x>=4 (the leader's half).
+  function guardScene() {
+    const map = new BattleMap(flatMap(9, 5));
+    const guard = makeUnit('guard', 'enemy', 5, 1, FACING_W, { move: 3 });
+    const leader = makeUnit('leader', 'enemy', 8, 2, FACING_W);
+    const threat = makeUnit('threat', 'player', 0, 2, FACING_E);
+    return { map, guard, leader, threat };
+  }
+
+  it('a guard interposes between its leader and the nearest threat', () => {
+    const { map, guard, leader, threat } = guardScene();
+    leader.isLeader = true;
+    const d = new HeuristicAi().decide(guard, map, [guard, leader, threat]);
+    expect(d.action).toBeNull();
+    const end = d.movePath[d.movePath.length - 1];
+    expect(end.z).toBe(2);
+    expect(end.x).toBeGreaterThanOrEqual(4);
+  });
+
+  it('without a leader ally the screening term is inert — the guard advances', () => {
+    const { map, guard, leader, threat } = guardScene();
+    const d = new HeuristicAi().decide(guard, map, [guard, leader, threat]);
+    const end = d.movePath[d.movePath.length - 1] ?? { x: guard.x, z: guard.z };
+    expect(mh(end, threat)).toBeLessThan(5);
+  });
+
+  it('a leader actor skips the screening term', () => {
+    const { map, guard, leader, threat } = guardScene();
+    leader.isLeader = true;
+    guard.isLeader = true; // the actor is itself a leader → no screening
+    const d = new HeuristicAi().decide(guard, map, [guard, leader, threat]);
+    const end = d.movePath[d.movePath.length - 1] ?? { x: guard.x, z: guard.z };
+    expect(mh(end, threat)).toBeLessThan(5);
+  });
+
+  it('the screening bonus never outranks an available KO', () => {
+    const map = new BattleMap(flatMap(9, 5));
+    const guard = makeUnit('guard', 'enemy', 1, 2, FACING_E, { move: 4 });
+    const leader = makeUnit('leader', 'enemy', 8, 2, FACING_W);
+    leader.isLeader = true;
+    const weak = makeUnit('weak', 'player', 3, 2, FACING_E, { hp: 5 });
+    const d = new HeuristicAi().decide(guard, map, [guard, leader, weak]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('weak');
+  });
+});
+
 describe('HeuristicAi — abilities', () => {
   it('an enemy Time Mage casts Haste on a friendly target', () => {
     // Time Mage with MP, ally adjacent, no player in range — best play is to

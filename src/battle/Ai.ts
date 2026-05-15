@@ -190,7 +190,44 @@ function scoreOption(
   }
   s -= threat * (actor.isLeader ? 0.7 : 0.3);
 
+  // Bodyguard screening — a non-leader with a living leader ally is rewarded
+  // for end-tiles that interpose between the boss and its nearest threat.
+  if (!actor.isLeader) {
+    const leader = units.find(u => u.team === actor.team && u.isLeader && u.isAlive);
+    if (leader) {
+      const threatToBoss = nearestThreatTo(leader, units);
+      if (threatToBoss && isScreeningTile(endTile, leader, threatToBoss)) s += SCREEN_BONUS;
+    }
+  }
+
   return s;
+}
+
+/** Flat reward for an end-tile that screens a guarded leader. */
+const SCREEN_BONUS = 12;
+
+/** Living opponent of `anchor` closest (manhattan) to it — the threat a
+ *  bodyguard should position itself against. */
+function nearestThreatTo(anchor: Unit, units: readonly Unit[]): Unit | null {
+  let best: Unit | null = null;
+  let bestD = Infinity;
+  for (const u of units) {
+    if (u.team === anchor.team || !u.isAlive) continue;
+    const d = manhattan(anchor, u);
+    if (d < bestD) { bestD = d; best = u; }
+  }
+  return best;
+}
+
+/** True if tile `t` sits on an L1 geodesic between leader `l` and threat
+ *  `p`, on the leader's half, and is not the leader's own tile. */
+function isScreeningTile(
+  t: { x: number; z: number }, l: Unit, p: Unit,
+): boolean {
+  const lp = manhattan(l, p);
+  const lt = manhattan(l, t);
+  const tp = manhattan(t, p);
+  return lt >= 1 && lp === lt + tp && lt <= tp;
 }
 
 function scoreAbility(
