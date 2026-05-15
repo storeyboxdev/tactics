@@ -726,11 +726,28 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-ranged-damage', weaponPower: 4, drainPercent: 50 },
   },
 
-  // ─── Ninja ────────────────────────────────────────────────────────────────
+  // ─── Ninja (Throw) ────────────────────────────────────────────────────────
+  // Each throw is a standalone free, instant physical technique — the
+  // ranged-attack-by-throwing half of FFT's Throw command, without the
+  // item-consuming half (that waits on the equipment inventory).
   throw_shuriken: {
-    id: 'throw_shuriken', name: 'Throw',
+    id: 'throw_shuriken', name: 'Throw Shuriken',
     jpCost: 200, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
+  },
+  throw_knife: {
+    // Longest reach of the throws, lightest hit — a flicked blade for
+    // chipping a target the Ninja can't close on yet.
+    id: 'throw_knife', name: 'Throw Knife',
+    jpCost: 200, type: 'physical', range: 5, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 4 },
+  },
+  throw_spear: {
+    // The heavy throw — biggest single-target weaponPower in the kit, at
+    // the standard range 4.
+    id: 'throw_spear', name: 'Throw Spear',
+    jpCost: 400, type: 'physical', range: 4, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 10 },
   },
 
   // ─── Summoner ─────────────────────────────────────────────────────────────
