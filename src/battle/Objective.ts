@@ -10,8 +10,9 @@
 import { Unit, Team } from './Unit';
 
 export type BattleObjective =
-  | { kind: 'rout' }       // defeat the entire enemy team (the classic default)
-  | { kind: 'regicide' };  // defeat the designated enemy leader — others irrelevant
+  | { kind: 'rout' }                       // defeat the entire enemy team (classic default)
+  | { kind: 'regicide' }                   // defeat the designated enemy leader
+  | { kind: 'survive'; ticks: number };    // outlast a CT-tick threshold
 
 /** True if `team` still has a unit that's alive and not petrified. */
 function teamStanding(units: readonly Unit[], team: Team): boolean {
@@ -24,7 +25,7 @@ function teamStanding(units: readonly Unit[], team: Team): boolean {
  * tested logic are the same function.
  */
 export function evaluateObjective(
-  objective: BattleObjective, units: readonly Unit[],
+  objective: BattleObjective, units: readonly Unit[], tick = 0,
 ): 'player' | 'enemy' | null {
   // Loss is universal: a wiped player team always loses, whatever the goal.
   if (!teamStanding(units, 'player')) return 'enemy';
@@ -36,16 +37,28 @@ export function evaluateObjective(
       const leader = units.find(u => u.isLeader);
       return leader && leader.isAlive ? null : 'player';
     }
+    case 'survive':
+      // Routing the enemy is always a valid way to "survive"; otherwise
+      // hold out until the tick threshold.
+      if (!teamStanding(units, 'enemy')) return 'player';
+      return tick >= objective.ticks ? 'player' : null;
   }
 }
 
-/** HUD banner text for the current objective. */
-export function objectiveLabel(objective: BattleObjective, leaderName: string | null): string {
+/**
+ * HUD banner text for the current objective. For Survive, `tick` is the
+ * current CT tick so the banner can count down the ticks remaining.
+ */
+export function objectiveLabel(
+  objective: BattleObjective, leaderName: string | null, tick = 0,
+): string {
   switch (objective.kind) {
     case 'rout':
       return 'Objective — Rout the enemy';
     case 'regicide':
       return `Objective — Defeat the leader${leaderName ? `: ${leaderName}` : ''}`;
+    case 'survive':
+      return `Objective — Survive (${Math.max(0, objective.ticks - tick)} ticks left)`;
   }
 }
 
@@ -55,5 +68,8 @@ export function objectiveLabel(objective: BattleObjective, leaderName: string | 
  */
 export function pickObjective(battleCount: number, rng: () => number = Math.random): BattleObjective {
   if (battleCount <= 0) return { kind: 'rout' };
-  return rng() < 0.70 ? { kind: 'rout' } : { kind: 'regicide' };
+  const r = rng();
+  if (r < 0.60) return { kind: 'rout' };
+  if (r < 0.85) return { kind: 'regicide' };
+  return { kind: 'survive', ticks: 60 };
 }

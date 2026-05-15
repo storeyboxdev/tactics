@@ -22,9 +22,10 @@ describe('pickObjective', () => {
     }
   });
 
-  it('later battles can roll Regicide', () => {
-    expect(pickObjective(5, () => 0.99).kind).toBe('regicide');
+  it('later battles can roll Regicide and Survive', () => {
     expect(pickObjective(5, () => 0.0).kind).toBe('rout');
+    expect(pickObjective(5, () => 0.7).kind).toBe('regicide');
+    expect(pickObjective(5, () => 0.99).kind).toBe('survive');
   });
 });
 
@@ -75,5 +76,35 @@ describe('evaluateObjective — Regicide', () => {
     leader.isLeader = true;
     p.applyDamage(999);
     expect(evaluateObjective(regicide, [p, leader])).toBe('enemy');
+  });
+});
+
+describe('evaluateObjective — Survive', () => {
+  const survive = { kind: 'survive' as const, ticks: 60 };
+
+  it('is unresolved before the tick threshold', () => {
+    const units = [makeUnit('p', 'player'), makeUnit('e', 'enemy')];
+    expect(evaluateObjective(survive, units, 0)).toBeNull();
+    expect(evaluateObjective(survive, units, 59)).toBeNull();
+  });
+
+  it('player wins once the tick threshold is reached', () => {
+    const units = [makeUnit('p', 'player'), makeUnit('e', 'enemy')];
+    expect(evaluateObjective(survive, units, 60)).toBe('player');
+    expect(evaluateObjective(survive, units, 120)).toBe('player');
+  });
+
+  it('routing the enemy wins a Survive battle early', () => {
+    const p = makeUnit('p', 'player');
+    const e = makeUnit('e', 'enemy');
+    e.applyDamage(999);
+    expect(evaluateObjective(survive, [p, e], 5)).toBe('player');
+  });
+
+  it('a team wipe still loses, even one tick from the threshold', () => {
+    const p = makeUnit('p', 'player');
+    const e = makeUnit('e', 'enemy');
+    p.applyDamage(999);
+    expect(evaluateObjective(survive, [p, e], 59)).toBe('enemy');
   });
 });

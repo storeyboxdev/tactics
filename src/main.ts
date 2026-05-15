@@ -240,9 +240,9 @@ let battleOver = false;
 
 function checkBattleEnd(): 'player' | 'enemy' | null {
   // Objective-aware: Rout needs the whole enemy team down, Regicide just the
-  // leader. Loss (player team wiped) is universal. Petrified units count as
-  // down inside evaluateObjective's standing check.
-  return evaluateObjective(battleObjective, units);
+  // leader, Survive a tick threshold. Loss (player team wiped) is universal.
+  // Petrified units count as down inside evaluateObjective's standing check.
+  return evaluateObjective(battleObjective, units, turns.tick);
 }
 
 /**
@@ -1454,6 +1454,10 @@ function closestEndTileTo(plan: MovePlan, target: Unit): { x: number; z: number 
 
 function refreshHud() {
   hud.setTurnOrder(turns.predictUpcoming(8), currentActor?.id ?? null);
+  // Survive's banner counts down — keep it current.
+  if (battleObjective.kind === 'survive') {
+    hud.setObjective(objectiveLabel(battleObjective, null, turns.tick));
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
