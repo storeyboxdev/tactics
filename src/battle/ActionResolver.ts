@@ -4,7 +4,7 @@ import { ABILITIES, Ability } from '../data/abilities';
 import { StatusId } from '../data/statuses';
 import { JOB_DEFS } from '../data/jobs';
 import { WEAPONS } from '../data/weapons';
-import { ARMOR } from '../data/armor';
+import { ARMOR, ArmorDef } from '../data/armor';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
 
@@ -81,15 +81,18 @@ export const PLACEHOLDER_WEAPON_POWER = 4;
 export const WEAPON_ACCURACY = 95;
 
 /**
- * Weapon-power for a unit's basic Attack — looked up from its job's
- * signature weapon. Falls back to PLACEHOLDER_WEAPON_POWER when the job
- * is unknown or weaponless (synthetic test jobs), keeping legacy
- * basic-attack damage assertions stable.
+ * Weapon-power for a unit's basic Attack — the equipped weapon when one
+ * is set, otherwise the job's signature weapon. Falls back to
+ * PLACEHOLDER_WEAPON_POWER when the job is unknown or weaponless
+ * (synthetic test jobs), keeping legacy basic-attack damage assertions
+ * stable. An unknown equipped id falls back rather than throwing.
  */
 export function effectiveWeaponPower(unit: Unit): number {
-  const weaponId = JOB_DEFS[unit.jobId]?.weapon;
-  const weapon = weaponId ? WEAPONS[weaponId] : undefined;
-  return weapon?.weaponPower ?? PLACEHOLDER_WEAPON_POWER;
+  const equipped = unit.weaponId ? WEAPONS[unit.weaponId] : undefined;
+  if (equipped) return equipped.weaponPower;
+  const sigId = JOB_DEFS[unit.jobId]?.weapon;
+  const sig = sigId ? WEAPONS[sigId] : undefined;
+  return sig?.weaponPower ?? PLACEHOLDER_WEAPON_POWER;
 }
 
 /**
@@ -180,17 +183,23 @@ export function effectiveMa(caster: Unit): number {
   return caster.ma;
 }
 
-/** Incoming-physical-damage multiplier from the target's job armor.
- *  1.0 for unknown/armorless jobs (synthetic test fixtures). */
-export function armorPhysicalFactor(unit: Unit): number {
-  const armorId = JOB_DEFS[unit.jobId]?.armor;
-  return (armorId ? ARMOR[armorId] : undefined)?.physicalFactor ?? 1;
+/** The armor in effect — the equipped armor when one is set, otherwise
+ *  the job signature. `undefined` for unknown/armorless jobs. */
+function effectiveArmor(unit: Unit): ArmorDef | undefined {
+  if (unit.armorId && ARMOR[unit.armorId]) return ARMOR[unit.armorId];
+  const sigId = JOB_DEFS[unit.jobId]?.armor;
+  return sigId ? ARMOR[sigId] : undefined;
 }
 
-/** Incoming-magic-damage multiplier from the target's job armor. */
+/** Incoming-physical-damage multiplier from the target's armor.
+ *  1.0 for unknown/armorless jobs (synthetic test fixtures). */
+export function armorPhysicalFactor(unit: Unit): number {
+  return effectiveArmor(unit)?.physicalFactor ?? 1;
+}
+
+/** Incoming-magic-damage multiplier from the target's armor. */
 export function armorMagicalFactor(unit: Unit): number {
-  const armorId = JOB_DEFS[unit.jobId]?.armor;
-  return (armorId ? ARMOR[armorId] : undefined)?.magicalFactor ?? 1;
+  return effectiveArmor(unit)?.magicalFactor ?? 1;
 }
 
 /**

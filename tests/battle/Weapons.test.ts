@@ -55,6 +55,18 @@ describe('effectiveWeaponPower', () => {
     const u = makeUnit('u', 'player', 'x'); // synthetic test job
     expect(effectiveWeaponPower(u)).toBe(PLACEHOLDER_WEAPON_POWER);
   });
+
+  it('an equipped weapon overrides the job signature', () => {
+    const bm = makeUnit('m', 'player', 'black_mage'); // job weapon: rod
+    bm.weaponId = 'sword';
+    expect(effectiveWeaponPower(bm)).toBe(WEAPONS.sword.weaponPower);
+  });
+
+  it('an unknown equipped weapon id falls back to the job signature', () => {
+    const knight = makeUnit('k', 'player', 'knight');
+    knight.weaponId = 'no_such_weapon';
+    expect(effectiveWeaponPower(knight)).toBe(WEAPONS.sword.weaponPower);
+  });
 });
 
 describe('Basic Attack varies by job weapon', () => {
@@ -67,5 +79,17 @@ describe('Basic Attack varies by job weapon', () => {
     const knightHit = resolveAttack(knight, t1, map, () => 0.5);
     const bmHit     = resolveAttack(bm, t2, map, () => 0.5);
     expect(knightHit.damage).toBeGreaterThan(bmHit.damage);
+  });
+
+  it('an equipped heavier weapon raises basic-attack damage', () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const bare  = makeUnit('a', 'player', 'black_mage', 1, 2, FACING_E, { pa: 8 });
+    const armed = makeUnit('b', 'player', 'black_mage', 1, 2, FACING_E, { pa: 8 });
+    armed.weaponId = 'sword';
+    const t1 = makeUnit('t1', 'enemy', 'x', 2, 2, FACING_W, { hp: 9999, evasion: 0 });
+    const t2 = makeUnit('t2', 'enemy', 'x', 2, 2, FACING_W, { hp: 9999, evasion: 0 });
+    const bareHit  = resolveAttack(bare, t1, map, () => 0.5);
+    const armedHit = resolveAttack(armed, t2, map, () => 0.5);
+    expect(armedHit.damage).toBeGreaterThan(bareHit.damage);
   });
 });

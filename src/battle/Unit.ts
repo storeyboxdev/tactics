@@ -63,6 +63,10 @@ export interface UnitDef {
   progression?: UnitProgression;
   /** Reserved — Secondary Command UI deferred. */
   secondaryJobId?: string | null;
+  /** Equipped weapon id (see WEAPONS) — null tracks the job signature. */
+  weaponId?: string | null;
+  /** Equipped armor id (see ARMOR) — null tracks the job signature. */
+  armorId?: string | null;
 }
 
 export interface StatusInstance {
@@ -131,6 +135,10 @@ export class Unit {
   support: string | null;
   movement: string | null;
 
+  /** Equipped gear — null tracks the current job's signature weapon/armor. */
+  weaponId: string | null;
+  armorId: string | null;
+
   /** Player units carry a progression record; enemies have null. */
   progression: UnitProgression | null;
   /** Reserved — Secondary Command UI deferred. */
@@ -160,6 +168,9 @@ export class Unit {
     this.reaction = def.reaction ?? null;
     this.support = def.support ?? null;
     this.movement = def.movement ?? null;
+
+    this.weaponId = def.weaponId ?? null;
+    this.armorId = def.armorId ?? null;
 
     this.progression = def.progression ?? null;
     this.secondaryJobId = def.secondaryJobId ?? null;

@@ -54,6 +54,20 @@ describe('armor factor helpers', () => {
     expect(armorMagicalFactor(u)).toBe(1);
   });
 
+  it('equipped armor overrides the job signature', () => {
+    const bm = makeUnit('m', 'player', 'black_mage'); // job armor: robe
+    bm.armorId = 'heavy_armor';
+    expect(armorPhysicalFactor(bm)).toBe(ARMOR.heavy_armor.physicalFactor);
+    expect(armorMagicalFactor(bm)).toBe(ARMOR.heavy_armor.magicalFactor);
+  });
+
+  it('an unknown equipped armor id falls back to the job signature', () => {
+    const knight = makeUnit('k', 'player', 'knight');
+    knight.armorId = 'no_such_armor';
+    expect(armorPhysicalFactor(knight)).toBe(ARMOR.heavy_armor.physicalFactor);
+    expect(armorMagicalFactor(knight)).toBe(ARMOR.heavy_armor.magicalFactor);
+  });
+
   it('effectiveDefenseFactor stacks armor x Defense Up multiplicatively', () => {
     const knight = makeUnit('k', 'player', 'knight');
     knight.support = 'defense_up'; // 0.75
