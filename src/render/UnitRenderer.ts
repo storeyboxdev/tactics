@@ -3,7 +3,7 @@ import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from '../battle/
 import { BattleMap } from '../battle/Map';
 import { AssetLoader } from '../core/AssetLoader';
 import { AnimationState } from './AnimationState';
-import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME } from '../data/sprites';
+import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME, JOB_APPEARANCE } from '../data/sprites';
 
 // Camera quadrant 0..3 corresponds to camera position roughly: 0=SE, 1=SW, 2=NW, 3=NE.
 // The cardinal world side of the unit most facing the camera is then S, W, N, E.
@@ -19,11 +19,6 @@ const STEP_TIME = 0.22; // seconds per tile during movement animation
 // UV cell sizes for sub-region sampling on a loaded sheet.
 const CELL_U = 1 / SHEET_LAYOUT.cols;
 const CELL_V = 1 / SHEET_LAYOUT.rows;
-
-const JOB_LABEL: Record<string, string> = {
-  squire: 'S', chemist: 'C', knight: 'K', black_mage: 'M',
-  time_mage: 'T', oracle: 'O',
-};
 
 interface MoveState {
   path: { x: number; z: number }[];
@@ -208,7 +203,7 @@ function facingTowards(fx: number, fz: number, tx: number, tz: number): Facing {
 
 function makePlaceholderFrames(unit: Unit): THREE.Texture[] {
   const teamColor = unit.team === 'player' ? '#5b8def' : '#d96363';
-  const jobLetter = JOB_LABEL[unit.jobId] ?? '?';
+  const jobLetter = JOB_APPEARANCE[unit.jobId]?.label ?? '?';
   return [
     makeFrameTexture(teamColor, 0, jobLetter),
     makeFrameTexture(teamColor, 1, jobLetter),

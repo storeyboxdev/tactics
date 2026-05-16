@@ -46,6 +46,43 @@ export const SHEET_LAYOUT = {
   } satisfies Record<AnimStateName, AnimStateDef>,
 } as const;
 
+/**
+ * Per-job placeholder appearance — a distinct 2-char tag drawn on the
+ * procedural unit sprite (the fallback when no PNG sheet is present).
+ * Every JOB_DEFS job and monster has an entry; the renderer falls back
+ * to '?' only for a genuinely unknown jobId.
+ */
+export const JOB_APPEARANCE: Record<string, { label: string }> = {
+  // Player jobs.
+  squire:     { label: 'Sq' },
+  chemist:    { label: 'Cm' },
+  knight:     { label: 'Kn' },
+  archer:     { label: 'Ar' },
+  white_mage: { label: 'WM' },
+  black_mage: { label: 'BM' },
+  monk:       { label: 'Mk' },
+  thief:      { label: 'Tf' },
+  time_mage:  { label: 'TM' },
+  oracle:     { label: 'Or' },
+  geomancer:  { label: 'Ge' },
+  lancer:     { label: 'Ln' },
+  mediator:   { label: 'Md' },
+  summoner:   { label: 'Sm' },
+  samurai:    { label: 'Sa' },
+  ninja:      { label: 'Nj' },
+  calculator: { label: 'Cl' },
+  bard:       { label: 'Bd' },
+  dancer:     { label: 'Dn' },
+  mime:       { label: 'Mm' },
+  // Monsters.
+  goblin:       { label: 'Gb' },
+  chocobo:      { label: 'Co' },
+  red_panther:  { label: 'Pn' },
+  bomb:         { label: 'Bo' },
+  skeleton:     { label: 'Sk' },
+  floating_eye: { label: 'Ey' },
+};
+
 /** Frame index (0..N-1) within an attack at which the hit "lands" on the target. */
 export const ATTACK_IMPACT_FRAME = 2;
 /** Frame index within ranged at which the projectile leaves the bow / fist. */

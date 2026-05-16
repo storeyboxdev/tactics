@@ -1,10 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { JOB_DEFS } from '../../src/data/jobs';
 import { ABILITIES } from '../../src/data/abilities';
+import { JOB_APPEARANCE } from '../../src/data/sprites';
 
 describe('JOB_DEFS catalog', () => {
   it('contains at least 20 jobs', () => {
     expect(Object.keys(JOB_DEFS).length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('every job has a JOB_APPEARANCE entry with a unique label', () => {
+    const labels = new Set<string>();
+    for (const id of Object.keys(JOB_DEFS)) {
+      const appearance = JOB_APPEARANCE[id];
+      expect(appearance, `${id} appearance`).toBeDefined();
+      expect(appearance.label.length, `${id} label length`).toBeGreaterThan(0);
+      expect(labels.has(appearance.label), `${id} duplicate label ${appearance.label}`).toBe(false);
+      labels.add(appearance.label);
+    }
   });
 
   it('every prereq jobId references a defined job', () => {
