@@ -4,6 +4,7 @@ import {
   Unit, UnitDef, UnitStats, FACING_E, FACING_W, Facing, Team,
 } from '../../src/battle/Unit';
 import { HeuristicAi } from '../../src/battle/Ai';
+import { ABILITIES } from '../../src/data/abilities';
 
 const baseStats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 0, pa: 5, ma: 5, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
@@ -190,6 +191,24 @@ describe('HeuristicAi — bodyguard screening', () => {
     const d = new HeuristicAi().decide(guard, map, [guard, leader, weak]);
     expect(d.action?.kind).toBe('attack');
     if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('weak');
+  });
+});
+
+describe('HeuristicAi — elemental resistance', () => {
+  it('a caster avoids an element its target resists', () => {
+    // The lone target wears Flame Mail. Fire spells are halved on it, so
+    // the AI should reach for a non-fire element of equal power instead.
+    const map = new BattleMap(flatMap(7, 5));
+    const bm = makeUnit('bm', 'enemy', 3, 2, FACING_W, { mp: 30, ma: 10, move: 0 }, 'black_mage');
+    const t = makeUnit('t', 'player', 5, 2, FACING_W, { hp: 999 });
+    t.armorId = 'flame_mail';
+    const d = new HeuristicAi().decide(bm, map, [bm, t]);
+    expect(d.action?.kind).toBe('ability');
+    if (d.action?.kind === 'ability') {
+      const eff = ABILITIES[d.action.abilityId].effect;
+      const element = 'element' in eff ? eff.element : undefined;
+      expect(element).not.toBe('fire');
+    }
   });
 });
 

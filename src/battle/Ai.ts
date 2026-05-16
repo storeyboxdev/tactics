@@ -268,12 +268,12 @@ function scoreSingleTarget(ab: Ability, target: Unit, actor: Unit, map: BattleMa
       return 8 * curable * p;
     }
     case 'magic-damage': {
-      const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
+      const pred = predictSpellDamage(actor, target, ab.effect.spellPower, ab.effect.element);
       const lethal = target.hp - pred.damage <= 0;
       return pred.damage + (lethal ? 100 : 0) + winCriticalBonus(target, lethal);
     }
     case 'damage-and-status': {
-      const pred = predictSpellDamage(actor, target, ab.effect.spellPower);
+      const pred = predictSpellDamage(actor, target, ab.effect.spellPower, ab.effect.element);
       const lethal = target.hp - pred.damage <= 0;
       const damageScore = pred.damage + (lethal ? 100 : 0) + winCriticalBonus(target, lethal);
       const statusValue = STATUS_VALUE[ab.effect.statusId] ?? 0;
