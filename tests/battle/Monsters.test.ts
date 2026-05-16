@@ -41,10 +41,12 @@ describe('Monster bestiary', () => {
     }
   });
 
-  it('each monster has exactly one signature ability', () => {
-    expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle']);
+  it("each monster's signature kit", () => {
+    expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle', 'goblin_eye_gouge']);
     expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster']);
     expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure']);
+    // Bomb's identity is the on-death blast — no active kit, by design.
+    expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
   });
 
   it('isPlayableJob excludes monsters, includes real jobs', () => {
@@ -110,6 +112,17 @@ describe('Monster signature abilities', () => {
     expect(ab.range).toBe(1);
     if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
     expect(ab.effect.weaponPower).toBeGreaterThan(WEAPONS.claw.weaponPower);
+  });
+
+  it("Goblin's Eye Gouge inflicts Poison, hitting between claw and Tackle", () => {
+    const ab = ABILITIES.goblin_eye_gouge;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('poison');
+    const tackle = ABILITIES.goblin_tackle.effect;
+    if (tackle.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(ab.effect.weaponPower).toBeGreaterThan(WEAPONS.claw.weaponPower);
+    expect(ab.effect.weaponPower).toBeLessThan(tackle.weaponPower);
   });
 
   it("Red Panther's Blaster chains Don't Move via physical-damage-and-status", () => {

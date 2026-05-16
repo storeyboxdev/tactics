@@ -1125,6 +1125,15 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 8 },
   },
+  goblin_eye_gouge: {
+    // A raking claw across the face — the filth-caked nails leave the
+    // wound to fester. Lower direct damage than Tackle (WP 7 vs 8); the
+    // Poison chain is the point.
+    id: 'goblin_eye_gouge', name: 'Eye Gouge',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 7,
+              statusId: 'poison', statusBaseAcc: 65 },
+  },
   choco_cure: {
     // Chocobos heal. A flat +30 HP restore — not magic-heal, since a
     // Chocobo's MA is 2 and a faith-scaled heal would be worthless. An
