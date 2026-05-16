@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Unit, UnitDef, UnitStats } from '../../src/battle/Unit';
 import { JOB_DEFS } from '../../src/data/jobs';
-import { loadSave, saveRoster, wipeSave, SavedUnit } from '../../src/core/Save';
+import { loadSave, saveRoster, wipeSave, lootFromBattle, SavedUnit } from '../../src/core/Save';
 import { bootstrapUnit } from '../../src/core/Bootstrap';
 
 // Vitest's `node` environment doesn't supply localStorage. Install a tiny
@@ -27,6 +27,34 @@ function unitFromSaved(saved: SavedUnit): Unit {
   };
   return new Unit(def, 0, 0, 1);
 }
+
+function enemyUnit(id: string, jobId: string): Unit {
+  const job = JOB_DEFS[jobId];
+  const def: UnitDef = {
+    id, name: id, team: 'enemy', jobId, level: 1,
+    stats: { ...job.baseStats } as UnitStats,
+  };
+  return new Unit(def, 0, 0, 1);
+}
+
+describe('lootFromBattle', () => {
+  it('collects the signature gear of defeated enemies only', () => {
+    const deadKnight = enemyUnit('e1', 'knight'); deadKnight.applyDamage(9999);
+    const deadGoblin = enemyUnit('e2', 'goblin'); deadGoblin.applyDamage(9999);
+    const liveArcher = enemyUnit('e3', 'archer'); // still standing — not looted
+    const player = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
+    const loot = lootFromBattle([deadKnight, deadGoblin, liveArcher, player]);
+    expect([...loot.weapons].sort()).toEqual(['claw', 'sword']);
+    expect([...loot.armors].sort()).toEqual(['heavy_armor', 'light_armor']);
+    expect(loot.weapons).not.toContain('bow'); // the surviving archer's bow
+  });
+
+  it('dedupes gear from multiple enemies of the same job', () => {
+    const k1 = enemyUnit('e1', 'knight'); k1.applyDamage(9999);
+    const k2 = enemyUnit('e2', 'knight'); k2.applyDamage(9999);
+    expect(lootFromBattle([k1, k2]).weapons).toEqual(['sword']);
+  });
+});
 
 describe('Save round-trip', () => {
   beforeEach(() => wipeSave());
@@ -82,6 +110,28 @@ describe('Save round-trip', () => {
     const r = loadSave()!.roster[0];
     expect(r.weaponId).toBeNull();
     expect(r.armorId).toBeNull();
+  });
+
+  it('round-trips foundGear', () => {
+    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
+    saveRoster([u], { weapons: ['katana'], armors: ['robe'] });
+    const f = loadSave()!.foundGear;
+    expect(f.weapons).toEqual(['katana']);
+    expect(f.armors).toEqual(['robe']);
+  });
+
+  it('migrates a save written before foundGear to empty pools', () => {
+    localStorage.setItem('tactics-save-v1', JSON.stringify({ version: 1, roster: [] }));
+    expect(loadSave()!.foundGear).toEqual({ weapons: [], armors: [] });
+  });
+
+  it('foundGear accumulates across battles, deduped', () => {
+    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
+    saveRoster([u], { weapons: ['sword'], armors: ['heavy_armor'] });
+    saveRoster([u], { weapons: ['sword', 'spear'], armors: ['robe'] });
+    const f = loadSave()!.foundGear;
+    expect([...f.weapons].sort()).toEqual(['spear', 'sword']);
+    expect([...f.armors].sort()).toEqual(['heavy_armor', 'robe']);
   });
 
   it('saveRoster filters out enemy units', () => {

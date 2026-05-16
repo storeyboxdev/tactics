@@ -313,7 +313,7 @@ function activateNext() {
     cursor.clearActiveTile();
     refreshHud();
     hud.setStatus(winner === 'player' ? 'Victory!' : 'Defeat.');
-    hud.showResult(winner, () => showRosterScreen(units));
+    hud.showResult(winner, () => showRosterScreen(units, winner === 'player'));
     return;
   }
   const event = turns.advance();

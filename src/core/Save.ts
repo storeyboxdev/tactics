@@ -9,8 +9,15 @@
 
 import { Unit } from '../battle/Unit';
 import { UnitProgression } from '../battle/Progression';
+import { JOB_DEFS } from '../data/jobs';
 
 const SAVE_KEY = 'tactics-save-v1';
+
+/** A deduped set-like pool of weapon/armor ids. */
+export interface GearPool {
+  weapons: string[];
+  armors: string[];
+}
 
 export interface SaveFile {
   version: 1;
@@ -21,6 +28,12 @@ export interface SaveFile {
    * load with `battleCount = 0`.
    */
   battleCount: number;
+  /**
+   * Gear scavenged from defeated enemies, accumulated across battles.
+   * Widens every unit's equip options beyond their unlocked jobs. Old
+   * saves load with empty pools.
+   */
+  foundGear: GearPool;
 }
 
 export interface SavedUnit {
@@ -48,7 +61,26 @@ export function loadSave(): SaveFile | null {
   }
 }
 
-export function saveRoster(units: Unit[]): void {
+/**
+ * Signature weapon/armor of every defeated enemy — the loot pool a won
+ * battle yields. Deduped. Pass the result to `saveRoster`.
+ */
+export function lootFromBattle(units: readonly Unit[]): GearPool {
+  const weapons = new Set<string>();
+  const armors = new Set<string>();
+  for (const u of units) {
+    if (u.team !== 'enemy' || u.isAlive) continue;
+    const job = JOB_DEFS[u.jobId];
+    if (!job) continue;
+    if (job.weapon) weapons.add(job.weapon);
+    if (job.armor) armors.add(job.armor);
+  }
+  return { weapons: [...weapons], armors: [...armors] };
+}
+
+const EMPTY_POOL: GearPool = { weapons: [], armors: [] };
+
+export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL): void {
   const roster: SavedUnit[] = [];
   for (const u of units) {
     if (u.team !== 'player' || !u.progression) continue;
@@ -69,7 +101,12 @@ export function saveRoster(units: Unit[]): void {
   // so this naturally tracks "how many battles has this party survived".
   const prev = loadSave();
   const battleCount = (prev?.battleCount ?? 0) + 1;
-  const file: SaveFile = { version: 1, roster, battleCount };
+  // Loot accumulates — carry the prior stash forward, union in the new find.
+  const foundGear: GearPool = {
+    weapons: [...new Set([...(prev?.foundGear.weapons ?? []), ...newFound.weapons])],
+    armors:  [...new Set([...(prev?.foundGear.armors  ?? []), ...newFound.armors])],
+  };
+  const file: SaveFile = { version: 1, roster, battleCount, foundGear };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(file));
   } catch {
@@ -88,7 +125,7 @@ export function wipeSave(): void {
  */
 function migrate(raw: unknown): SaveFile | null {
   if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as { version?: unknown; roster?: unknown; battleCount?: unknown };
+  const obj = raw as { version?: unknown; roster?: unknown; battleCount?: unknown; foundGear?: unknown };
   if (obj.version !== 1) return null;
   if (!Array.isArray(obj.roster)) return null;
   const roster: SavedUnit[] = [];
@@ -97,7 +134,16 @@ function migrate(raw: unknown): SaveFile | null {
     if (su) roster.push(su);
   }
   const battleCount = typeof obj.battleCount === 'number' ? obj.battleCount : 0;
-  return { version: 1, roster, battleCount };
+  return { version: 1, roster, battleCount, foundGear: parseGearPool(obj.foundGear) };
+}
+
+/** Parse a persisted GearPool, tolerating absent/corrupt data → empty pools. */
+function parseGearPool(raw: unknown): GearPool {
+  if (!raw || typeof raw !== 'object') return { weapons: [], armors: [] };
+  const r = raw as { weapons?: unknown; armors?: unknown };
+  const strings = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  return { weapons: strings(r.weapons), armors: strings(r.armors) };
 }
 
 function validateSavedUnit(raw: unknown): SavedUnit | null {
