@@ -11,7 +11,7 @@
 
 import { Unit } from '../battle/Unit';
 import { JOB_DEFS } from '../data/jobs';
-import { WEAPONS } from '../data/weapons';
+import { WEAPONS, GearBonuses } from '../data/weapons';
 import { ARMOR, ArmorDef } from '../data/armor';
 import { ABILITIES, Ability, AbilityKind } from '../data/abilities';
 import {
@@ -226,15 +226,27 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
   panel.appendChild(gearSelect(
     'Weapon',
     `Auto (${WEAPONS[job.weapon]?.name ?? '—'})`,
-    weapons.map(id => ({ id, text: `${WEAPONS[id]?.name ?? id} (WP ${WEAPONS[id]?.weaponPower ?? '?'})` })),
+    weapons.map(id => ({ id, text: `${WEAPONS[id]?.name ?? id} (WP ${WEAPONS[id]?.weaponPower ?? '?'}${bonusLabel(WEAPONS[id]?.bonuses)})` })),
     u.weaponId, (id) => { u.weaponId = id; },
   ));
   panel.appendChild(gearSelect(
     'Armor',
     `Auto (${ARMOR[job.armor]?.name ?? '—'})`,
-    armors.map(id => ({ id, text: `${ARMOR[id]?.name ?? id} (${armorLabel(ARMOR[id])})` })),
+    armors.map(id => ({ id, text: `${ARMOR[id]?.name ?? id} (${armorLabel(ARMOR[id])}${bonusLabel(ARMOR[id]?.bonuses)})` })),
     u.armorId, (id) => { u.armorId = id; },
   ));
+}
+
+/** ", +1 PA" — a gear piece's stat bonus, or "" when it carries none. */
+function bonusLabel(b: GearBonuses | undefined): string {
+  if (!b) return '';
+  const parts: string[] = [];
+  if (b.hp) parts.push(`+${b.hp} HP`);
+  if (b.mp) parts.push(`+${b.mp} MP`);
+  if (b.pa) parts.push(`+${b.pa} PA`);
+  if (b.ma) parts.push(`+${b.ma} MA`);
+  if (b.speed) parts.push(`+${b.speed} SP`);
+  return parts.length ? `, ${parts.join(' ')}` : '';
 }
 
 /** "Phys -22% / Magic -18%" — armor's damage-reduction in plain terms. */

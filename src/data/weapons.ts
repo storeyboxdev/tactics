@@ -11,11 +11,23 @@
  * martial jobs rise above it (their Fight command should actually hurt).
  */
 
+/** Flat additive stat bonuses a piece of gear grants its wearer. */
+export type GearBonuses = Partial<{
+  hp: number;
+  mp: number;
+  pa: number;
+  ma: number;
+  speed: number;
+}>;
+
 export interface WeaponDef {
   id: string;
   name: string;
   /** Weapon-power contribution to the basic-attack damage formula. */
   weaponPower: number;
+  /** Flat stat bonuses applied to the wearer. Absent on signature
+   *  weapons — only loot-tier gear carries one. */
+  bonuses?: GearBonuses;
 }
 
 export const WEAPONS: Record<string, WeaponDef> = {
@@ -34,4 +46,16 @@ export const WEAPONS: Record<string, WeaponDef> = {
   katana:      { id: 'katana',      name: 'Katana',       weaponPower: 9 },
   // Natural weapon — monsters' claws / beaks / fangs.
   claw:        { id: 'claw',        name: 'Claw',         weaponPower: 6 },
+
+  // ─── Loot-tier weapons ────────────────────────────────────────────────────
+  // Not any job's signature — reachable only as battle loot. Each pairs a
+  // weapon-power line with a flat stat bonus.
+  mythril_sword: { id: 'mythril_sword', name: 'Mythril Sword', weaponPower: 11, bonuses: { pa: 1 } },
+  flame_rod:     { id: 'flame_rod',     name: 'Flame Rod',     weaponPower: 4,  bonuses: { ma: 2 } },
+  hunting_bow:   { id: 'hunting_bow',   name: 'Hunting Bow',   weaponPower: 7,  bonuses: { speed: 1 } },
 };
+
+/** Weapon ids that carry a stat bonus — the loot-tier set. Derived so a
+ *  new bonus weapon needs only its WEAPONS entry. */
+export const BONUS_WEAPON_IDS: string[] =
+  Object.values(WEAPONS).filter(w => w.bonuses).map(w => w.id);

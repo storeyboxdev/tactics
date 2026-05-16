@@ -13,6 +13,8 @@
  * baseline.
  */
 
+import { GearBonuses } from './weapons';
+
 export interface ArmorDef {
   id: string;
   name: string;
@@ -20,6 +22,9 @@ export interface ArmorDef {
   physicalFactor: number;
   /** Multiplier on incoming magic damage. */
   magicalFactor: number;
+  /** Flat stat bonuses applied to the wearer. Absent on signature
+   *  armor — only loot-tier gear carries one. */
+  bonuses?: GearBonuses;
 }
 
 export const ARMOR: Record<string, ArmorDef> = {
@@ -27,4 +32,13 @@ export const ARMOR: Record<string, ArmorDef> = {
   light_armor: { id: 'light_armor', name: 'Light Armor', physicalFactor: 0.90, magicalFactor: 0.92 },
   robe:        { id: 'robe',        name: 'Robe',        physicalFactor: 1.00, magicalFactor: 0.82 },
   clothes:     { id: 'clothes',     name: 'Clothes',     physicalFactor: 0.95, magicalFactor: 0.95 },
+
+  // ─── Loot-tier armor ──────────────────────────────────────────────────────
+  // Not any job's signature — reachable only as battle loot.
+  chain_mail: { id: 'chain_mail', name: 'Chain Mail', physicalFactor: 0.82, magicalFactor: 0.95, bonuses: { hp: 12 } },
+  silk_robe:  { id: 'silk_robe',  name: 'Silk Robe',  physicalFactor: 1.00, magicalFactor: 0.80, bonuses: { mp: 12 } },
 };
+
+/** Armor ids that carry a stat bonus — the loot-tier set. */
+export const BONUS_ARMOR_IDS: string[] =
+  Object.values(ARMOR).filter(a => a.bonuses).map(a => a.id);

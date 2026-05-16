@@ -1,5 +1,8 @@
 import { StatusId, STATUS_DEFS } from '../data/statuses';
 import { ABILITIES } from '../data/abilities';
+import { WEAPONS } from '../data/weapons';
+import { ARMOR } from '../data/armor';
+import { JOB_DEFS } from '../data/jobs';
 import { UnitProgression } from './Progression';
 import { computeDisplayStats } from './Stats';
 
@@ -178,6 +181,10 @@ export class Unit {
     if (this.progression) {
       this.level = this.progression.totalLevel;
       this.refreshStatsFromProgression();
+    } else {
+      // Progression units get gear bonuses via refreshStatsFromProgression;
+      // enemies / plain units need them folded in here.
+      this.applyGearBonuses();
     }
   }
 
@@ -310,5 +317,29 @@ export class Unit {
     this.bravery = s.bravery;
     this.evasion = s.evasion;
     this.level = this.progression.totalLevel;
+    this.applyGearBonuses();
+  }
+
+  /**
+   * Fold the effective weapon's + armor's flat stat bonuses on top of the
+   * already-computed base stats. The effective gear is the equipped
+   * override when set, else the job signature. Signature gear carries no
+   * bonuses, so this is a no-op for any default loadout.
+   *
+   * Must run *after* base stats are set — `refreshStatsFromProgression`
+   * recomputes from scratch and re-applies, so repeated refreshes never
+   * double-count.
+   */
+  applyGearBonuses(): void {
+    const weapon = this.weaponId ? WEAPONS[this.weaponId] : WEAPONS[JOB_DEFS[this.jobId]?.weapon ?? ''];
+    const armor  = this.armorId  ? ARMOR[this.armorId]    : ARMOR[JOB_DEFS[this.jobId]?.armor ?? ''];
+    for (const bonuses of [weapon?.bonuses, armor?.bonuses]) {
+      if (!bonuses) continue;
+      this.hpMax += bonuses.hp ?? 0;  this.hp += bonuses.hp ?? 0;
+      this.mpMax += bonuses.mp ?? 0;  this.mp += bonuses.mp ?? 0;
+      this.pa += bonuses.pa ?? 0;
+      this.ma += bonuses.ma ?? 0;
+      this.speed += bonuses.speed ?? 0;
+    }
   }
 }
