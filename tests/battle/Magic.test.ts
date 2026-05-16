@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BattleMap, MapData } from '../../src/battle/Map';
 import { Unit, UnitDef, UnitStats, FACING_N, FACING_E, FACING_S, FACING_W, Facing, Team } from '../../src/battle/Unit';
 import {
-  resolveAttack, resolveSpell, applyBreak, computeSpellDamage,
+  resolveAttack, resolveSpell, resolveDamageAndStatus, applyBreak, computeSpellDamage,
   predictSpellDamage,
 } from '../../src/battle/ActionResolver';
 
@@ -172,6 +172,44 @@ describe('elemental affinity — weakness', () => {
     const holy = resolveSpell(c, a, 14, rngHalf, 'holy').damage;
     const fire = resolveSpell(c, b, 14, rngHalf, 'fire').damage;
     expect(holy).toBeGreaterThan(fire);
+  });
+});
+
+describe('elemental affinity — absorb', () => {
+  it('a Bomb absorbs Fire — the damage becomes healing', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { hp: 100, faith: 100 }, 'bomb');
+    bomb.applyDamage(60); // room to heal into
+    const out = resolveSpell(c, bomb, 14, rngHalf, 'fire');
+    expect(out.damage).toBe(0);
+    expect(out.absorbed).toBeGreaterThan(0);
+    expect(bomb.hp).toBeGreaterThan(40);
+  });
+
+  it('absorbed healing is capped at max HP', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { hp: 100, faith: 100 }, 'bomb');
+    const out = resolveSpell(c, bomb, 14, rngHalf, 'fire'); // already full
+    expect(out.absorbed).toBe(0);
+    expect(bomb.hp).toBe(100);
+  });
+
+  it('the Bomb still takes amplified Ice damage — C1 intact', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 }, 'bomb');
+    const out = resolveSpell(c, bomb, 14, rngHalf, 'ice');
+    expect(out.damage).toBeGreaterThan(0);
+    expect(out.absorbed ?? 0).toBe(0);
+  });
+
+  it('an absorbed damage-and-status spell still rolls its status', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { hp: 100, faith: 100 }, 'bomb');
+    bomb.applyDamage(40);
+    const out = resolveDamageAndStatus(c, bomb, 12, 'poison', 200, rngHalf, 'fire');
+    expect(out.damage).toBe(0);
+    expect(out.absorbed).toBeGreaterThan(0);
+    expect(out.statusApplied).toBe(true);
   });
 });
 

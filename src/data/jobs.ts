@@ -26,8 +26,9 @@
 import { StatusId } from './statuses';
 import { Element } from './abilities';
 
-/** A creature's response to a damage element. Absent = takes it normally. */
-export type Affinity = 'weak';
+/** A creature's response to a damage element. Absent = takes it normally.
+ *  `weak` amplifies the damage; `absorb` turns it into healing. */
+export type Affinity = 'weak' | 'absorb';
 
 export interface JobPrereq { jobId: string; level: number; }
 
@@ -358,8 +359,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: [],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     deathTrigger: { radius: 1, damage: 35 },
-    // A living flame — Ice and Water bite harder than normal.
-    elementAffinities: { ice: 'weak', water: 'weak' },
+    // A living flame — Fire feeds it, Ice and Water bite harder than normal.
+    elementAffinities: { fire: 'absorb', ice: 'weak', water: 'weak' },
   },
   skeleton: {
     // A sturdy, slow undead bruiser. Undead from spawn — healing magic

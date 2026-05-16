@@ -2,7 +2,7 @@ import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
 import { ABILITIES, Ability, Element } from '../data/abilities';
 import { StatusId } from '../data/statuses';
-import { JOB_DEFS } from '../data/jobs';
+import { JOB_DEFS, Affinity } from '../data/jobs';
 import { WEAPONS } from '../data/weapons';
 import { ARMOR, ArmorDef } from '../data/armor';
 
@@ -48,6 +48,8 @@ export interface SpellOutcome {
   autoPotion?: AutoPotionOutcome;
   /** True if the target's Reraise fired to interrupt a would-KO. */
   reraised?: boolean;
+  /** HP gained when the target absorbs the spell's element (damage is 0). */
+  absorbed?: number;
 }
 
 export interface PotionOutcome {
@@ -236,9 +238,17 @@ export function effectiveMagicDefenseFactor(target: Unit): number {
  * every player unit.
  */
 export function elementalDamageMultiplier(target: Unit, element?: Element): number {
-  if (!element) return 1;
-  const affinity = JOB_DEFS[target.jobId]?.elementAffinities?.[element];
-  return affinity === 'weak' ? 1.5 : 1;
+  const affinity = affinityOf(target, element);
+  if (affinity === 'weak') return 1.5;
+  if (affinity === 'absorb') return 0;
+  return 1;
+}
+
+/** The target's affinity to `element` — `undefined` for an element-less
+ *  spell or a unit with no declared affinity. */
+export function affinityOf(target: Unit, element?: Element): Affinity | undefined {
+  if (!element) return undefined;
+  return JOB_DEFS[target.jobId]?.elementAffinities?.[element];
 }
 
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
@@ -485,6 +495,14 @@ export function resolveSpell(
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
+  // Absorb flips the spell into healing — the target is never "hit", so no
+  // damage, no Sleep break, no Auto-Potion.
+  if (affinityOf(target, element) === 'absorb') {
+    const heal = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + heal);
+    return { caster, target, damage: 0, hit: true, reraised: false, absorbed: target.hp - before };
+  }
   const damage = Math.max(1, Math.floor(
     raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element)));
   const dmgResult = target.applyDamage(damage);
@@ -516,6 +534,8 @@ export interface DamageStatusOutcome {
   autoPotion?: { user: Unit; amount: number };
   /** True if the target's Reraise fired to interrupt a would-KO. */
   reraised?: boolean;
+  /** HP gained when the target absorbs the spell's element (damage is 0). */
+  absorbed?: number;
 }
 
 /**
@@ -543,15 +563,28 @@ export function resolveDamageAndStatus(
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
-  const damage = Math.max(1, Math.floor(
-    raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element)));
-  const dmgResult = target.applyDamage(damage);
-  if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
+  // Absorb flips the damage component into healing; the status still rolls.
+  const absorbing = affinityOf(target, element) === 'absorb';
+  let damage = 0;
+  let absorbed = 0;
+  let reraised = false;
+  if (absorbing) {
+    const heal = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + heal);
+    absorbed = target.hp - before;
+  } else {
+    damage = Math.max(1, Math.floor(
+      raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element)));
+    const dmgResult = target.applyDamage(damage);
+    if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
+    reraised = dmgResult.reraised;
+  }
 
-  const out: DamageStatusOutcome = { caster, target, damage, statusApplied: false, reraised: dmgResult.reraised };
+  const out: DamageStatusOutcome = { caster, target, damage, statusApplied: false, reraised, absorbed };
 
-  // Auto-Potion reaction (mirrors resolveSpell).
-  if (target.isAlive && target.reaction) {
+  // Auto-Potion reaction (mirrors resolveSpell) — only on an actual hit.
+  if (damage > 0 && target.isAlive && target.reaction) {
     const ab = ABILITIES[target.reaction];
     if (ab && ab.effect.kind === 'reaction-auto-potion') {
       const before = target.hp;

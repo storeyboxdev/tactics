@@ -732,19 +732,29 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
   }
   if (eff.kind === 'magic-damage') {
     const out = resolveSpell(actor, target, eff.spellPower, Math.random, eff.element);
-    hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
-    spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
-    if (out.reraised) logReraise(target);
+    if (out.absorbed) {
+      hud.log(`${ab.name}: ${target.name} absorbs ${out.absorbed} HP`);
+      spellFx.burst(target, 'heal', () => {});
+    } else {
+      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
+      spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+      if (out.reraised) logReraise(target);
+    }
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'damage-and-status') {
     const out = resolveDamageAndStatus(actor, target, eff.spellPower, eff.statusId, eff.statusBaseAcc, Math.random, eff.element);
-    hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
-    spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+    if (out.absorbed) {
+      hud.log(`${ab.name}: ${target.name} absorbs ${out.absorbed} HP`);
+      spellFx.burst(target, 'heal', () => {});
+    } else {
+      hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
+      spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
+      if (out.reraised) logReraise(target);
+    }
     if (out.statusApplied) {
       hud.log(`  ↳ ${target.name} is now ${STATUS_DEFS[eff.statusId].name}`);
     }
-    if (out.reraised) logReraise(target);
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'magic-heal') {
