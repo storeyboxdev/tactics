@@ -43,7 +43,7 @@ describe('Monster bestiary', () => {
 
   it("each monster's signature kit", () => {
     expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle', 'goblin_eye_gouge']);
-    expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster']);
+    expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster', 'panther_scratch']);
     expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure', 'choco_ball']);
     // Bomb's identity is the on-death blast — no active kit, by design.
     expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
@@ -130,6 +130,15 @@ describe('Monster signature abilities', () => {
     expect(ab.range).toBe(1);
     if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.statusId).toBe('dont_move');
+  });
+
+  it("Red Panther's Scratch out-powers Blaster — the finisher in the combo", () => {
+    const ab = ABILITIES.panther_scratch;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    const blaster = ABILITIES.blaster.effect;
+    if (blaster.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(ab.effect.weaponPower).toBeGreaterThan(blaster.weaponPower);
   });
 
   it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {

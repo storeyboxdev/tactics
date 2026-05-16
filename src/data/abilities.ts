@@ -1159,6 +1159,14 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-damage-and-status', weaponPower: 7,
               statusId: 'dont_move', statusBaseAcc: 60 },
   },
+  panther_scratch: {
+    // The Red Panther's maul — a heavy single-target hit (WP 10, well
+    // above Blaster's 7). The kit is a combo: Blaster pins the prey,
+    // Scratch finishes it.
+    id: 'panther_scratch', name: 'Scratch',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 10 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).
