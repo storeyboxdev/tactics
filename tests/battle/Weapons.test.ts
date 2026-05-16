@@ -4,10 +4,10 @@ import {
 } from '../../src/battle/Unit';
 import { BattleMap, MapData } from '../../src/battle/Map';
 import {
-  effectiveWeaponPower, resolveAttack, PLACEHOLDER_WEAPON_POWER,
+  effectiveWeaponPower, resolveAttack, predictAttackDamage, PLACEHOLDER_WEAPON_POWER,
 } from '../../src/battle/ActionResolver';
 import { JOB_DEFS } from '../../src/data/jobs';
-import { WEAPONS } from '../../src/data/weapons';
+import { WEAPONS, BONUS_WEAPON_IDS } from '../../src/data/weapons';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 30, pa: 8, ma: 8, speed: 10, move: 4, jump: 1,
@@ -91,5 +91,62 @@ describe('Basic Attack varies by job weapon', () => {
     const bareHit  = resolveAttack(bare, t1, map, () => 0.5);
     const armedHit = resolveAttack(armed, t2, map, () => 0.5);
     expect(armedHit.damage).toBeGreaterThan(bareHit.damage);
+  });
+});
+
+describe('Elemental weapons', () => {
+  it('the elemental weapons are loot-tier — sold and lootable', () => {
+    expect(BONUS_WEAPON_IDS).toEqual(
+      expect.arrayContaining(['flame_sword', 'frost_dagger', 'thunder_spear']));
+  });
+
+  it("an ice weapon's Attack amplifies on an ice-weak target", () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8 });
+    atk.weaponId = 'frost_dagger'; // ice
+    // Bomb (ice-weak) and Goblin (neutral) both wear light_armor — only the
+    // affinity differs.
+    const bomb = makeUnit('bomb', 'enemy', 'bomb', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    const gob  = makeUnit('gob', 'enemy', 'goblin', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    const bombDmg = predictAttackDamage(atk, bomb, map).damage;
+    const gobDmg  = predictAttackDamage(atk, gob, map).damage;
+    expect(bombDmg).toBeGreaterThan(gobDmg);
+    expect(bombDmg / gobDmg).toBeCloseTo(1.5, 1);
+  });
+
+  it("a fire weapon's Attack is halved against a fire-resistant target", () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8 });
+    atk.weaponId = 'flame_sword'; // fire
+    // Both targets wear a Mail (same physical factor); only the resisted
+    // element differs.
+    const fireRes = makeUnit('fr', 'enemy', 'x', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    fireRes.armorId = 'flame_mail';
+    const iceRes = makeUnit('ir', 'enemy', 'x', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    iceRes.armorId = 'frost_mail';
+    const frDmg = predictAttackDamage(atk, fireRes, map).damage;
+    const irDmg = predictAttackDamage(atk, iceRes, map).damage;
+    expect(frDmg).toBeLessThan(irDmg);
+    expect(frDmg / irDmg).toBeCloseTo(0.5, 1);
+  });
+
+  it('a non-elemental weapon is unaffected by the target affinity', () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8 });
+    atk.weaponId = 'mythril_sword'; // no element
+    const bomb = makeUnit('bomb', 'enemy', 'bomb', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    const gob  = makeUnit('gob', 'enemy', 'goblin', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    expect(predictAttackDamage(atk, bomb, map).damage)
+      .toBe(predictAttackDamage(atk, gob, map).damage);
+  });
+
+  it('resolveAttack applies the weapon element on the live path', () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8 });
+    atk.weaponId = 'frost_dagger';
+    const bomb = makeUnit('bomb', 'enemy', 'bomb', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    const gob  = makeUnit('gob', 'enemy', 'goblin', 1, 2, FACING_E, { hp: 9999, evasion: 0 });
+    expect(resolveAttack(atk, bomb, map, () => 0.5).damage)
+      .toBeGreaterThan(resolveAttack(atk, gob, map, () => 0.5).damage);
   });
 });

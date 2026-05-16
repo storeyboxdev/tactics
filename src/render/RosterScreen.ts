@@ -239,7 +239,7 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
   panel.appendChild(gearSelect(
     'Weapon',
     `Auto (${WEAPONS[job.weapon]?.name ?? '—'})`,
-    weapons.map(id => ({ id, text: `${WEAPONS[id]?.name ?? id} (WP ${WEAPONS[id]?.weaponPower ?? '?'}${bonusLabel(WEAPONS[id]?.bonuses)})` })),
+    weapons.map(id => ({ id, text: `${WEAPONS[id]?.name ?? id} (WP ${WEAPONS[id]?.weaponPower ?? '?'}${elementLabel(WEAPONS[id]?.element)}${bonusLabel(WEAPONS[id]?.bonuses)})` })),
     u.weaponId, (id) => { u.weaponId = id; },
   ));
   panel.appendChild(gearSelect(
@@ -265,6 +265,11 @@ function bonusLabel(b: GearBonuses | undefined): string {
 /** ", resist Fire" — an armor's elemental resistance, or "" when it has none. */
 function resistLabel(el: string | undefined): string {
   return el ? `, resist ${el[0].toUpperCase()}${el.slice(1)}` : '';
+}
+
+/** ", Fire" — a weapon's damage element, or "" when it has none. */
+function elementLabel(el: string | undefined): string {
+  return el ? `, ${el[0].toUpperCase()}${el.slice(1)}` : '';
 }
 
 /** "Phys -22% / Magic -18%" — armor's damage-reduction in plain terms. */

@@ -3,7 +3,7 @@ import { BattleMap } from './Map';
 import { ABILITIES, Ability, Element } from '../data/abilities';
 import { StatusId } from '../data/statuses';
 import { JOB_DEFS, Affinity } from '../data/jobs';
-import { WEAPONS } from '../data/weapons';
+import { WEAPONS, WeaponDef } from '../data/weapons';
 import { ARMOR, ArmorDef } from '../data/armor';
 
 export type RelativeFacing = 'front' | 'side' | 'back';
@@ -89,12 +89,17 @@ export const WEAPON_ACCURACY = 95;
  * (synthetic test jobs), keeping legacy basic-attack damage assertions
  * stable. An unknown equipped id falls back rather than throwing.
  */
-export function effectiveWeaponPower(unit: Unit): number {
-  const equipped = unit.weaponId ? WEAPONS[unit.weaponId] : undefined;
-  if (equipped) return equipped.weaponPower;
+/** The weapon in effect — the equipped override when one is set and
+ *  valid, otherwise the job's signature weapon. `undefined` for an
+ *  unknown/weaponless job. */
+export function effectiveWeapon(unit: Unit): WeaponDef | undefined {
+  if (unit.weaponId && WEAPONS[unit.weaponId]) return WEAPONS[unit.weaponId];
   const sigId = JOB_DEFS[unit.jobId]?.weapon;
-  const sig = sigId ? WEAPONS[sigId] : undefined;
-  return sig?.weaponPower ?? PLACEHOLDER_WEAPON_POWER;
+  return sigId ? WEAPONS[sigId] : undefined;
+}
+
+export function effectiveWeaponPower(unit: Unit): number {
+  return effectiveWeapon(unit)?.weaponPower ?? PLACEHOLDER_WEAPON_POWER;
 }
 
 /**
@@ -339,7 +344,9 @@ export function predictAttackDamage(
     facing, randomMul: 1.0,
   });
   return {
-    damage: Math.max(1, Math.floor(raw * effectiveDefenseFactor(target))),
+    damage: Math.max(1, Math.floor(
+      raw * effectiveDefenseFactor(target)
+      * elementalDamageMultiplier(target, effectiveWeapon(attacker)?.element))),
     facing,
     heightDiff: aH - tH,
     hitChance: physicalHitChanceFrom(attacker, target, facing),
@@ -386,7 +393,9 @@ export function resolveAttack(
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   // Blade Grasp: a Brave% roll fully negates the weapon attack.
   const bladeGrasp = rollBladeGrasp(target, rng);
-  const damage = bladeGrasp ? 0 : Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
+  const damage = bladeGrasp ? 0 : Math.max(1, Math.floor(
+    critDamage * effectiveDefenseFactor(target)
+    * elementalDamageMultiplier(target, effectiveWeapon(attacker)?.element)));
   const dmgResult = target.applyDamage(damage);
 
   const out: AttackOutcome = {

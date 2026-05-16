@@ -25,9 +25,10 @@ function bonusLabel(b: GearBonuses | undefined): string {
 function gearLine(id: string): { name: string; desc: string; price: number; isWeapon: boolean } {
   const w = WEAPONS[id];
   if (w) {
+    const element = w.element ? `, ${w.element[0].toUpperCase()}${w.element.slice(1)}` : '';
     return {
       name: w.name,
-      desc: `WP ${w.weaponPower}${bonusLabel(w.bonuses)}`,
+      desc: `WP ${w.weaponPower}${element}${bonusLabel(w.bonuses)}`,
       price: w.price ?? 0,
       isWeapon: true,
     };

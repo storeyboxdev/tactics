@@ -11,6 +11,8 @@
  * martial jobs rise above it (their Fight command should actually hurt).
  */
 
+import { Element } from './abilities';
+
 /** Flat additive stat bonuses a piece of gear grants its wearer. */
 export type GearBonuses = Partial<{
   hp: number;
@@ -31,6 +33,9 @@ export interface WeaponDef {
   /** Gil price in the shop. Absent on signature weapons — only
    *  loot-tier gear is sold. */
   price?: number;
+  /** If set, the wearer's basic Attack deals this element — interacting
+   *  with the target's elemental affinity. */
+  element?: Element;
 }
 
 export const WEAPONS: Record<string, WeaponDef> = {
@@ -56,6 +61,11 @@ export const WEAPONS: Record<string, WeaponDef> = {
   mythril_sword: { id: 'mythril_sword', name: 'Mythril Sword', weaponPower: 11, bonuses: { pa: 1 },    price: 600 },
   flame_rod:     { id: 'flame_rod',     name: 'Flame Rod',     weaponPower: 4,  bonuses: { ma: 2 },    price: 480 },
   hunting_bow:   { id: 'hunting_bow',   name: 'Hunting Bow',   weaponPower: 7,  bonuses: { speed: 1 }, price: 480 },
+
+  // Elemental weapons — a basic Attack that carries an element.
+  flame_sword:   { id: 'flame_sword',   name: 'Flame Sword',   weaponPower: 10, bonuses: { pa: 1 },    price: 620, element: 'fire' },
+  frost_dagger:  { id: 'frost_dagger',  name: 'Frost Dagger',  weaponPower: 6,  bonuses: { speed: 1 }, price: 520, element: 'ice' },
+  thunder_spear: { id: 'thunder_spear', name: 'Thunder Spear', weaponPower: 9,  bonuses: { pa: 1 },    price: 600, element: 'bolt' },
 };
 
 /** Weapon ids that carry a stat bonus — the loot-tier set. Derived so a
