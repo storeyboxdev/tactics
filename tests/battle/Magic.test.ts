@@ -5,6 +5,7 @@ import {
   resolveAttack, resolveSpell, resolveDamageAndStatus, applyBreak, computeSpellDamage,
   predictSpellDamage,
 } from '../../src/battle/ActionResolver';
+import { BONUS_ARMOR_IDS } from '../../src/data/armor';
 
 const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   hp: 100, mp: 30, pa: 5, ma: 8, speed: 8, move: 4, jump: 1, faith: 50, bravery: 50, evasion: 10,
@@ -210,6 +211,47 @@ describe('elemental affinity — absorb', () => {
     expect(out.damage).toBe(0);
     expect(out.absorbed).toBeGreaterThan(0);
     expect(out.statusApplied).toBe(true);
+  });
+});
+
+describe('elemental affinity — resist gear', () => {
+  it('Flame Mail halves Fire but leaves other elements alone', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W, { faith: 100 });
+    t.armorId = 'flame_mail';
+    const fire = predictSpellDamage(c, t, 14, 'fire').damage;
+    const ice = predictSpellDamage(c, t, 14, 'ice').damage;
+    expect(fire).toBeLessThan(ice);
+    expect(fire / ice).toBeCloseTo(0.5, 1);
+  });
+
+  it('a unit with no resist armor takes every element the same', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const t = makeUnit('t', 'enemy', 1, 0, FACING_W, { faith: 100 });
+    expect(predictSpellDamage(c, t, 14, 'fire').damage)
+      .toBe(predictSpellDamage(c, t, 14, 'ice').damage);
+  });
+
+  it('resolveSpell applies the resist on the live path', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const guarded = makeUnit('g', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 });
+    const bare = makeUnit('b', 'enemy', 2, 0, FACING_W, { hp: 999, faith: 100 });
+    guarded.armorId = 'flame_mail';
+    expect(resolveSpell(c, guarded, 14, rngHalf, 'fire').damage)
+      .toBeLessThan(resolveSpell(c, bare, 14, rngHalf, 'fire').damage);
+  });
+
+  it('an innate affinity overrides resist gear', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { hp: 100, faith: 100 }, 'bomb');
+    bomb.applyDamage(50);
+    bomb.armorId = 'flame_mail'; // resists fire — but the Bomb absorbs it
+    expect(resolveSpell(c, bomb, 14, rngHalf, 'fire').absorbed).toBeGreaterThan(0);
+  });
+
+  it('the resist armors are loot-tier — sold and lootable', () => {
+    expect(BONUS_ARMOR_IDS).toEqual(
+      expect.arrayContaining(['flame_mail', 'frost_mail', 'storm_mail']));
   });
 });
 

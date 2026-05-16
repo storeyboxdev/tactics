@@ -34,9 +34,10 @@ function gearLine(id: string): { name: string; desc: string; price: number; isWe
   }
   const a = ARMOR[id];
   const pct = (f: number) => `${Math.round((1 - f) * 100)}%`;
+  const resist = a.resists ? `, resist ${a.resists[0].toUpperCase()}${a.resists.slice(1)}` : '';
   return {
     name: a.name,
-    desc: `Phys -${pct(a.physicalFactor)} / Magic -${pct(a.magicalFactor)}${bonusLabel(a.bonuses)}`,
+    desc: `Phys -${pct(a.physicalFactor)} / Magic -${pct(a.magicalFactor)}${bonusLabel(a.bonuses)}${resist}`,
     price: a.price ?? 0,
     isWeapon: false,
   };

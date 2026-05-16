@@ -26,9 +26,10 @@
 import { StatusId } from './statuses';
 import { Element } from './abilities';
 
-/** A creature's response to a damage element. Absent = takes it normally.
- *  `weak` amplifies the damage; `absorb` turns it into healing. */
-export type Affinity = 'weak' | 'absorb';
+/** A response to a damage element. Absent = takes it normally. `weak`
+ *  amplifies the damage, `half` cuts it in two, `absorb` turns it into
+ *  healing. Innate (creature) affinities and resist gear both use this. */
+export type Affinity = 'weak' | 'absorb' | 'half';
 
 export interface JobPrereq { jobId: string; level: number; }
 

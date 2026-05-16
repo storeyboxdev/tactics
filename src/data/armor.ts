@@ -14,6 +14,7 @@
  */
 
 import { GearBonuses } from './weapons';
+import { Element } from './abilities';
 
 export interface ArmorDef {
   id: string;
@@ -28,6 +29,8 @@ export interface ArmorDef {
   /** Gil price in the shop. Absent on signature armor — only
    *  loot-tier gear is sold. */
   price?: number;
+  /** If set, the wearer takes half damage from this element. */
+  resists?: Element;
 }
 
 export const ARMOR: Record<string, ArmorDef> = {
@@ -40,6 +43,11 @@ export const ARMOR: Record<string, ArmorDef> = {
   // Not any job's signature — reachable only as battle loot.
   chain_mail: { id: 'chain_mail', name: 'Chain Mail', physicalFactor: 0.82, magicalFactor: 0.95, bonuses: { hp: 12 }, price: 520 },
   silk_robe:  { id: 'silk_robe',  name: 'Silk Robe',  physicalFactor: 1.00, magicalFactor: 0.80, bonuses: { mp: 12 }, price: 520 },
+
+  // Resist armor — halves one element on top of a modest stat line.
+  flame_mail: { id: 'flame_mail', name: 'Flame Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'fire' },
+  frost_mail: { id: 'frost_mail', name: 'Frost Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'ice' },
+  storm_mail: { id: 'storm_mail', name: 'Storm Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'bolt' },
 };
 
 /** Armor ids that carry a stat bonus — the loot-tier set. */

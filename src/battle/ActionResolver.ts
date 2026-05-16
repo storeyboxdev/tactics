@@ -240,15 +240,19 @@ export function effectiveMagicDefenseFactor(target: Unit): number {
 export function elementalDamageMultiplier(target: Unit, element?: Element): number {
   const affinity = affinityOf(target, element);
   if (affinity === 'weak') return 1.5;
+  if (affinity === 'half') return 0.5;
   if (affinity === 'absorb') return 0;
   return 1;
 }
 
-/** The target's affinity to `element` — `undefined` for an element-less
- *  spell or a unit with no declared affinity. */
+/** The target's affinity to `element` — an innate creature trait if the
+ *  job declares one, otherwise a `half` from resist armor. `undefined`
+ *  for an element-less spell or a unit with neither. */
 export function affinityOf(target: Unit, element?: Element): Affinity | undefined {
   if (!element) return undefined;
-  return JOB_DEFS[target.jobId]?.elementAffinities?.[element];
+  const innate = JOB_DEFS[target.jobId]?.elementAffinities?.[element];
+  if (innate) return innate;
+  return effectiveArmor(target)?.resists === element ? 'half' : undefined;
 }
 
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */

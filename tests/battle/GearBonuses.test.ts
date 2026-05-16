@@ -80,7 +80,8 @@ describe('Loot-tier gear catalog', () => {
 
   it('BONUS_WEAPON_IDS / BONUS_ARMOR_IDS list exactly the bonus-bearing gear', () => {
     expect([...BONUS_WEAPON_IDS].sort()).toEqual(['flame_rod', 'hunting_bow', 'mythril_sword']);
-    expect([...BONUS_ARMOR_IDS].sort()).toEqual(['chain_mail', 'silk_robe']);
+    expect([...BONUS_ARMOR_IDS].sort()).toEqual(
+      ['chain_mail', 'flame_mail', 'frost_mail', 'silk_robe', 'storm_mail']);
   });
 
   it('signature gear stays bonus-free', () => {
