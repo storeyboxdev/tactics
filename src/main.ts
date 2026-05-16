@@ -37,7 +37,7 @@ import { Cursor } from './render/Cursor';
 import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
-import { loadSave, SavedUnit } from './core/Save';
+import { loadSave, recordBattleRewards, SavedUnit } from './core/Save';
 import { defaultRoster, pickEnemyJobs } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
@@ -143,7 +143,9 @@ function buildPlayerUnit(saved: SavedUnit, x: number, z: number): Unit {
 const playerSpawns = map.spawns.player;
 const enemySpawns  = map.spawns.enemy;
 const save = loadSave();
-const roster: SavedUnit[] = save?.roster ?? defaultRoster();
+// A length check, not just `??` — recordBattleRewards can write a save
+// with an empty roster (battle 0, no prior save); fall back to the default.
+const roster: SavedUnit[] = save?.roster?.length ? save.roster : defaultRoster();
 // Enemy team scales with how many battles the party has survived. Battle 0
 // is Squires-only (the very first fight the player ever sees); Tier-1 jobs
 // come in by battle 2, casters by 4, the full pool by 6.
@@ -308,6 +310,9 @@ function activateNext() {
   resolveDeathTriggers();
   const winner = checkBattleEnd();
   if (winner) {
+    // Commit gil + loot now (once) so the roster screen and shop show
+    // what was just earned — not a battle-stale balance.
+    if (winner === 'player' && !battleOver) recordBattleRewards(units);
     battleOver = true;
     currentActor = null;
     cursor.clearActiveTile();

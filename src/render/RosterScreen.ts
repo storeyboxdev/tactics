@@ -19,7 +19,7 @@ import {
   eligibleEquipment, ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
-import { loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle } from '../core/Save';
+import { loadSave, saveRoster, wipeSave } from '../core/Save';
 import { showShopScreen } from './ShopScreen';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
@@ -80,8 +80,9 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px',
   });
   footer.appendChild(footerButton('Start Next Battle', '#243c66', '#5b8def', () => {
-    // A won battle scavenges the defeated enemies' gear and pays gil.
-    saveRoster(units, won ? lootFromBattle(units) : undefined, won ? gilFromBattle(units) : 0);
+    // Gil and loot were committed at victory by recordBattleRewards; this
+    // just persists the roster edits and advances the battle counter.
+    saveRoster(units);
     location.reload();
   }));
   footer.appendChild(footerButton('Shop', '#1f4a2e', '#4fe07a', () => {

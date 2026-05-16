@@ -106,9 +106,31 @@ export function gilFromBattle(units: readonly Unit[]): number {
   return BASE_GIL + GIL_PER_ENEMY * defeated;
 }
 
-const EMPTY_POOL: GearPool = { weapons: [], armors: [] };
+/** A SaveFile with no roster and no progress — the base before any battle. */
+function freshSaveFile(): SaveFile {
+  return { version: 1, roster: [], battleCount: 0, foundGear: { weapons: [], armors: [] }, gil: 0 };
+}
 
-export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL, gilEarned = 0): void {
+/**
+ * Commit a won battle's rewards — gil and looted gear — to the save right
+ * away, so the roster screen and shop reflect them. Called once at the
+ * moment of victory; `saveRoster` (at "Start Next Battle") then carries
+ * the stash and balance forward without re-adding anything.
+ */
+export function recordBattleRewards(units: readonly Unit[], rng: () => number = Math.random): void {
+  const base = loadSave() ?? freshSaveFile();
+  const loot = lootFromBattle(units, rng);
+  writeSave({
+    ...base,
+    gil: base.gil + gilFromBattle(units),
+    foundGear: {
+      weapons: [...new Set([...base.foundGear.weapons, ...loot.weapons])],
+      armors:  [...new Set([...base.foundGear.armors,  ...loot.armors])],
+    },
+  });
+}
+
+export function saveRoster(units: Unit[]): void {
   const roster: SavedUnit[] = [];
   for (const u of units) {
     if (u.team !== 'player' || !u.progression) continue;
@@ -127,16 +149,16 @@ export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL, gilEa
   }
   // Bump the battle counter — every saveRoster call follows a battle finish,
   // so this naturally tracks "how many battles has this party survived".
+  // Gil and loot were already committed by recordBattleRewards at victory;
+  // here they just carry forward untouched.
   const prev = loadSave();
-  const battleCount = (prev?.battleCount ?? 0) + 1;
-  // Loot accumulates — carry the prior stash forward, union in the new find.
-  const foundGear: GearPool = {
-    weapons: [...new Set([...(prev?.foundGear.weapons ?? []), ...newFound.weapons])],
-    armors:  [...new Set([...(prev?.foundGear.armors  ?? []), ...newFound.armors])],
-  };
-  // Gil accumulates — carry the prior balance forward, add the new reward.
-  const gil = (prev?.gil ?? 0) + gilEarned;
-  writeSave({ version: 1, roster, battleCount, foundGear, gil });
+  writeSave({
+    version: 1,
+    roster,
+    battleCount: (prev?.battleCount ?? 0) + 1,
+    foundGear: prev?.foundGear ?? { weapons: [], armors: [] },
+    gil: prev?.gil ?? 0,
+  });
 }
 
 /**

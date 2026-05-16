@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Unit, UnitDef, UnitStats } from '../../src/battle/Unit';
 import { JOB_DEFS } from '../../src/data/jobs';
 import {
-  loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle, buyGear,
+  loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle, recordBattleRewards, buyGear,
   SavedUnit, SaveFile,
 } from '../../src/core/Save';
 import { bootstrapUnit } from '../../src/core/Bootstrap';
@@ -188,12 +188,19 @@ describe('Save round-trip', () => {
     expect(r.armorId).toBeNull();
   });
 
-  it('round-trips foundGear', () => {
-    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
-    saveRoster([u], { weapons: ['katana'], armors: ['robe'] });
+  it('recordBattleRewards records defeated-enemy loot to foundGear', () => {
+    const dead = enemyUnit('e1', 'knight'); dead.applyDamage(9999);
+    recordBattleRewards([dead], () => 0.99); // no bonus drop
     const f = loadSave()!.foundGear;
-    expect(f.weapons).toEqual(['katana']);
-    expect(f.armors).toEqual(['robe']);
+    expect(f.weapons).toContain('sword');
+    expect(f.armors).toContain('heavy_armor');
+  });
+
+  it('recordBattleRewards creates a save when none exists', () => {
+    const dead = enemyUnit('e1', 'knight'); dead.applyDamage(9999);
+    recordBattleRewards([dead], () => 0.99);
+    expect(loadSave()).not.toBeNull();
+    expect(loadSave()!.gil).toBe(85); // base 60 + 25 per defeated enemy
   });
 
   it('migrates a save written before foundGear to empty pools', () => {
@@ -201,21 +208,27 @@ describe('Save round-trip', () => {
     expect(loadSave()!.foundGear).toEqual({ weapons: [], armors: [] });
   });
 
-  it('foundGear accumulates across battles, deduped', () => {
-    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
-    saveRoster([u], { weapons: ['sword'], armors: ['heavy_armor'] });
-    saveRoster([u], { weapons: ['sword', 'spear'], armors: ['robe'] });
-    const f = loadSave()!.foundGear;
-    expect([...f.weapons].sort()).toEqual(['spear', 'sword']);
-    expect([...f.armors].sort()).toEqual(['heavy_armor', 'robe']);
+  it('rewards accumulate across battles, deduped', () => {
+    const k1 = enemyUnit('e1', 'knight'); k1.applyDamage(9999);
+    recordBattleRewards([k1], () => 0.99);
+    expect(loadSave()!.gil).toBe(85);
+    const g = enemyUnit('e2', 'goblin'); g.applyDamage(9999);
+    const k2 = enemyUnit('e3', 'knight'); k2.applyDamage(9999);
+    recordBattleRewards([g, k2], () => 0.99);
+    const s = loadSave()!;
+    expect(s.gil).toBe(195); // 85 + (60 + 25*2)
+    expect([...s.foundGear.weapons].sort()).toEqual(['claw', 'sword']); // sword deduped
+    expect([...s.foundGear.armors].sort()).toEqual(['heavy_armor', 'light_armor']);
   });
 
-  it('round-trips and accumulates gil', () => {
-    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
-    saveRoster([u], undefined, 100);
-    expect(loadSave()!.gil).toBe(100);
-    saveRoster([u], undefined, 50);
-    expect(loadSave()!.gil).toBe(150);
+  it('saveRoster carries gil and foundGear forward without changing them', () => {
+    const dead = enemyUnit('e1', 'knight'); dead.applyDamage(9999);
+    recordBattleRewards([dead], () => 0.99);
+    saveRoster([unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }))]);
+    const s = loadSave()!;
+    expect(s.gil).toBe(85);
+    expect(s.foundGear.weapons).toContain('sword');
+    expect(s.roster).toHaveLength(1);
   });
 
   it('migrates a save written before gil to 0', () => {
