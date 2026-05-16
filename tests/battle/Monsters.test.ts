@@ -8,7 +8,7 @@ import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
 import { poolFor } from '../../src/core/Bootstrap';
 
-const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye'];
+const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye', 'treant'];
 
 function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
   const job = JOB_DEFS[jobId];
@@ -49,6 +49,15 @@ describe('Monster bestiary', () => {
     expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
     expect(JOB_DEFS.skeleton.learnableActives).toEqual(['bone_crush']);
     expect(JOB_DEFS.floating_eye.learnableActives).toEqual(['hypno_gaze', 'eye_beam']);
+    expect(JOB_DEFS.treant.learnableActives).toEqual(['treant_sap']);
+  });
+
+  it('the Treant is a sturdy, slow, fire-weak bruiser', () => {
+    expect(JOB_DEFS.treant.elementAffinities).toEqual({ fire: 'weak' });
+    const treant = JOB_DEFS.treant.baseStats;
+    const gob = JOB_DEFS.goblin.baseStats;
+    expect(treant.hp).toBeGreaterThan(gob.hp);
+    expect(treant.speed).toBeLessThan(gob.speed);
   });
 
   it('the Floating Eye is fragile and evasive next to a Skeleton', () => {
@@ -186,6 +195,13 @@ describe('Monster signature abilities', () => {
     const ab = ABILITIES.eye_beam;
     expect(ab.range).toBeGreaterThan(1);
     expect(ab.effect.kind).toBe('magic-damage');
+  });
+
+  it("Treant's Sap is a melee strike that inflicts Slow", () => {
+    const ab = ABILITIES.treant_sap;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('slow');
   });
 
   it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {

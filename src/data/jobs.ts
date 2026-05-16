@@ -388,6 +388,17 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: ['hypno_gaze', 'eye_beam'],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
   },
+  treant: {
+    // A slow, woody bruiser — and very flammable. Fire tears through it.
+    id: 'treant', name: 'Treant', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 75, pa: 7, ma: 2, speed: 6, move: 2, jump: 1, evasion: 5 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   6, mp:   2, pa:   4, ma:   1, speed:   1 },
+    learnableActives: ['treant_sap'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    elementAffinities: { fire: 'weak' },
+  },
 };
 
 /** All non-monster job ids — the jobs a player can actually be. */

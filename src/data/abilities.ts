@@ -1189,6 +1189,14 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
     effect: { kind: 'magic-damage', spellPower: 10 },
   },
+  treant_sap: {
+    // The Treant's sticky strike — damage plus a Slow that bogs the prey
+    // down, the slow creature's way of keeping faster prey in reach.
+    id: 'treant_sap', name: 'Sap',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-damage-and-status', weaponPower: 8,
+              statusId: 'slow', statusBaseAcc: 60 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).

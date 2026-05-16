@@ -111,6 +111,11 @@ describe('pickEnemyJobs — tier ramp', () => {
     expect(poolFor(2)).not.toContain('skeleton');
   });
 
+  it('the Treant enters the pool by battle 4, not before', () => {
+    expect(poolFor(4)).toContain('treant');
+    expect(poolFor(2)).not.toContain('treant');
+  });
+
   it('the Floating Eye is a full-pool creature — battle 6, not battle 4', () => {
     expect(poolFor(6)).toContain('floating_eye');
     expect(poolFor(4)).not.toContain('floating_eye');

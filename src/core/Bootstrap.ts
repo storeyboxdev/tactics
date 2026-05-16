@@ -53,14 +53,14 @@ const ENEMY_TIERS: Array<readonly string[]> = [
   // 4 — first wave of casters and rogues (sleep / poison / mug pressure),
   //     and Chocobos join the beast roster.
   ['squire', 'chemist', 'knight', 'archer', 'monk', 'thief', 'white_mage', 'black_mage', 'oracle',
-   'goblin', 'chocobo', 'skeleton'],
+   'goblin', 'chocobo', 'skeleton', 'treant'],
   // 6 — full pool. Anything goes — every job and every monster.
   [
     'squire', 'chemist', 'knight', 'archer', 'monk', 'thief',
     'white_mage', 'black_mage', 'time_mage', 'oracle',
     'geomancer', 'lancer', 'mediator', 'summoner',
     'samurai', 'ninja', 'calculator', 'bard', 'dancer', 'mime',
-    'goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye',
+    'goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye', 'treant',
   ],
 ];
 
