@@ -364,6 +364,17 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     innateStatuses: ['undead'],
   },
+  floating_eye: {
+    // A fragile, evasive hovering gaze-caster. Hangs back, lands Sleep
+    // with Hypno Gaze, and snipes with Eye Beam.
+    id: 'floating_eye', name: 'Floating Eye', weapon: 'claw', armor: 'clothes',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 30, pa: 3, ma: 6, speed: 11, move: 3, jump: 3, evasion: 20 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   3, mp:   2, pa:   2, ma:   5, speed:   2 },
+    learnableActives: ['hypno_gaze', 'eye_beam'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+  },
 };
 
 /** All non-monster job ids — the jobs a player can actually be. */

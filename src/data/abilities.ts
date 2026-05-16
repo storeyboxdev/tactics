@@ -1173,6 +1173,19 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 9 },
   },
+  hypno_gaze: {
+    // The Floating Eye's lulling stare — a ranged Sleep that opens the
+    // fight before the Eye snipes from safety.
+    id: 'hypno_gaze', name: 'Hypno Gaze',
+    jpCost: 100, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'inflict-status', statusId: 'sleep', targetTeam: 'enemy', baseAccuracy: 55 },
+  },
+  eye_beam: {
+    // The Floating Eye's ranged magic bolt — its damage move.
+    id: 'eye_beam', name: 'Eye Beam',
+    jpCost: 100, type: 'magical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'magic-damage', spellPower: 10 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).

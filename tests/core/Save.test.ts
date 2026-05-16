@@ -45,7 +45,7 @@ describe('lootFromBattle', () => {
     const deadGoblin = enemyUnit('e2', 'goblin'); deadGoblin.applyDamage(9999);
     const liveArcher = enemyUnit('e3', 'archer'); // still standing — not looted
     const player = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
-    const loot = lootFromBattle([deadKnight, deadGoblin, liveArcher, player]);
+    const loot = lootFromBattle([deadKnight, deadGoblin, liveArcher, player], () => 0.99);
     expect([...loot.weapons].sort()).toEqual(['claw', 'sword']);
     expect([...loot.armors].sort()).toEqual(['heavy_armor', 'light_armor']);
     expect(loot.weapons).not.toContain('bow'); // the surviving archer's bow

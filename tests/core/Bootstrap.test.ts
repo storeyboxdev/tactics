@@ -103,11 +103,17 @@ describe('pickEnemyJobs — tier ramp', () => {
     const pool = poolFor(6);
     expect(pool).toContain('bomb');
     expect(pool).toContain('skeleton');
+    expect(pool).toContain('floating_eye');
   });
 
   it('the Skeleton enters the pool by battle 4, not before', () => {
     expect(poolFor(4)).toContain('skeleton');
     expect(poolFor(2)).not.toContain('skeleton');
+  });
+
+  it('the Floating Eye is a full-pool creature — battle 6, not battle 4', () => {
+    expect(poolFor(6)).toContain('floating_eye');
+    expect(poolFor(4)).not.toContain('floating_eye');
   });
 
   it('always includes at least one squire as a sanity baseline', () => {

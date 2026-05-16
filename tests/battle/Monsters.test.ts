@@ -8,7 +8,7 @@ import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
 import { poolFor } from '../../src/core/Bootstrap';
 
-const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton'];
+const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye'];
 
 function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
   const job = JOB_DEFS[jobId];
@@ -48,6 +48,14 @@ describe('Monster bestiary', () => {
     // Bomb's identity is the on-death blast — no active kit, by design.
     expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
     expect(JOB_DEFS.skeleton.learnableActives).toEqual(['bone_crush']);
+    expect(JOB_DEFS.floating_eye.learnableActives).toEqual(['hypno_gaze', 'eye_beam']);
+  });
+
+  it('the Floating Eye is fragile and evasive next to a Skeleton', () => {
+    const eye = JOB_DEFS.floating_eye.baseStats;
+    const skel = JOB_DEFS.skeleton.baseStats;
+    expect(eye.hp).toBeLessThan(skel.hp);
+    expect(eye.evasion).toBeGreaterThan(skel.evasion);
   });
 
   it('the Skeleton spawns permanently Undead', () => {
@@ -165,6 +173,19 @@ describe('Monster signature abilities', () => {
     expect(ab.range).toBe(1);
     if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
     expect(ab.effect.weaponPower).toBeGreaterThan(WEAPONS.claw.weaponPower);
+  });
+
+  it("Floating Eye's Hypno Gaze is a ranged Sleep gaze", () => {
+    const ab = ABILITIES.hypno_gaze;
+    expect(ab.range).toBeGreaterThan(1);
+    if (ab.effect.kind !== 'inflict-status') throw new Error('bad fixture');
+    expect(ab.effect.statusId).toBe('sleep');
+  });
+
+  it("Floating Eye's Eye Beam is a ranged magic bolt", () => {
+    const ab = ABILITIES.eye_beam;
+    expect(ab.range).toBeGreaterThan(1);
+    expect(ab.effect.kind).toBe('magic-damage');
   });
 
   it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {
