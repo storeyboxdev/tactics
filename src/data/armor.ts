@@ -25,6 +25,9 @@ export interface ArmorDef {
   /** Flat stat bonuses applied to the wearer. Absent on signature
    *  armor — only loot-tier gear carries one. */
   bonuses?: GearBonuses;
+  /** Gil price in the shop. Absent on signature armor — only
+   *  loot-tier gear is sold. */
+  price?: number;
 }
 
 export const ARMOR: Record<string, ArmorDef> = {
@@ -35,8 +38,8 @@ export const ARMOR: Record<string, ArmorDef> = {
 
   // ─── Loot-tier armor ──────────────────────────────────────────────────────
   // Not any job's signature — reachable only as battle loot.
-  chain_mail: { id: 'chain_mail', name: 'Chain Mail', physicalFactor: 0.82, magicalFactor: 0.95, bonuses: { hp: 12 } },
-  silk_robe:  { id: 'silk_robe',  name: 'Silk Robe',  physicalFactor: 1.00, magicalFactor: 0.80, bonuses: { mp: 12 } },
+  chain_mail: { id: 'chain_mail', name: 'Chain Mail', physicalFactor: 0.82, magicalFactor: 0.95, bonuses: { hp: 12 }, price: 520 },
+  silk_robe:  { id: 'silk_robe',  name: 'Silk Robe',  physicalFactor: 1.00, magicalFactor: 0.80, bonuses: { mp: 12 }, price: 520 },
 };
 
 /** Armor ids that carry a stat bonus — the loot-tier set. */

@@ -10,8 +10,8 @@
 import { Unit } from '../battle/Unit';
 import { UnitProgression } from '../battle/Progression';
 import { JOB_DEFS } from '../data/jobs';
-import { BONUS_WEAPON_IDS } from '../data/weapons';
-import { BONUS_ARMOR_IDS } from '../data/armor';
+import { WEAPONS, BONUS_WEAPON_IDS } from '../data/weapons';
+import { ARMOR, BONUS_ARMOR_IDS } from '../data/armor';
 
 const SAVE_KEY = 'tactics-save-v1';
 
@@ -147,6 +147,31 @@ export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL, gilEa
 
 export function wipeSave(): void {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+}
+
+/**
+ * Buy a piece of loot-tier gear: a pure transaction. Returns an updated
+ * SaveFile, or `null` when the purchase can't go through — the id is
+ * unknown or unpriced (signature gear isn't sold), the party can't
+ * afford it, or it's already in `foundGear`.
+ */
+export function buyGear(save: SaveFile, gearId: string): SaveFile | null {
+  const weapon = WEAPONS[gearId];
+  const armor = ARMOR[gearId];
+  const price = weapon?.price ?? armor?.price;
+  if (price === undefined) return null;
+  if (save.gil < price) return null;
+  const isWeapon = !!weapon;
+  const owned = isWeapon ? save.foundGear.weapons : save.foundGear.armors;
+  if (owned.includes(gearId)) return null;
+  return {
+    ...save,
+    gil: save.gil - price,
+    foundGear: {
+      weapons: isWeapon ? [...save.foundGear.weapons, gearId] : save.foundGear.weapons,
+      armors:  isWeapon ? save.foundGear.armors : [...save.foundGear.armors, gearId],
+    },
+  };
 }
 
 /**

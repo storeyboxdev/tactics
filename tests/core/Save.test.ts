@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Unit, UnitDef, UnitStats } from '../../src/battle/Unit';
 import { JOB_DEFS } from '../../src/data/jobs';
-import { loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle, SavedUnit } from '../../src/core/Save';
+import {
+  loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle, buyGear,
+  SavedUnit, SaveFile,
+} from '../../src/core/Save';
 import { bootstrapUnit } from '../../src/core/Bootstrap';
-import { BONUS_WEAPON_IDS } from '../../src/data/weapons';
-import { BONUS_ARMOR_IDS } from '../../src/data/armor';
+import { WEAPONS, BONUS_WEAPON_IDS } from '../../src/data/weapons';
+import { ARMOR, BONUS_ARMOR_IDS } from '../../src/data/armor';
 
 // Vitest's `node` environment doesn't supply localStorage. Install a tiny
 // in-memory shim before any test runs.
@@ -72,6 +75,45 @@ describe('lootFromBattle', () => {
     const bonus = [...BONUS_WEAPON_IDS, ...BONUS_ARMOR_IDS];
     expect([...loot.weapons, ...loot.armors].some(id => bonus.includes(id))).toBe(false);
     expect(loot.weapons).toContain('sword');
+  });
+});
+
+function freshSave(gil: number): SaveFile {
+  return { version: 1, roster: [], battleCount: 0, foundGear: { weapons: [], armors: [] }, gil };
+}
+
+describe('buyGear', () => {
+  it('debits gil and adds a bought weapon to foundGear', () => {
+    const after = buyGear(freshSave(1000), 'flame_rod'); // price 480
+    expect(after).not.toBeNull();
+    expect(after!.gil).toBe(520);
+    expect(after!.foundGear.weapons).toContain('flame_rod');
+  });
+
+  it('a bought armor lands in the armor pool', () => {
+    const after = buyGear(freshSave(1000), 'chain_mail');
+    expect(after!.foundGear.armors).toContain('chain_mail');
+  });
+
+  it('fails when the party cannot afford it', () => {
+    expect(buyGear(freshSave(100), 'mythril_sword')).toBeNull();
+  });
+
+  it('fails on gear already owned', () => {
+    const save = { ...freshSave(1000), foundGear: { weapons: ['flame_rod'], armors: [] } };
+    expect(buyGear(save, 'flame_rod')).toBeNull();
+  });
+
+  it('fails on signature (unpriced) or unknown gear', () => {
+    expect(buyGear(freshSave(9999), 'sword')).toBeNull();
+    expect(buyGear(freshSave(9999), 'no_such_gear')).toBeNull();
+  });
+
+  it('the loot-tier pieces are priced; signature gear is not', () => {
+    expect(WEAPONS.flame_rod.price).toBeGreaterThan(0);
+    expect(WEAPONS.sword.price).toBeUndefined();
+    expect(ARMOR.chain_mail.price).toBeGreaterThan(0);
+    expect(ARMOR.heavy_armor.price).toBeUndefined();
   });
 });
 
