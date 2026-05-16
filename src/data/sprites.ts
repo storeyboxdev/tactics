@@ -47,41 +47,44 @@ export const SHEET_LAYOUT = {
 } as const;
 
 /**
- * Per-job placeholder appearance — a distinct 2-char tag drawn on the
- * procedural unit sprite (the fallback when no PNG sheet is present).
- * Every JOB_DEFS job and monster has an entry; the renderer falls back
- * to '?' only for a genuinely unknown jobId.
+ * Per-job placeholder appearance — a distinct 2-char tag and an accent
+ * colour drawn on the procedural unit sprite (the fallback when no PNG
+ * sheet is present). Every JOB_DEFS job and monster has an entry; the
+ * renderer falls back to a default only for a genuinely unknown jobId.
  */
-export const JOB_APPEARANCE: Record<string, { label: string }> = {
+export const JOB_APPEARANCE: Record<string, { label: string; accent: string }> = {
   // Player jobs.
-  squire:     { label: 'Sq' },
-  chemist:    { label: 'Cm' },
-  knight:     { label: 'Kn' },
-  archer:     { label: 'Ar' },
-  white_mage: { label: 'WM' },
-  black_mage: { label: 'BM' },
-  monk:       { label: 'Mk' },
-  thief:      { label: 'Tf' },
-  time_mage:  { label: 'TM' },
-  oracle:     { label: 'Or' },
-  geomancer:  { label: 'Ge' },
-  lancer:     { label: 'Ln' },
-  mediator:   { label: 'Md' },
-  summoner:   { label: 'Sm' },
-  samurai:    { label: 'Sa' },
-  ninja:      { label: 'Nj' },
-  calculator: { label: 'Cl' },
-  bard:       { label: 'Bd' },
-  dancer:     { label: 'Dn' },
-  mime:       { label: 'Mm' },
-  // Monsters.
-  goblin:       { label: 'Gb' },
-  chocobo:      { label: 'Co' },
-  red_panther:  { label: 'Pn' },
-  bomb:         { label: 'Bo' },
-  skeleton:     { label: 'Sk' },
-  floating_eye: { label: 'Ey' },
+  squire:     { label: 'Sq', accent: '#c2a268' },
+  chemist:    { label: 'Cm', accent: '#dfe4e8' },
+  knight:     { label: 'Kn', accent: '#8893a8' },
+  archer:     { label: 'Ar', accent: '#5a8f4e' },
+  white_mage: { label: 'WM', accent: '#f0e8c0' },
+  black_mage: { label: 'BM', accent: '#5a4a78' },
+  monk:       { label: 'Mk', accent: '#cf7b3a' },
+  thief:      { label: 'Tf', accent: '#3f7d5c' },
+  time_mage:  { label: 'TM', accent: '#4a5a9c' },
+  oracle:     { label: 'Or', accent: '#3f8f8f' },
+  geomancer:  { label: 'Ge', accent: '#8a6b3f' },
+  lancer:     { label: 'Ln', accent: '#4f6f9f' },
+  mediator:   { label: 'Md', accent: '#8f4a4a' },
+  summoner:   { label: 'Sm', accent: '#a84a8f' },
+  samurai:    { label: 'Sa', accent: '#9c3f3f' },
+  ninja:      { label: 'Nj', accent: '#3a3a44' },
+  calculator: { label: 'Cl', accent: '#6f7f8f' },
+  bard:       { label: 'Bd', accent: '#6fb0d0' },
+  dancer:     { label: 'Dn', accent: '#d06f9f' },
+  mime:       { label: 'Mm', accent: '#9a9aa0' },
+  // Monsters — creature-flavoured accents.
+  goblin:       { label: 'Gb', accent: '#6b8e23' },
+  chocobo:      { label: 'Co', accent: '#e8c64a' },
+  red_panther:  { label: 'Pn', accent: '#c0392b' },
+  bomb:         { label: 'Bo', accent: '#e0682f' },
+  skeleton:     { label: 'Sk', accent: '#e8e2cf' },
+  floating_eye: { label: 'Ey', accent: '#8e6fc4' },
 };
+
+/** Appearance for a jobId with no JOB_APPEARANCE entry. */
+export const DEFAULT_APPEARANCE = { label: '?', accent: '#f3d6a8' };
 
 /** Frame index (0..N-1) within an attack at which the hit "lands" on the target. */
 export const ATTACK_IMPACT_FRAME = 2;

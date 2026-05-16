@@ -3,7 +3,9 @@ import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from '../battle/
 import { BattleMap } from '../battle/Map';
 import { AssetLoader } from '../core/AssetLoader';
 import { AnimationState } from './AnimationState';
-import { SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME, JOB_APPEARANCE } from '../data/sprites';
+import {
+  SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME, JOB_APPEARANCE, DEFAULT_APPEARANCE,
+} from '../data/sprites';
 
 // Camera quadrant 0..3 corresponds to camera position roughly: 0=SE, 1=SW, 2=NW, 3=NE.
 // The cardinal world side of the unit most facing the camera is then S, W, N, E.
@@ -203,16 +205,16 @@ function facingTowards(fx: number, fz: number, tx: number, tz: number): Facing {
 
 function makePlaceholderFrames(unit: Unit): THREE.Texture[] {
   const teamColor = unit.team === 'player' ? '#5b8def' : '#d96363';
-  const jobLetter = JOB_APPEARANCE[unit.jobId]?.label ?? '?';
+  const { label, accent } = JOB_APPEARANCE[unit.jobId] ?? DEFAULT_APPEARANCE;
   return [
-    makeFrameTexture(teamColor, 0, jobLetter),
-    makeFrameTexture(teamColor, 1, jobLetter),
-    makeFrameTexture(teamColor, 2, jobLetter),
-    makeFrameTexture(teamColor, 3, jobLetter),
+    makeFrameTexture(teamColor, 0, label, accent),
+    makeFrameTexture(teamColor, 1, label, accent),
+    makeFrameTexture(teamColor, 2, label, accent),
+    makeFrameTexture(teamColor, 3, label, accent),
   ];
 }
 
-function makeFrameTexture(bodyColor: string, view: number, jobLetter: string): THREE.Texture {
+function makeFrameTexture(bodyColor: string, view: number, jobLetter: string, accent: string): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = SPRITE_W;
   c.height = SPRITE_H;
@@ -221,7 +223,7 @@ function makeFrameTexture(bodyColor: string, view: number, jobLetter: string): T
 
   ctx.fillStyle = bodyColor;
   ctx.fillRect(8, 16, SPRITE_W - 16, SPRITE_H - 20);
-  ctx.fillStyle = '#f3d6a8';
+  ctx.fillStyle = accent;
   ctx.fillRect(10, 4, SPRITE_W - 20, 14);
 
   ctx.fillStyle = '#222';

@@ -8,12 +8,13 @@ describe('JOB_DEFS catalog', () => {
     expect(Object.keys(JOB_DEFS).length).toBeGreaterThanOrEqual(20);
   });
 
-  it('every job has a JOB_APPEARANCE entry with a unique label', () => {
+  it('every job has a JOB_APPEARANCE entry with a unique label and an accent', () => {
     const labels = new Set<string>();
     for (const id of Object.keys(JOB_DEFS)) {
       const appearance = JOB_APPEARANCE[id];
       expect(appearance, `${id} appearance`).toBeDefined();
       expect(appearance.label.length, `${id} label length`).toBeGreaterThan(0);
+      expect(appearance.accent.length, `${id} accent`).toBeGreaterThan(0);
       expect(labels.has(appearance.label), `${id} duplicate label ${appearance.label}`).toBe(false);
       labels.add(appearance.label);
     }
