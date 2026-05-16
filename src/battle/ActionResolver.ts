@@ -22,6 +22,8 @@ export interface AttackOutcome {
   reraised?: boolean;
   /** True if the target's Blade Grasp caught the attack (damage negated to 0). */
   bladeGrasp?: boolean;
+  /** HP gained when the target absorbs the weapon's element (damage is 0). */
+  absorbed?: number;
 }
 
 export interface CounterOutcome {
@@ -393,9 +395,24 @@ export function resolveAttack(
   const critDamage = crit ? Math.max(1, Math.floor(baseDamage * CRIT_MULTIPLIER)) : baseDamage;
   // Blade Grasp: a Brave% roll fully negates the weapon attack.
   const bladeGrasp = rollBladeGrasp(target, rng);
+  const weaponElement = effectiveWeapon(attacker)?.element;
+
+  // Absorb: the weapon's element heals the target instead of hurting it —
+  // no damage, no Sleep break, no Counter (it was never a "hit"). Blade
+  // Grasp still takes precedence: a caught attack does nothing at all.
+  if (!bladeGrasp && affinityOf(target, weaponElement) === 'absorb') {
+    const heal = Math.max(1, Math.floor(critDamage * effectiveDefenseFactor(target)));
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + heal);
+    return {
+      attacker, target, damage: 0, heightDiff: aH - tH, facing,
+      hit: true, crit, absorbed: target.hp - before,
+    };
+  }
+
   const damage = bladeGrasp ? 0 : Math.max(1, Math.floor(
     critDamage * effectiveDefenseFactor(target)
-    * elementalDamageMultiplier(target, effectiveWeapon(attacker)?.element)));
+    * elementalDamageMultiplier(target, weaponElement)));
   const dmgResult = target.applyDamage(damage);
 
   const out: AttackOutcome = {

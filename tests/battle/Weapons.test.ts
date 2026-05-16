@@ -149,4 +149,29 @@ describe('Elemental weapons', () => {
     expect(resolveAttack(atk, bomb, map, () => 0.5).damage)
       .toBeGreaterThan(resolveAttack(atk, gob, map, () => 0.5).damage);
   });
+
+  it('a fire weapon absorbed by the Bomb heals it instead of hurting', () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8 });
+    atk.weaponId = 'flame_sword'; // fire — the Bomb absorbs it
+    const bomb = makeUnit('bomb', 'enemy', 'bomb', 1, 2, FACING_E, { hp: 60, evasion: 0 });
+    bomb.applyDamage(40); // hp 20 — room to heal
+    const out = resolveAttack(atk, bomb, map, () => 0.5);
+    expect(out.damage).toBe(0);
+    expect(out.absorbed).toBeGreaterThan(0);
+    expect(bomb.hp).toBeGreaterThan(20);
+  });
+
+  it('an absorbed attack provokes no Counter', () => {
+    const map = new BattleMap(flatMap(6, 5));
+    const atk = makeUnit('a', 'player', 'x', 0, 2, FACING_E, { pa: 8, hp: 100 });
+    atk.weaponId = 'flame_sword';
+    const bomb = makeUnit('bomb', 'enemy', 'bomb', 1, 2, FACING_E, { hp: 60, evasion: 0, bravery: 100 });
+    bomb.applyDamage(40);
+    bomb.reaction = 'counter';
+    const out = resolveAttack(atk, bomb, map, () => 0.5);
+    expect(out.absorbed).toBeGreaterThan(0);
+    expect(out.counter).toBeUndefined();
+    expect(atk.hp).toBe(100);
+  });
 });

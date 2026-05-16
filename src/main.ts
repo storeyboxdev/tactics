@@ -1182,6 +1182,10 @@ function logAttack(out: AttackOutcome) {
     hud.showFloatingMiss(out.target);
     return;
   }
+  if (out.absorbed) {
+    hud.log(`${out.target.name} absorbs ${out.attacker.name}'s attack — +${out.absorbed} HP`);
+    return;
+  }
   const critTag = out.crit ? ' ★CRIT' : '';
   hud.log(
     `${out.attacker.name} → ${out.target.name}: ${out.damage} dmg${critTag} ` +
