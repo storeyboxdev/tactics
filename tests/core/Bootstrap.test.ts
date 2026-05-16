@@ -121,6 +121,11 @@ describe('pickEnemyJobs — tier ramp', () => {
     expect(poolFor(4)).not.toContain('floating_eye');
   });
 
+  it('the Wraith is a full-pool creature — battle 6, not battle 4', () => {
+    expect(poolFor(6)).toContain('wraith');
+    expect(poolFor(4)).not.toContain('wraith');
+  });
+
   it('always includes at least one squire as a sanity baseline', () => {
     for (const battle of [0, 2, 4, 6, 10]) {
       const jobs = pickEnemyJobs(battle, 5, rng0);

@@ -399,6 +399,18 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     elementAffinities: { fire: 'weak' },
   },
+  wraith: {
+    // A fragile, evasive undead that sustains by draining HP — its touch
+    // heals it for half the damage it deals.
+    id: 'wraith', name: 'Wraith', weapon: 'claw', armor: 'clothes',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 32, pa: 7, ma: 3, speed: 11, move: 4, jump: 2, evasion: 30 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   3, mp:   2, pa:   5, ma:   2, speed:   2 },
+    learnableActives: ['wraith_drain'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    innateStatuses: ['undead'],
+  },
 };
 
 /** All non-monster job ids — the jobs a player can actually be. */

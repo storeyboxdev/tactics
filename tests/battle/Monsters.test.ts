@@ -8,7 +8,7 @@ import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
 import { poolFor } from '../../src/core/Bootstrap';
 
-const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye', 'treant'];
+const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton', 'floating_eye', 'treant', 'wraith'];
 
 function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
   const job = JOB_DEFS[jobId];
@@ -50,6 +50,16 @@ describe('Monster bestiary', () => {
     expect(JOB_DEFS.skeleton.learnableActives).toEqual(['bone_crush']);
     expect(JOB_DEFS.floating_eye.learnableActives).toEqual(['hypno_gaze', 'eye_beam']);
     expect(JOB_DEFS.treant.learnableActives).toEqual(['treant_sap']);
+    expect(JOB_DEFS.wraith.learnableActives).toEqual(['wraith_drain']);
+  });
+
+  it('the Wraith spawns Undead and is fragile but evasive', () => {
+    expect(JOB_DEFS.wraith.innateStatuses).toEqual(['undead']);
+    expect(monsterUnit('wraith').hasStatus('undead')).toBe(true);
+    const wraith = JOB_DEFS.wraith.baseStats;
+    const treant = JOB_DEFS.treant.baseStats;
+    expect(wraith.hp).toBeLessThan(treant.hp);
+    expect(wraith.evasion).toBeGreaterThan(treant.evasion);
   });
 
   it('the Treant is a sturdy, slow, fire-weak bruiser', () => {
@@ -202,6 +212,13 @@ describe('Monster signature abilities', () => {
     expect(ab.range).toBe(1);
     if (ab.effect.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.statusId).toBe('slow');
+  });
+
+  it("Wraith's Drain Touch heals the Wraith from the damage dealt", () => {
+    const ab = ABILITIES.wraith_drain;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(ab.effect.drainPercent).toBeGreaterThan(0);
   });
 
   it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {

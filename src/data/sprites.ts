@@ -82,6 +82,7 @@ export const JOB_APPEARANCE: Record<string, { label: string; accent: string }> =
   skeleton:     { label: 'Sk', accent: '#e8e2cf' },
   floating_eye: { label: 'Ey', accent: '#8e6fc4' },
   treant:       { label: 'Tr', accent: '#5c6b2e' },
+  wraith:       { label: 'Wr', accent: '#9fb0c8' },
 };
 
 /** Appearance for a jobId with no JOB_APPEARANCE entry. */

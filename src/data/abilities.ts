@@ -1197,6 +1197,13 @@ export const ABILITIES: Record<string, Ability> = {
     effect: { kind: 'physical-damage-and-status', weaponPower: 8,
               statusId: 'slow', statusBaseAcc: 60 },
   },
+  wraith_drain: {
+    // The Wraith's draining touch — it heals for half the damage dealt,
+    // so an undead that never needs a healer of its own.
+    id: 'wraith_drain', name: 'Drain Touch',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 7, drainPercent: 50 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).
