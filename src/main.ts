@@ -677,7 +677,7 @@ function castMathSkill(actor: Unit, ab: Ability) {
   hud.log(`${ab.name}: ${matched.length} unit${matched.length === 1 ? '' : 's'} match`);
   let affectedEnemy = false;
   for (const target of matched) {
-    const out = resolveSpell(actor, target, eff.spellPower);
+    const out = resolveSpell(actor, target, eff.spellPower, Math.random, eff.element);
     hud.log(`  ↳ ${actor.name} → ${target.name} for ${out.damage} dmg`);
     spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
     if (target.team === 'enemy' && out.damage > 0) affectedEnemy = true;
@@ -731,14 +731,14 @@ function applyEffectToTarget(actor: Unit, ab: Ability, target: Unit): boolean {
     return target.team === 'enemy' && out.hit;
   }
   if (eff.kind === 'magic-damage') {
-    const out = resolveSpell(actor, target, eff.spellPower);
+    const out = resolveSpell(actor, target, eff.spellPower, Math.random, eff.element);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
     if (out.reraised) logReraise(target);
     return target.team === 'enemy' && out.damage > 0;
   }
   if (eff.kind === 'damage-and-status') {
-    const out = resolveDamageAndStatus(actor, target, eff.spellPower, eff.statusId, eff.statusBaseAcc);
+    const out = resolveDamageAndStatus(actor, target, eff.spellPower, eff.statusId, eff.statusBaseAcc, Math.random, eff.element);
     hud.log(`${ab.name}: ${actor.name} → ${target.name} for ${out.damage} dmg`);
     spellFx.burst(target, eff.element ?? 'fire', () => playSpellHitVisual(target));
     if (out.statusApplied) {

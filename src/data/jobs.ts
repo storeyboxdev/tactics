@@ -24,6 +24,10 @@
  */
 
 import { StatusId } from './statuses';
+import { Element } from './abilities';
+
+/** A creature's response to a damage element. Absent = takes it normally. */
+export type Affinity = 'weak';
 
 export interface JobPrereq { jobId: string; level: number; }
 
@@ -69,6 +73,9 @@ export interface JobDef {
    *  applied in the Unit constructor. Used for creature traits like a
    *  Skeleton's permanent Undead. */
   innateStatuses?: StatusId[];
+  /** Per-element damage affinities — a creature trait. Elemental magic
+   *  damage on this unit is scaled accordingly. */
+  elementAffinities?: Partial<Record<Element, Affinity>>;
 }
 
 /**
@@ -351,6 +358,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: [],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     deathTrigger: { radius: 1, damage: 35 },
+    // A living flame — Ice and Water bite harder than normal.
+    elementAffinities: { ice: 'weak', water: 'weak' },
   },
   skeleton: {
     // A sturdy, slow undead bruiser. Undead from spawn — healing magic
@@ -363,6 +372,8 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: ['bone_crush'],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     innateStatuses: ['undead'],
+    // Undead — Holy magic sears it.
+    elementAffinities: { holy: 'weak' },
   },
   floating_eye: {
     // A fragile, evasive hovering gaze-caster. Hangs back, lands Sleep

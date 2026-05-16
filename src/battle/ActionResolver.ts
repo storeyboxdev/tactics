@@ -1,6 +1,6 @@
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from './Unit';
 import { BattleMap } from './Map';
-import { ABILITIES, Ability } from '../data/abilities';
+import { ABILITIES, Ability, Element } from '../data/abilities';
 import { StatusId } from '../data/statuses';
 import { JOB_DEFS } from '../data/jobs';
 import { WEAPONS } from '../data/weapons';
@@ -229,6 +229,18 @@ export function effectiveMagicDefenseFactor(target: Unit): number {
   return factor;
 }
 
+/**
+ * Damage multiplier from the target's elemental affinity. 1.5 when the
+ * target is weak to `element`, 1.0 otherwise (and 1.0 for element-less
+ * spells). Only monster jobs declare affinities, so this is a no-op for
+ * every player unit.
+ */
+export function elementalDamageMultiplier(target: Unit, element?: Element): number {
+  if (!element) return 1;
+  const affinity = JOB_DEFS[target.jobId]?.elementAffinities?.[element];
+  return affinity === 'weak' ? 1.5 : 1;
+}
+
 /** rolls a hit at `chance` (0..100) — `chance=0` always misses, `chance=100` always lands. */
 export function rollHit(chance: number, rng: Rng): boolean {
   if (chance >= 100) return true;
@@ -440,7 +452,9 @@ export function computeSpellDamage(p: SpellDamageInputs): number {
 
 export interface SpellPrediction { damage: number; hitChance: number; }
 
-export function predictSpellDamage(caster: Unit, target: Unit, spellPower: number): SpellPrediction {
+export function predictSpellDamage(
+  caster: Unit, target: Unit, spellPower: number, element?: Element,
+): SpellPrediction {
   const raw = computeSpellDamage({
     ma: effectiveMa(caster),
     spellPower,
@@ -449,7 +463,8 @@ export function predictSpellDamage(caster: Unit, target: Unit, spellPower: numbe
     randomMul: 1.0,
   });
   return {
-    damage: Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target))),
+    damage: Math.max(1, Math.floor(
+      raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element))),
     // Damage spells are 100% — Faith already gates the damage value, a second
     // faith-roll on top would be doubly punitive on low-faith casters.
     hitChance: 100,
@@ -461,6 +476,7 @@ export function resolveSpell(
   target: Unit,
   spellPower: number,
   rng: Rng = Math.random,
+  element?: Element,
 ): SpellOutcome {
   const raw = computeSpellDamage({
     ma: effectiveMa(caster),
@@ -469,7 +485,8 @@ export function resolveSpell(
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
-  const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
+  const damage = Math.max(1, Math.floor(
+    raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element)));
   const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
@@ -516,6 +533,7 @@ export function resolveDamageAndStatus(
   statusId: StatusId,
   statusBaseAcc: number,
   rng: Rng = Math.random,
+  element?: Element,
 ): DamageStatusOutcome {
   // Damage path — identical to resolveSpell.
   const raw = computeSpellDamage({
@@ -525,7 +543,8 @@ export function resolveDamageAndStatus(
     targetFaith: target.faith,
     randomMul: 0.85 + rng() * 0.30,
   });
-  const damage = Math.max(1, Math.floor(raw * effectiveMagicDefenseFactor(target)));
+  const damage = Math.max(1, Math.floor(
+    raw * effectiveMagicDefenseFactor(target) * elementalDamageMultiplier(target, element)));
   const dmgResult = target.applyDamage(damage);
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 

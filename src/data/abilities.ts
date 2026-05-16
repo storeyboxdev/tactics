@@ -10,8 +10,11 @@
 import { StatusId } from './statuses';
 import { Terrain } from '../core/types';
 
+/** The six damage elements. A spell may be element-less (no resist applies). */
+export type Element = 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water';
+
 export type AbilityEffect =
-  | { kind: 'magic-damage'; spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water' }
+  | { kind: 'magic-damage'; spellPower: number; element?: Element }
   | { kind: 'magic-heal'; spellPower: number }
   /**
    * Flat HP / MP restore — Chemist Items, mostly. Heals a fixed amount
@@ -60,7 +63,7 @@ export type AbilityEffect =
    * tactical play. No MP cost; the math itself is the cost.
    */
   | { kind: 'math-skill'; stat: 'hp' | 'mp' | 'ct' | 'level'; divisor: number;
-      spellPower: number; element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water' }
+      spellPower: number; element?: Element }
   | { kind: 'debuff'; stat: 'pa' | 'speed' | 'ma'; amount: number }
   /**
    * Cast a status. `baseAccuracy` is FFT's "Y" parameter — fed into the
@@ -76,7 +79,7 @@ export type AbilityEffect =
    */
   | { kind: 'damage-and-status';
       spellPower: number;
-      element?: 'fire' | 'ice' | 'bolt' | 'earth' | 'holy' | 'water';
+      element?: Element;
       statusId: StatusId;
       /** Y parameter — fed into the faith-scaled status-hit formula. */
       statusBaseAcc: number;

@@ -11,9 +11,9 @@ const stats = (over: Partial<UnitStats> = {}): UnitStats => ({
   ...over,
 });
 
-function makeUnit(id: string, team: Team, x: number, z: number, facing: Facing, over: Partial<UnitStats> = {}): Unit {
+function makeUnit(id: string, team: Team, x: number, z: number, facing: Facing, over: Partial<UnitStats> = {}, jobId = 'x'): Unit {
   const def: UnitDef = {
-    id, name: id, team, jobId: 'x', level: 1, stats: stats(over),
+    id, name: id, team, jobId, level: 1, stats: stats(over),
   };
   return new Unit(def, x, z, facing);
 }
@@ -131,6 +131,47 @@ describe('applyBreak', () => {
     expect(o.hit).toBe(false);
     expect(o.amount).toBe(0);
     expect(t.pa).toBe(5);
+  });
+});
+
+describe('elemental affinity — weakness', () => {
+  it('a Skeleton takes ~1.5x from Holy, its weak element', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const skel = makeUnit('s', 'enemy', 1, 0, FACING_W, { faith: 100 }, 'skeleton');
+    const holy = predictSpellDamage(c, skel, 14, 'holy').damage;
+    const fire = predictSpellDamage(c, skel, 14, 'fire').damage; // no fire affinity
+    expect(holy).toBeGreaterThan(fire);
+    expect(holy / fire).toBeCloseTo(1.5, 1);
+  });
+
+  it('an element-less spell is unaffected by affinity', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const skel = makeUnit('s', 'enemy', 1, 0, FACING_W, { faith: 100 }, 'skeleton');
+    expect(predictSpellDamage(c, skel, 14).damage)
+      .toBe(predictSpellDamage(c, skel, 14, 'fire').damage);
+  });
+
+  it('a unit with no affinities takes every element the same', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const plain = makeUnit('t', 'enemy', 1, 0, FACING_W, { faith: 100 }); // jobId 'x'
+    expect(predictSpellDamage(c, plain, 14, 'holy').damage)
+      .toBe(predictSpellDamage(c, plain, 14, 'fire').damage);
+  });
+
+  it('a Bomb is weak to Ice but not to Fire (C1)', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const bomb = makeUnit('b', 'enemy', 1, 0, FACING_W, { faith: 100 }, 'bomb');
+    expect(predictSpellDamage(c, bomb, 14, 'ice').damage)
+      .toBeGreaterThan(predictSpellDamage(c, bomb, 14, 'fire').damage);
+  });
+
+  it('resolveSpell applies the weakness on the live damage path', () => {
+    const c = makeUnit('c', 'player', 0, 0, FACING_E, { ma: 8, faith: 100 });
+    const a = makeUnit('a', 'enemy', 1, 0, FACING_W, { hp: 999, faith: 100 }, 'skeleton');
+    const b = makeUnit('b', 'enemy', 2, 0, FACING_W, { hp: 999, faith: 100 }, 'skeleton');
+    const holy = resolveSpell(c, a, 14, rngHalf, 'holy').damage;
+    const fire = resolveSpell(c, b, 14, rngHalf, 'fire').damage;
+    expect(holy).toBeGreaterThan(fire);
   });
 });
 
