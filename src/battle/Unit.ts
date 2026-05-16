@@ -186,6 +186,9 @@ export class Unit {
       // enemies / plain units need them folded in here.
       this.applyGearBonuses();
     }
+
+    // Creature traits — e.g. a Skeleton spawns permanently Undead.
+    for (const s of JOB_DEFS[this.jobId]?.innateStatuses ?? []) this.addStatus(s);
   }
 
   get isAlive(): boolean { return this.hp > 0; }

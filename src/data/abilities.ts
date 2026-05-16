@@ -1167,6 +1167,12 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'physical-ranged-damage', weaponPower: 10 },
   },
+  bone_crush: {
+    // The Skeleton's heavy bone strike — well above its claw (WP 6).
+    id: 'bone_crush', name: 'Bone Crush',
+    jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 9 },
+  },
 };
 
 // Job → ability mapping moved to JOB_DEFS[jobId].learnableActives (src/data/jobs.ts).

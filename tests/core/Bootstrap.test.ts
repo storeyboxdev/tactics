@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoster, bootstrapUnit, pickEnemyJobs } from '../../src/core/Bootstrap';
+import { defaultRoster, bootstrapUnit, pickEnemyJobs, poolFor } from '../../src/core/Bootstrap';
 import { JOB_DEFS, RAW_STAT_BASELINE } from '../../src/data/jobs';
 import { ABILITIES } from '../../src/data/abilities';
 import { jobLevelFor, prereqsSatisfied, MAX_OVERALL_LEVEL } from '../../src/battle/Progression';
@@ -99,9 +99,15 @@ describe('pickEnemyJobs — tier ramp', () => {
   });
 
   it('battle 6 reaches the full pool', () => {
-    const jobs = pickEnemyJobs(6, 5, rng1);
-    // rng1 picks the last entry of the full pool: 'bomb'.
-    expect(jobs).toContain('bomb');
+    // Assert pool composition directly — robust to new entries being appended.
+    const pool = poolFor(6);
+    expect(pool).toContain('bomb');
+    expect(pool).toContain('skeleton');
+  });
+
+  it('the Skeleton enters the pool by battle 4, not before', () => {
+    expect(poolFor(4)).toContain('skeleton');
+    expect(poolFor(2)).not.toContain('skeleton');
   });
 
   it('always includes at least one squire as a sanity baseline', () => {

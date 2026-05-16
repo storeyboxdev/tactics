@@ -8,7 +8,7 @@ import { WEAPONS } from '../../src/data/weapons';
 import { ABILITIES } from '../../src/data/abilities';
 import { poolFor } from '../../src/core/Bootstrap';
 
-const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb'];
+const MONSTERS = ['goblin', 'chocobo', 'red_panther', 'bomb', 'skeleton'];
 
 function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
   const job = JOB_DEFS[jobId];
@@ -23,7 +23,7 @@ function monsterUnit(jobId: string, team: Team = 'enemy'): Unit {
 }
 
 describe('Monster bestiary', () => {
-  it('all three monsters exist and are flagged isMonster', () => {
+  it('all monsters exist and are flagged isMonster', () => {
     for (const id of MONSTERS) {
       const job = JOB_DEFS[id];
       expect(job, id).toBeDefined();
@@ -47,6 +47,25 @@ describe('Monster bestiary', () => {
     expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure', 'choco_ball']);
     // Bomb's identity is the on-death blast — no active kit, by design.
     expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
+    expect(JOB_DEFS.skeleton.learnableActives).toEqual(['bone_crush']);
+  });
+
+  it('the Skeleton spawns permanently Undead', () => {
+    expect(JOB_DEFS.skeleton.innateStatuses).toEqual(['undead']);
+    const skel = monsterUnit('skeleton');
+    expect(skel.hasStatus('undead')).toBe(true);
+  });
+
+  it('non-undead monsters carry no innate status', () => {
+    expect(JOB_DEFS.goblin.innateStatuses).toBeUndefined();
+    expect(monsterUnit('goblin').hasStatus('undead')).toBe(false);
+  });
+
+  it('the Skeleton is sturdier and slower than a Goblin', () => {
+    const skel = JOB_DEFS.skeleton.baseStats;
+    const gob = JOB_DEFS.goblin.baseStats;
+    expect(skel.hp).toBeGreaterThan(gob.hp);
+    expect(skel.speed).toBeLessThan(gob.speed);
   });
 
   it('isPlayableJob excludes monsters, includes real jobs', () => {
@@ -139,6 +158,13 @@ describe('Monster signature abilities', () => {
     const blaster = ABILITIES.blaster.effect;
     if (blaster.kind !== 'physical-damage-and-status') throw new Error('bad fixture');
     expect(ab.effect.weaponPower).toBeGreaterThan(blaster.weaponPower);
+  });
+
+  it("Skeleton's Bone Crush is a range-1 physical strike above its claw", () => {
+    const ab = ABILITIES.bone_crush;
+    expect(ab.range).toBe(1);
+    if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(ab.effect.weaponPower).toBeGreaterThan(WEAPONS.claw.weaponPower);
   });
 
   it("Chocobo's Choco Cure is a flat HP heal — no MA scaling", () => {

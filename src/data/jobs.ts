@@ -23,6 +23,8 @@
  *    persistent (faith/bravery, stored on UnitProgression, seeded from job).
  */
 
+import { StatusId } from './statuses';
+
 export interface JobPrereq { jobId: string; level: number; }
 
 export interface JobStats {
@@ -63,6 +65,10 @@ export interface JobDef {
   /** If set, the unit's KO fires an explosion: flat `damage` to every
    *  alive unit (both teams) within Manhattan `radius` of its tile. */
   deathTrigger?: { radius: number; damage: number };
+  /** Statuses a unit of this job carries from the moment it spawns —
+   *  applied in the Unit constructor. Used for creature traits like a
+   *  Skeleton's permanent Undead. */
+  innateStatuses?: StatusId[];
 }
 
 /**
@@ -345,6 +351,18 @@ export const JOB_DEFS: Record<string, JobDef> = {
     learnableActives: [],
     learnableReactions: [], learnableSupports: [], learnableMovements: [],
     deathTrigger: { radius: 1, damage: 35 },
+  },
+  skeleton: {
+    // A sturdy, slow undead bruiser. Undead from spawn — healing magic
+    // burns it and it can't be revived the normal way.
+    id: 'skeleton', name: 'Skeleton', weapon: 'claw', armor: 'light_armor',
+    isMonster: true, prereqs: [],
+    baseStats: stat({ hp: 65, pa: 8, ma: 1, speed: 7, move: 3, jump: 1, evasion: 5 }),
+    mult:   { hp: 100, mp: 100, pa: 100, ma: 100, speed: 100 },
+    growth: { hp:   5, mp:   2, pa:   5, ma:   1, speed:   1 },
+    learnableActives: ['bone_crush'],
+    learnableReactions: [], learnableSupports: [], learnableMovements: [],
+    innateStatuses: ['undead'],
   },
 };
 
