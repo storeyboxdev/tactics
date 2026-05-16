@@ -62,6 +62,28 @@ describe('Save round-trip', () => {
     expect(learned).toEqual(['fire', 'ice']);
   });
 
+  it('round-trips equipped weapon and armor', () => {
+    const seed = bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'knight' });
+    const u = unitFromSaved(seed);
+    u.weaponId = 'katana';
+    u.armorId = 'robe';
+    saveRoster([u]);
+    const r = loadSave()!.roster[0];
+    expect(r.weaponId).toBe('katana');
+    expect(r.armorId).toBe('robe');
+  });
+
+  it('migrates a save written before weaponId/armorId to null', () => {
+    saveRoster([unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }))]);
+    const raw = JSON.parse(localStorage.getItem('tactics-save-v1')!);
+    delete raw.roster[0].weaponId;
+    delete raw.roster[0].armorId;
+    localStorage.setItem('tactics-save-v1', JSON.stringify(raw));
+    const r = loadSave()!.roster[0];
+    expect(r.weaponId).toBeNull();
+    expect(r.armorId).toBeNull();
+  });
+
   it('saveRoster filters out enemy units', () => {
     const playerSeed = bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'knight' });
     const player = unitFromSaved(playerSeed);

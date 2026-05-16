@@ -134,6 +134,8 @@ function buildPlayerUnit(saved: SavedUnit, x: number, z: number): Unit {
     movement: saved.movement ?? fallback.movement,
     progression: saved.progression,
     secondaryJobId: saved.secondaryJobId,
+    weaponId: saved.weaponId,
+    armorId: saved.armorId,
   };
   return new Unit(def, x, z, FACING_E);
 }

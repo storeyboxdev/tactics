@@ -31,6 +31,9 @@ export interface SavedUnit {
   reaction: string | null;
   support: string | null;
   movement: string | null;
+  /** Equipped gear — null tracks the job signature. */
+  weaponId: string | null;
+  armorId: string | null;
   progression: UnitProgression;
 }
 
@@ -57,6 +60,8 @@ export function saveRoster(units: Unit[]): void {
       reaction: u.reaction,
       support: u.support,
       movement: u.movement,
+      weaponId: u.weaponId,
+      armorId: u.armorId,
       progression: u.progression,
     });
   }
@@ -110,6 +115,8 @@ function validateSavedUnit(raw: unknown): SavedUnit | null {
     reaction:  typeof r.reaction  === 'string' ? r.reaction  : null,
     support:   typeof r.support   === 'string' ? r.support   : null,
     movement:  typeof r.movement  === 'string' ? r.movement  : null,
+    weaponId:  typeof r.weaponId  === 'string' ? r.weaponId  : null,
+    armorId:   typeof r.armorId   === 'string' ? r.armorId   : null,
     progression: p as unknown as UnitProgression,
   };
 }

@@ -153,6 +153,8 @@ export function bootstrapUnit(seed: RosterSeed): SavedUnit {
     reaction:  null,
     support:   null,
     movement:  null,
+    weaponId:  null,
+    armorId:   null,
     progression,
   };
 }
