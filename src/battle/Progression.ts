@@ -225,11 +225,14 @@ export function allLearnedPassives(p: UnitProgression): { reactions: string[]; s
 }
 
 /** Weapon/armor ids a unit may equip — the signature gear of every
- *  unlocked job, deduped and sorted. Used by the roster screen's
- *  Weapon/Armor dropdowns. */
-export function eligibleEquipment(p: UnitProgression): { weapons: string[]; armors: string[] } {
-  const weapons = new Set<string>();
-  const armors = new Set<string>();
+ *  unlocked job, unioned with any `found` loot pool, deduped and sorted.
+ *  Used by the roster screen's Weapon/Armor dropdowns. */
+export function eligibleEquipment(
+  p: UnitProgression,
+  found: { weapons: string[]; armors: string[] } = { weapons: [], armors: [] },
+): { weapons: string[]; armors: string[] } {
+  const weapons = new Set<string>(found.weapons);
+  const armors = new Set<string>(found.armors);
   for (const [jobId, prog] of Object.entries(p.jobs)) {
     if (!prog.unlocked) continue;
     const job = JOB_DEFS[jobId];

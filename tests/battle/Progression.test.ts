@@ -198,6 +198,26 @@ describe('eligibleEquipment', () => {
     p.jobs.black_mage = { jp: 0, unlocked: false, learnedAbilities: [] };
     expect(eligibleEquipment(p).weapons).not.toContain('rod'); // black_mage, locked
   });
+
+  it('unions a found-gear loot pool with the job signatures', () => {
+    const p = freshProgression('knight'); // sword / heavy_armor
+    const eq = eligibleEquipment(p, { weapons: ['katana'], armors: ['robe'] });
+    expect(eq.weapons).toContain('sword');   // job signature
+    expect(eq.weapons).toContain('katana');  // looted
+    expect(eq.armors).toContain('heavy_armor');
+    expect(eq.armors).toContain('robe');
+  });
+
+  it('does not duplicate a found id that is also a job signature', () => {
+    const p = freshProgression('knight');
+    const eq = eligibleEquipment(p, { weapons: ['sword'], armors: [] });
+    expect(eq.weapons.filter(w => w === 'sword')).toHaveLength(1);
+  });
+
+  it('behaves as before when no found pool is passed', () => {
+    const p = freshProgression('knight');
+    expect(eligibleEquipment(p)).toEqual(eligibleEquipment(p, { weapons: [], armors: [] }));
+  });
 });
 
 describe('canonical baseline', () => {

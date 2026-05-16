@@ -19,7 +19,7 @@ import {
   eligibleEquipment, ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
-import { saveRoster, wipeSave, lootFromBattle } from '../core/Save';
+import { loadSave, saveRoster, wipeSave, lootFromBattle } from '../core/Save';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -219,8 +219,10 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
   panel.appendChild(equipSelect('Movement', learned.movements, u.movement, (id) => { u.movement = id; }));
 
   // Gear slots — weapon/armor a unit may equip is the signature gear of
-  // every unlocked job. "Auto" tracks the current job's signature.
-  const { weapons, armors } = eligibleEquipment(p);
+  // every unlocked job plus whatever has been looted. "Auto" tracks the
+  // current job's signature.
+  const found = loadSave()?.foundGear ?? { weapons: [], armors: [] };
+  const { weapons, armors } = eligibleEquipment(p, found);
   panel.appendChild(gearSelect(
     'Weapon',
     `Auto (${WEAPONS[job.weapon]?.name ?? '—'})`,
