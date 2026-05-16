@@ -3,6 +3,8 @@ import { Unit, UnitDef, UnitStats } from '../../src/battle/Unit';
 import { JOB_DEFS } from '../../src/data/jobs';
 import { loadSave, saveRoster, wipeSave, lootFromBattle, SavedUnit } from '../../src/core/Save';
 import { bootstrapUnit } from '../../src/core/Bootstrap';
+import { BONUS_WEAPON_IDS } from '../../src/data/weapons';
+import { BONUS_ARMOR_IDS } from '../../src/data/armor';
 
 // Vitest's `node` environment doesn't supply localStorage. Install a tiny
 // in-memory shim before any test runs.
@@ -52,7 +54,24 @@ describe('lootFromBattle', () => {
   it('dedupes gear from multiple enemies of the same job', () => {
     const k1 = enemyUnit('e1', 'knight'); k1.applyDamage(9999);
     const k2 = enemyUnit('e2', 'knight'); k2.applyDamage(9999);
-    expect(lootFromBattle([k1, k2]).weapons).toEqual(['sword']);
+    // A no-drop rng keeps the assertion to the signature gear.
+    expect(lootFromBattle([k1, k2], () => 0.99).weapons).toEqual(['sword']);
+  });
+
+  it('a won battle can drop one bonus-gear piece', () => {
+    const dead = enemyUnit('e1', 'knight'); dead.applyDamage(9999);
+    const loot = lootFromBattle([dead], () => 0); // forced drop
+    const bonus = [...BONUS_WEAPON_IDS, ...BONUS_ARMOR_IDS];
+    const dropped = [...loot.weapons, ...loot.armors].filter(id => bonus.includes(id));
+    expect(dropped).toHaveLength(1);
+  });
+
+  it('no bonus piece drops when the roll misses — signature loot stands', () => {
+    const dead = enemyUnit('e1', 'knight'); dead.applyDamage(9999);
+    const loot = lootFromBattle([dead], () => 0.99); // no drop
+    const bonus = [...BONUS_WEAPON_IDS, ...BONUS_ARMOR_IDS];
+    expect([...loot.weapons, ...loot.armors].some(id => bonus.includes(id))).toBe(false);
+    expect(loot.weapons).toContain('sword');
   });
 });
 

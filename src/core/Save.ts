@@ -10,8 +10,13 @@
 import { Unit } from '../battle/Unit';
 import { UnitProgression } from '../battle/Progression';
 import { JOB_DEFS } from '../data/jobs';
+import { BONUS_WEAPON_IDS } from '../data/weapons';
+import { BONUS_ARMOR_IDS } from '../data/armor';
 
 const SAVE_KEY = 'tactics-save-v1';
+
+/** Chance a won battle yields one loot-tier (stat-bonus) gear piece. */
+const BONUS_DROP_CHANCE = 0.35;
 
 /** A deduped set-like pool of weapon/armor ids. */
 export interface GearPool {
@@ -62,10 +67,11 @@ export function loadSave(): SaveFile | null {
 }
 
 /**
- * Signature weapon/armor of every defeated enemy — the loot pool a won
- * battle yields. Deduped. Pass the result to `saveRoster`.
+ * The loot pool a won battle yields: the signature weapon/armor of every
+ * defeated enemy, plus — with `BONUS_DROP_CHANCE` — one random loot-tier
+ * (stat-bonus) piece. Deduped. Pass the result to `saveRoster`.
  */
-export function lootFromBattle(units: readonly Unit[]): GearPool {
+export function lootFromBattle(units: readonly Unit[], rng: () => number = Math.random): GearPool {
   const weapons = new Set<string>();
   const armors = new Set<string>();
   for (const u of units) {
@@ -74,6 +80,12 @@ export function lootFromBattle(units: readonly Unit[]): GearPool {
     if (!job) continue;
     if (job.weapon) weapons.add(job.weapon);
     if (job.armor) armors.add(job.armor);
+  }
+  // A bonus-gear drop on top of the scavenged signature gear.
+  if (rng() < BONUS_DROP_CHANCE) {
+    const pool = [...BONUS_WEAPON_IDS, ...BONUS_ARMOR_IDS];
+    const pick = pool[Math.floor(rng() * pool.length)];
+    if (pick) (BONUS_WEAPON_IDS.includes(pick) ? weapons : armors).add(pick);
   }
   return { weapons: [...weapons], armors: [...armors] };
 }
