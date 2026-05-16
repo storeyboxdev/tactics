@@ -136,12 +136,20 @@ export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL, gilEa
   };
   // Gil accumulates — carry the prior balance forward, add the new reward.
   const gil = (prev?.gil ?? 0) + gilEarned;
-  const file: SaveFile = { version: 1, roster, battleCount, foundGear, gil };
+  writeSave({ version: 1, roster, battleCount, foundGear, gil });
+}
+
+/**
+ * Persist a SaveFile verbatim. The shop uses this to commit a `buyGear`
+ * result without saveRoster's battle-finish semantics (battleCount bump,
+ * roster rebuild). A failed write is dropped silently — the in-memory
+ * game is unaffected.
+ */
+export function writeSave(file: SaveFile): void {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(file));
   } catch {
-    // QuotaExceededError or similar — drop silently; the roster will be lost
-    // on reload but the in-memory game is unaffected.
+    // QuotaExceededError or similar — drop silently.
   }
 }
 

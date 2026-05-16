@@ -20,6 +20,7 @@ import {
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
 import { loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle } from '../core/Save';
+import { showShopScreen } from './ShopScreen';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -45,6 +46,11 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     color: '#ffe14a', textAlign: 'center',
   });
   overlay.appendChild(heading);
+
+  const gilLine = document.createElement('div');
+  gilLine.textContent = `Gil: ${loadSave()?.gil ?? 0}`;
+  Object.assign(gilLine.style, { textAlign: 'center', color: '#ffe14a', fontSize: '13px' });
+  overlay.appendChild(gilLine);
 
   const grid = document.createElement('div');
   Object.assign(grid.style, {
@@ -77,6 +83,11 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     // A won battle scavenges the defeated enemies' gear and pays gil.
     saveRoster(units, won ? lootFromBattle(units) : undefined, won ? gilFromBattle(units) : 0);
     location.reload();
+  }));
+  footer.appendChild(footerButton('Shop', '#1f4a2e', '#4fe07a', () => {
+    // The shop overlays the roster screen; on close, rebuild the roster
+    // screen so freshly-bought gear shows in the equip dropdowns.
+    showShopScreen(() => { overlay.remove(); showRosterScreen(units, won); });
   }));
   footer.appendChild(footerButton('Wipe Save', '#5a1f1f', '#d96363', () => {
     if (!confirm('Wipe save and start fresh?')) return;
