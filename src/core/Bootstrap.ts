@@ -10,9 +10,9 @@
  * `baseStats` exactly (the same numbers the original M1–M10 build shipped).
  */
 
-import { JOB_DEFS, RAW_STAT_BASELINE } from '../data/jobs';
+import { JOB_DEFS, RAW_STAT_BASELINE, JobStats, JobGrowth } from '../data/jobs';
 import {
-  UnitProgression, JOB_LEVEL_THRESHOLDS,
+  UnitProgression, JOB_LEVEL_THRESHOLDS, MAX_OVERALL_LEVEL,
 } from '../battle/Progression';
 import { SavedUnit } from './Save';
 
@@ -91,6 +91,36 @@ export function pickEnemyJobs(battleCount: number, count: number, rng: () => num
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+/**
+ * Enemy level for a battle — climbs with `battleCount` so late-game
+ * fights keep pace with the leveled player party (which keeps gaining
+ * EXP, levels, and gear). Capped at the overall level ceiling.
+ */
+export function enemyLevelFor(battleCount: number): number {
+  return Math.min(1 + battleCount, MAX_OVERALL_LEVEL);
+}
+
+/**
+ * Scale a job's base stats to `level`. hp/mp/pa/ma/speed grow by the
+ * job's per-level `growth` rate; move/jump/faith/bravery/evasion are
+ * level-independent. At level 1 the result equals `base` exactly.
+ */
+export function scaleEnemyStats(base: JobStats, growth: JobGrowth, level: number): JobStats {
+  const grow = (b: number, g: number) => Math.floor(b * (1 + (g / 100) * (level - 1)));
+  return {
+    hp:      grow(base.hp, growth.hp),
+    mp:      grow(base.mp, growth.mp),
+    pa:      grow(base.pa, growth.pa),
+    ma:      grow(base.ma, growth.ma),
+    speed:   grow(base.speed, growth.speed),
+    move:    base.move,
+    jump:    base.jump,
+    faith:   base.faith,
+    bravery: base.bravery,
+    evasion: base.evasion,
+  };
 }
 
 export function bootstrapUnit(seed: RosterSeed): SavedUnit {

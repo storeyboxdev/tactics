@@ -1,8 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoster, bootstrapUnit, pickEnemyJobs, poolFor } from '../../src/core/Bootstrap';
+import {
+  defaultRoster, bootstrapUnit, pickEnemyJobs, poolFor,
+  enemyLevelFor, scaleEnemyStats,
+} from '../../src/core/Bootstrap';
 import { JOB_DEFS, RAW_STAT_BASELINE } from '../../src/data/jobs';
 import { ABILITIES } from '../../src/data/abilities';
 import { jobLevelFor, prereqsSatisfied, MAX_OVERALL_LEVEL } from '../../src/battle/Progression';
+
+describe('enemyLevelFor', () => {
+  it('starts at 1 and climbs one per battle', () => {
+    expect(enemyLevelFor(0)).toBe(1);
+    expect(enemyLevelFor(12)).toBe(13);
+  });
+
+  it('caps at the overall level ceiling', () => {
+    expect(enemyLevelFor(99999)).toBe(MAX_OVERALL_LEVEL);
+  });
+});
+
+describe('scaleEnemyStats', () => {
+  const base = JOB_DEFS.knight.baseStats;
+  const growth = JOB_DEFS.knight.growth;
+
+  it('returns the base stats unchanged at level 1', () => {
+    expect(scaleEnemyStats(base, growth, 1)).toEqual(base);
+  });
+
+  it('raises hp at higher levels, leaving move/jump/faith/bravery/evasion fixed', () => {
+    const scaled = scaleEnemyStats(base, growth, 20);
+    expect(scaled.hp).toBeGreaterThan(base.hp);
+    expect(scaled.move).toBe(base.move);
+    expect(scaled.jump).toBe(base.jump);
+    expect(scaled.faith).toBe(base.faith);
+    expect(scaled.bravery).toBe(base.bravery);
+    expect(scaled.evasion).toBe(base.evasion);
+  });
+
+  it('scales monotonically with level', () => {
+    expect(scaleEnemyStats(base, growth, 15).hp)
+      .toBeGreaterThan(scaleEnemyStats(base, growth, 5).hp);
+  });
+});
 
 describe('bootstrapUnit', () => {
   it('starts at overall Level 1 with canonical raw stats', () => {
