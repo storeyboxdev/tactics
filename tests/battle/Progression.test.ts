@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   awardExp, awardJp, jobLevelFor, jpToNextJobLevel, prereqsSatisfied,
   ensureJobProgress, freshRawStats, learn, canLearn, learnedActivesInJob,
-  allLearnedPassives, JOB_LEVEL_THRESHOLDS, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
+  allLearnedPassives, eligibleEquipment, JOB_LEVEL_THRESHOLDS, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
   UnitProgression,
 } from '../../src/battle/Progression';
 import { JOB_DEFS, RAW_STAT_BASELINE } from '../../src/data/jobs';
@@ -171,6 +171,32 @@ describe('allLearnedPassives', () => {
     expect(pass.reactions).toEqual([]);
     expect(pass.supports).toEqual([]);
     expect(pass.movements).toEqual([]);
+  });
+});
+
+describe('eligibleEquipment', () => {
+  it('collects the signature gear of each unlocked job', () => {
+    const p = freshProgression('knight');
+    p.jobs.monk = { jp: 0, unlocked: true, learnedAbilities: [] };
+    const eq = eligibleEquipment(p);
+    expect(eq.weapons).toContain('sword');       // knight
+    expect(eq.weapons).toContain('knuckle');     // monk
+    expect(eq.armors).toContain('heavy_armor');  // knight
+    expect(eq.armors).toContain('light_armor');  // monk
+  });
+
+  it('dedupes gear shared by multiple jobs', () => {
+    const p = freshProgression('squire'); // dagger / light_armor
+    p.jobs.thief = { jp: 0, unlocked: true, learnedAbilities: [] }; // dagger / light_armor
+    const eq = eligibleEquipment(p);
+    expect(eq.weapons.filter(w => w === 'dagger')).toHaveLength(1);
+    expect(eq.armors.filter(a => a === 'light_armor')).toHaveLength(1);
+  });
+
+  it('excludes locked jobs', () => {
+    const p = freshProgression('knight');
+    p.jobs.black_mage = { jp: 0, unlocked: false, learnedAbilities: [] };
+    expect(eligibleEquipment(p).weapons).not.toContain('rod'); // black_mage, locked
   });
 });
 

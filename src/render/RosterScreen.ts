@@ -11,10 +11,12 @@
 
 import { Unit } from '../battle/Unit';
 import { JOB_DEFS } from '../data/jobs';
+import { WEAPONS } from '../data/weapons';
+import { ARMOR, ArmorDef } from '../data/armor';
 import { ABILITIES, Ability, AbilityKind } from '../data/abilities';
 import {
   jobLevelFor, jpToNextJobLevel, learn, canLearn, allLearnedPassives,
-  ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
+  eligibleEquipment, ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
 import { saveRoster, wipeSave } from '../core/Save';
@@ -214,6 +216,61 @@ function renderUnitPanel(panel: HTMLDivElement, u: Unit): void {
   panel.appendChild(equipSelect('Reaction', learned.reactions, u.reaction, (id) => { u.reaction = id; }));
   panel.appendChild(equipSelect('Support',  learned.supports,  u.support,  (id) => { u.support  = id; }));
   panel.appendChild(equipSelect('Movement', learned.movements, u.movement, (id) => { u.movement = id; }));
+
+  // Gear slots — weapon/armor a unit may equip is the signature gear of
+  // every unlocked job. "Auto" tracks the current job's signature.
+  const { weapons, armors } = eligibleEquipment(p);
+  panel.appendChild(gearSelect(
+    'Weapon',
+    `Auto (${WEAPONS[job.weapon]?.name ?? '—'})`,
+    weapons.map(id => ({ id, text: `${WEAPONS[id]?.name ?? id} (WP ${WEAPONS[id]?.weaponPower ?? '?'})` })),
+    u.weaponId, (id) => { u.weaponId = id; },
+  ));
+  panel.appendChild(gearSelect(
+    'Armor',
+    `Auto (${ARMOR[job.armor]?.name ?? '—'})`,
+    armors.map(id => ({ id, text: `${ARMOR[id]?.name ?? id} (${armorLabel(ARMOR[id])})` })),
+    u.armorId, (id) => { u.armorId = id; },
+  ));
+}
+
+/** "Phys -22% / Magic -18%" — armor's damage-reduction in plain terms. */
+function armorLabel(a: ArmorDef | undefined): string {
+  if (!a) return '';
+  const pct = (factor: number) => `${Math.round((1 - factor) * 100)}%`;
+  return `Phys -${pct(a.physicalFactor)} / Magic -${pct(a.magicalFactor)}`;
+}
+
+/** A dropdown for a gear slot — like equipSelect, but the empty value is
+ *  an "Auto (job default)" entry rather than "— none —", and each option
+ *  carries pre-formatted label text. */
+function gearSelect(
+  label: string,
+  autoLabel: string,
+  options: { id: string; text: string }[],
+  current: string | null,
+  onChange: (id: string | null) => void,
+): HTMLDivElement {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display: flex; flex-direction: column; gap: 2px;';
+  wrap.appendChild(sectionLabel(label));
+  const sel = document.createElement('select');
+  sel.style.cssText = selectCss();
+  const auto = document.createElement('option');
+  auto.value = '';
+  auto.textContent = autoLabel;
+  if (!current) auto.selected = true;
+  sel.appendChild(auto);
+  for (const opt of options) {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.text;
+    if (opt.id === current) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => onChange(sel.value === '' ? null : sel.value));
+  wrap.appendChild(sel);
+  return wrap;
 }
 
 function learnRow(u: Unit, ab: Ability, onLearned: () => void): HTMLDivElement {

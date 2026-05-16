@@ -224,6 +224,25 @@ export function allLearnedPassives(p: UnitProgression): { reactions: string[]; s
   };
 }
 
+/** Weapon/armor ids a unit may equip — the signature gear of every
+ *  unlocked job, deduped and sorted. Used by the roster screen's
+ *  Weapon/Armor dropdowns. */
+export function eligibleEquipment(p: UnitProgression): { weapons: string[]; armors: string[] } {
+  const weapons = new Set<string>();
+  const armors = new Set<string>();
+  for (const [jobId, prog] of Object.entries(p.jobs)) {
+    if (!prog.unlocked) continue;
+    const job = JOB_DEFS[jobId];
+    if (!job) continue;
+    if (job.weapon) weapons.add(job.weapon);
+    if (job.armor) armors.add(job.armor);
+  }
+  return {
+    weapons: [...weapons].sort(),
+    armors: [...armors].sort(),
+  };
+}
+
 /** Active abilities learnable by this unit *inside `jobId`* (used for the
  *  in-battle skill menu — actives only come from the current job, no
  *  Secondary Command yet). */
