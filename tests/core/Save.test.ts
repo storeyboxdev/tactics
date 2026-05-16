@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Unit, UnitDef, UnitStats } from '../../src/battle/Unit';
 import { JOB_DEFS } from '../../src/data/jobs';
-import { loadSave, saveRoster, wipeSave, lootFromBattle, SavedUnit } from '../../src/core/Save';
+import { loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle, SavedUnit } from '../../src/core/Save';
 import { bootstrapUnit } from '../../src/core/Bootstrap';
 import { BONUS_WEAPON_IDS } from '../../src/data/weapons';
 import { BONUS_ARMOR_IDS } from '../../src/data/armor';
@@ -72,6 +72,21 @@ describe('lootFromBattle', () => {
     const bonus = [...BONUS_WEAPON_IDS, ...BONUS_ARMOR_IDS];
     expect([...loot.weapons, ...loot.armors].some(id => bonus.includes(id))).toBe(false);
     expect(loot.weapons).toContain('sword');
+  });
+});
+
+describe('gilFromBattle', () => {
+  it('pays a base plus a cut per defeated enemy', () => {
+    const e1 = enemyUnit('e1', 'knight'); e1.applyDamage(9999);
+    const e2 = enemyUnit('e2', 'goblin'); e2.applyDamage(9999);
+    const alive = enemyUnit('e3', 'archer'); // survivor — no payout
+    const player = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
+    // base 60 + 25 per defeated enemy, 2 defeated → 110
+    expect(gilFromBattle([e1, e2, alive, player])).toBe(110);
+  });
+
+  it('pays the base alone when nothing was defeated', () => {
+    expect(gilFromBattle([enemyUnit('e1', 'knight')])).toBe(60);
   });
 });
 
@@ -151,6 +166,19 @@ describe('Save round-trip', () => {
     const f = loadSave()!.foundGear;
     expect([...f.weapons].sort()).toEqual(['spear', 'sword']);
     expect([...f.armors].sort()).toEqual(['heavy_armor', 'robe']);
+  });
+
+  it('round-trips and accumulates gil', () => {
+    const u = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' }));
+    saveRoster([u], undefined, 100);
+    expect(loadSave()!.gil).toBe(100);
+    saveRoster([u], undefined, 50);
+    expect(loadSave()!.gil).toBe(150);
+  });
+
+  it('migrates a save written before gil to 0', () => {
+    localStorage.setItem('tactics-save-v1', JSON.stringify({ version: 1, roster: [] }));
+    expect(loadSave()!.gil).toBe(0);
   });
 
   it('saveRoster filters out enemy units', () => {

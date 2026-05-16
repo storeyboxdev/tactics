@@ -18,6 +18,10 @@ const SAVE_KEY = 'tactics-save-v1';
 /** Chance a won battle yields one loot-tier (stat-bonus) gear piece. */
 const BONUS_DROP_CHANCE = 0.35;
 
+/** Gil paid for a won battle: a flat base plus a per-defeated-enemy cut. */
+const BASE_GIL = 60;
+const GIL_PER_ENEMY = 25;
+
 /** A deduped set-like pool of weapon/armor ids. */
 export interface GearPool {
   weapons: string[];
@@ -39,6 +43,9 @@ export interface SaveFile {
    * saves load with empty pools.
    */
   foundGear: GearPool;
+  /** Party-wide gil — earned from won battles, spent in the shop. Old
+   *  saves load with `gil = 0`. */
+  gil: number;
 }
 
 export interface SavedUnit {
@@ -90,9 +97,18 @@ export function lootFromBattle(units: readonly Unit[], rng: () => number = Math.
   return { weapons: [...weapons], armors: [...armors] };
 }
 
+/** Gil a won battle pays out — a flat base plus a cut per defeated enemy. */
+export function gilFromBattle(units: readonly Unit[]): number {
+  let defeated = 0;
+  for (const u of units) {
+    if (u.team === 'enemy' && !u.isAlive) defeated++;
+  }
+  return BASE_GIL + GIL_PER_ENEMY * defeated;
+}
+
 const EMPTY_POOL: GearPool = { weapons: [], armors: [] };
 
-export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL): void {
+export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL, gilEarned = 0): void {
   const roster: SavedUnit[] = [];
   for (const u of units) {
     if (u.team !== 'player' || !u.progression) continue;
@@ -118,7 +134,9 @@ export function saveRoster(units: Unit[], newFound: GearPool = EMPTY_POOL): void
     weapons: [...new Set([...(prev?.foundGear.weapons ?? []), ...newFound.weapons])],
     armors:  [...new Set([...(prev?.foundGear.armors  ?? []), ...newFound.armors])],
   };
-  const file: SaveFile = { version: 1, roster, battleCount, foundGear };
+  // Gil accumulates — carry the prior balance forward, add the new reward.
+  const gil = (prev?.gil ?? 0) + gilEarned;
+  const file: SaveFile = { version: 1, roster, battleCount, foundGear, gil };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(file));
   } catch {
@@ -137,7 +155,10 @@ export function wipeSave(): void {
  */
 function migrate(raw: unknown): SaveFile | null {
   if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as { version?: unknown; roster?: unknown; battleCount?: unknown; foundGear?: unknown };
+  const obj = raw as {
+    version?: unknown; roster?: unknown; battleCount?: unknown;
+    foundGear?: unknown; gil?: unknown;
+  };
   if (obj.version !== 1) return null;
   if (!Array.isArray(obj.roster)) return null;
   const roster: SavedUnit[] = [];
@@ -146,7 +167,8 @@ function migrate(raw: unknown): SaveFile | null {
     if (su) roster.push(su);
   }
   const battleCount = typeof obj.battleCount === 'number' ? obj.battleCount : 0;
-  return { version: 1, roster, battleCount, foundGear: parseGearPool(obj.foundGear) };
+  const gil = typeof obj.gil === 'number' ? obj.gil : 0;
+  return { version: 1, roster, battleCount, foundGear: parseGearPool(obj.foundGear), gil };
 }
 
 /** Parse a persisted GearPool, tolerating absent/corrupt data → empty pools. */

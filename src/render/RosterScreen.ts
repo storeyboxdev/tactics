@@ -19,7 +19,7 @@ import {
   eligibleEquipment, ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
-import { loadSave, saveRoster, wipeSave, lootFromBattle } from '../core/Save';
+import { loadSave, saveRoster, wipeSave, lootFromBattle, gilFromBattle } from '../core/Save';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -74,8 +74,8 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px',
   });
   footer.appendChild(footerButton('Start Next Battle', '#243c66', '#5b8def', () => {
-    // A won battle scavenges the defeated enemies' gear into the stash.
-    saveRoster(units, won ? lootFromBattle(units) : undefined);
+    // A won battle scavenges the defeated enemies' gear and pays gil.
+    saveRoster(units, won ? lootFromBattle(units) : undefined, won ? gilFromBattle(units) : 0);
     location.reload();
   }));
   footer.appendChild(footerButton('Wipe Save', '#5a1f1f', '#d96363', () => {
