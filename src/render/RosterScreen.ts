@@ -19,7 +19,7 @@ import {
   eligibleEquipment, ensureJobProgress, MAX_OVERALL_LEVEL, EXP_PER_LEVEL,
 } from '../battle/Progression';
 import { computeDisplayStats } from '../battle/Stats';
-import { loadSave, saveRoster, wipeSave } from '../core/Save';
+import { loadSave, saveRoster, wipeSave, gilFromBattle } from '../core/Save';
 import { showShopScreen } from './ShopScreen';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
@@ -48,7 +48,8 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
   overlay.appendChild(heading);
 
   const gilLine = document.createElement('div');
-  gilLine.textContent = `Gil: ${loadSave()?.gil ?? 0}`;
+  gilLine.textContent = `Gil: ${loadSave()?.gil ?? 0}`
+    + (won ? `  (+${gilFromBattle(units)} this battle)` : '');
   Object.assign(gilLine.style, { textAlign: 'center', color: '#ffe14a', fontSize: '13px' });
   overlay.appendChild(gilLine);
 
