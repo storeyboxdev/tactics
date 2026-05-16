@@ -1142,6 +1142,14 @@ export const ABILITIES: Record<string, Ability> = {
     jpCost: 100, type: 'physical', range: 1, chargeTime: 0, mpCost: 0,
     effect: { kind: 'flat-heal', hp: 30 },
   },
+  choco_ball: {
+    // A hurled peck — the Chocobo's ranged poke. Equal WP to its melee
+    // claw; the reach (range 3) is the whole trade, letting a Chocobo
+    // chip from outside retaliation instead of only healing and pecking.
+    id: 'choco_ball', name: 'Choco Ball',
+    jpCost: 100, type: 'physical', range: 3, chargeTime: 0, mpCost: 0,
+    effect: { kind: 'physical-ranged-damage', weaponPower: 6 },
+  },
   blaster: {
     // The Red Panther's pounce — damage plus a Don't Move chain that pins
     // the prey in place. baseAcc 60 keeps the lockdown a real threat

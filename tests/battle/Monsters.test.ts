@@ -44,7 +44,7 @@ describe('Monster bestiary', () => {
   it("each monster's signature kit", () => {
     expect(JOB_DEFS.goblin.learnableActives).toEqual(['goblin_tackle', 'goblin_eye_gouge']);
     expect(JOB_DEFS.red_panther.learnableActives).toEqual(['blaster']);
-    expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure']);
+    expect(JOB_DEFS.chocobo.learnableActives).toEqual(['choco_cure', 'choco_ball']);
     // Bomb's identity is the on-death blast — no active kit, by design.
     expect(JOB_DEFS.bomb.learnableActives).toEqual([]);
   });
@@ -137,5 +137,12 @@ describe('Monster signature abilities', () => {
     if (ab.effect.kind !== 'flat-heal') throw new Error('bad fixture');
     expect(ab.effect.hp).toBe(30);
     expect(ab.effect.mp).toBeUndefined();
+  });
+
+  it("Chocobo's Choco Ball is a ranged physical poke", () => {
+    const ab = ABILITIES.choco_ball;
+    expect(ab.range).toBe(3);
+    if (ab.effect.kind !== 'physical-ranged-damage') throw new Error('bad fixture');
+    expect(ab.effect.weaponPower).toBe(WEAPONS.claw.weaponPower);
   });
 });
