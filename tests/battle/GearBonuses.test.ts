@@ -83,7 +83,8 @@ describe('Loot-tier gear catalog', () => {
       ['flame_rod', 'flame_sword', 'frost_dagger', 'holy_lance', 'hunting_bow',
        'mythril_sword', 'stone_hammer', 'thunder_spear', 'wave_blade']);
     expect([...BONUS_ARMOR_IDS].sort()).toEqual(
-      ['chain_mail', 'flame_mail', 'frost_mail', 'silk_robe', 'storm_mail']);
+      ['chain_mail', 'flame_mail', 'frost_mail', 'hallowed_mail', 'silk_robe',
+       'stone_mail', 'storm_mail', 'tide_mail']);
   });
 
   it('elemental weapons cover all six elements', () => {
@@ -91,6 +92,14 @@ describe('Loot-tier gear catalog', () => {
       .map(w => w.element)
       .filter((e): e is NonNullable<typeof e> => !!e);
     expect([...new Set(elements)].sort())
+      .toEqual(['bolt', 'earth', 'fire', 'holy', 'ice', 'water']);
+  });
+
+  it('resist armors cover all six elements', () => {
+    const resists = Object.values(ARMOR)
+      .map(a => a.resists)
+      .filter((e): e is NonNullable<typeof e> => !!e);
+    expect([...new Set(resists)].sort())
       .toEqual(['bolt', 'earth', 'fire', 'holy', 'ice', 'water']);
   });
 

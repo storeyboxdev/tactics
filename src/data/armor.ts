@@ -45,9 +45,12 @@ export const ARMOR: Record<string, ArmorDef> = {
   silk_robe:  { id: 'silk_robe',  name: 'Silk Robe',  physicalFactor: 1.00, magicalFactor: 0.80, bonuses: { mp: 12 }, price: 520 },
 
   // Resist armor — halves one element on top of a modest stat line.
-  flame_mail: { id: 'flame_mail', name: 'Flame Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'fire' },
-  frost_mail: { id: 'frost_mail', name: 'Frost Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'ice' },
-  storm_mail: { id: 'storm_mail', name: 'Storm Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'bolt' },
+  flame_mail:    { id: 'flame_mail',    name: 'Flame Mail',    physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'fire' },
+  frost_mail:    { id: 'frost_mail',    name: 'Frost Mail',    physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'ice' },
+  storm_mail:    { id: 'storm_mail',    name: 'Storm Mail',    physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'bolt' },
+  stone_mail:    { id: 'stone_mail',    name: 'Stone Mail',    physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'earth' },
+  hallowed_mail: { id: 'hallowed_mail', name: 'Hallowed Mail', physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'holy' },
+  tide_mail:     { id: 'tide_mail',     name: 'Tide Mail',     physicalFactor: 0.84, magicalFactor: 0.95, bonuses: { hp: 8 }, price: 540, resists: 'water' },
 };
 
 /** Armor ids that carry a stat bonus — the loot-tier set. */
