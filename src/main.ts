@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BattleMap, MapData } from './battle/Map';
+import { BattleMap } from './battle/Map';
 import { Unit, UnitDef, UnitStats, FACING_E, FACING_W } from './battle/Unit';
 import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
@@ -43,18 +43,7 @@ import { battleIsCampaign, currentCampaignBattle } from './core/CampaignProgress
 import { showStoryScreen } from './render/StoryScreen';
 import { defaultRoster, pickEnemyJobs, enemyLevelFor, scaleEnemyStats } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
-import grasslandJson from './data/maps/grassland.json';
-import stoneCorridorJson from './data/maps/stone_corridor.json';
-import waterPondJson from './data/maps/water_pond.json';
-import highGroundJson from './data/maps/high_ground.json';
-import bridgeJson from './data/maps/bridge.json';
-import dunesJson from './data/maps/dunes.json';
-import ruinsJson from './data/maps/ruins.json';
-
-const ALL_MAPS = [
-  grasslandJson, stoneCorridorJson, waterPondJson, highGroundJson,
-  bridgeJson, dunesJson, ruinsJson,
-];
+import { BUILT_IN_MAPS } from './data/maps';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Renderer / scene setup
@@ -81,7 +70,7 @@ const campaignBattle = battleIsCampaign() ? currentCampaignBattle() : null;
 
 // The battle map: the campaign battle's named map; else a one-shot
 // editor "Test" selection; else a random pick from built-in + custom.
-const builtInMaps = ALL_MAPS as unknown as MapData[];
+const builtInMaps = BUILT_IN_MAPS;
 const map = new BattleMap(
   (campaignBattle && mapByName(campaignBattle.mapName, builtInMaps))
   || resolveBattleMap(builtInMaps),
