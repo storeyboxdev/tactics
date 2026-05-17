@@ -23,6 +23,7 @@ import { loadSave, saveRoster, wipeSave, gilFromBattle } from '../core/Save';
 import { showShopScreen } from './ShopScreen';
 import { goToScreen } from '../core/Screen';
 import { peekEditorTestMap, clearEditorTestMap } from '../core/CustomMaps';
+import { battleIsCampaign, advanceCampaign, campaignFinished, endCampaign } from '../core/CampaignProgress';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -82,11 +83,20 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
   Object.assign(footer.style, {
     display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px',
   });
-  footer.appendChild(footerButton('Start Next Battle', '#243c66', '#5b8def', () => {
+  // In a campaign the continue button advances the campaign (on a win) or
+  // retries the battle (on a loss); in the gauntlet it just rolls onward.
+  const continueLabel = battleIsCampaign()
+    ? (won ? 'Continue Campaign' : 'Retry Battle')
+    : 'Start Next Battle';
+  footer.appendChild(footerButton(continueLabel, '#243c66', '#5b8def', () => {
     // Gil and loot were committed at victory by recordBattleRewards; this
     // just persists the roster edits and advances the battle counter.
     clearEditorTestMap(); // continuing the gauntlet ends any editor-test trip
     saveRoster(units);
+    if (battleIsCampaign() && won) {
+      advanceCampaign();
+      if (campaignFinished()) { endCampaign(); goToScreen('menu'); return; }
+    }
     location.reload();
   }));
   footer.appendChild(footerButton('Shop', '#1f4a2e', '#4fe07a', () => {

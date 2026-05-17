@@ -15,6 +15,7 @@ import {
   setEditorTestMap, takeEditorTestMap,
 } from '../core/CustomMaps';
 import { goToScreen } from '../core/Screen';
+import { setBattleIsCampaign } from '../core/CampaignProgress';
 
 type Tool = 'raise' | 'lower' | 'player' | 'enemy' | 'terrain';
 
@@ -259,7 +260,8 @@ export function showMapEditorScreen(): void {
     row.appendChild(bigButton('Test', '#243c66', '#5b8def', () => {
       saveCustomMap(map);
       selectMapForBattle(map);
-      setEditorTestMap(map.name); // so the roster screen can return here
+      setEditorTestMap(map.name);  // so the roster screen can return here
+      setBattleIsCampaign(false);  // a test is a gauntlet battle, not a campaign one
       goToScreen('battle');
     }));
     row.appendChild(bigButton('Export', '#2a2a36', '#9a9aa0', () => exportMap(map)));

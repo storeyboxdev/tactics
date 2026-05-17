@@ -38,7 +38,9 @@ import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
 import { loadSave, recordBattleRewards, SavedUnit } from './core/Save';
-import { resolveBattleMap } from './core/CustomMaps';
+import { resolveBattleMap, mapByName } from './core/CustomMaps';
+import { battleIsCampaign, currentCampaignBattle } from './core/CampaignProgress';
+import { showStoryScreen } from './render/StoryScreen';
 import { defaultRoster, pickEnemyJobs, enemyLevelFor, scaleEnemyStats } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
@@ -73,10 +75,17 @@ const sun = new THREE.DirectionalLight(0xffffff, 0.95);
 sun.position.set(8, 14, 6);
 scene.add(sun);
 
-// The battle map: a one-shot "Test" selection from the map editor when
-// pending, otherwise a random pick from the built-in maps plus any
-// custom maps in the browser store.
-const map = new BattleMap(resolveBattleMap(ALL_MAPS as unknown as MapData[]));
+// A campaign battle when one is active, otherwise null — its presence
+// makes the whole setup below scripted rather than random.
+const campaignBattle = battleIsCampaign() ? currentCampaignBattle() : null;
+
+// The battle map: the campaign battle's named map; else a one-shot
+// editor "Test" selection; else a random pick from built-in + custom.
+const builtInMaps = ALL_MAPS as unknown as MapData[];
+const map = new BattleMap(
+  (campaignBattle && mapByName(campaignBattle.mapName, builtInMaps))
+  || resolveBattleMap(builtInMaps),
+);
 const mapRenderer = new MapRenderer(map);
 scene.add(mapRenderer.group);
 
@@ -147,11 +156,13 @@ const save = loadSave();
 // A length check, not just `??` — recordBattleRewards can write a save
 // with an empty roster (battle 0, no prior save); fall back to the default.
 const roster: SavedUnit[] = save?.roster?.length ? save.roster : defaultRoster();
-// Enemy team scales with how many battles the party has survived. Battle 0
-// is Squires-only (the very first fight the player ever sees); Tier-1 jobs
-// come in by battle 2, casters by 4, the full pool by 6.
-const enemyJobs = pickEnemyJobs(save?.battleCount ?? 0, enemySpawns.length);
-// Enemies scale with battle count so a leveled party still gets a fight.
+// Enemy roster: a campaign battle pins exact jobs; otherwise the gauntlet
+// rolls a tier-appropriate set that widens with the battle count.
+const enemyJobs = campaignBattle
+  ? campaignBattle.enemies.map(e => e.jobId)
+  : pickEnemyJobs(save?.battleCount ?? 0, enemySpawns.length);
+// Gauntlet enemies scale with battle count; campaign enemies carry their
+// own per-unit levels.
 const enemyLevel = enemyLevelFor(save?.battleCount ?? 0);
 
 const units: Unit[] = [];
@@ -160,13 +171,18 @@ playerSpawns.forEach(([x, z], i) => {
   if (!saved) return; // roster smaller than spawn count — leave the slot empty
   units.push(buildPlayerUnit(saved, x, z));
 });
-enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
-  id: `e${i + 1}`, name: `E${i + 1}`, jobId: enemyJobs[i], x, z,
-}, enemyLevel)));
+enemySpawns.forEach(([x, z], i) => {
+  const jobId = enemyJobs[i];
+  if (!jobId) return; // fewer enemies than spawn tiles (campaign rosters vary)
+  const level = campaignBattle ? (campaignBattle.enemies[i]?.level ?? enemyLevel) : enemyLevel;
+  units.push(buildEnemy({ id: `e${i + 1}`, name: `E${i + 1}`, jobId, x, z }, level));
+});
 
-// Battle objective — the win condition for this fight. Battle 0 is always
-// a Rout; later battles may roll Regicide / Survive / Protect.
-const battleObjective = pickObjective(save?.battleCount ?? 0);
+// Battle objective: a campaign battle pins it; otherwise it's rolled,
+// widening from Rout through Regicide / Survive / Protect / Escort.
+const battleObjective = campaignBattle
+  ? campaignBattle.objective
+  : pickObjective(save?.battleCount ?? 0);
 if (battleObjective.kind === 'regicide') {
   const enemies = units.filter(u => u.team === 'enemy');
   const players = units.filter(u => u.team === 'player');
@@ -321,7 +337,15 @@ function activateNext() {
     cursor.clearActiveTile();
     refreshHud();
     hud.setStatus(winner === 'player' ? 'Victory!' : 'Defeat.');
-    hud.showResult(winner, () => showRosterScreen(units, winner === 'player'));
+    hud.showResult(winner, () => {
+      const won = winner === 'player';
+      // A won campaign battle plays its outro story before the roster screen.
+      if (won && campaignBattle?.outro) {
+        showStoryScreen(campaignBattle.outro, () => showRosterScreen(units, won));
+      } else {
+        showRosterScreen(units, won);
+      }
+    });
     return;
   }
   const event = turns.advance();
@@ -1567,5 +1591,10 @@ hud.setStatus('Loading assets...');
   if (battleObjective.kind === 'escort') {
     cursor.setGoalTile(battleObjective.goalX, battleObjective.goalZ);
   }
-  activateNext();
+  // A campaign battle plays its intro story before the turn loop begins.
+  if (campaignBattle?.intro) {
+    showStoryScreen(campaignBattle.intro, () => activateNext());
+  } else {
+    activateNext();
+  }
 })();
