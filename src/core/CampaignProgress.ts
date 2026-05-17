@@ -5,7 +5,8 @@
  * gauntlet) is a session flag, set when the battle is launched.
  */
 
-import { CampaignBattle, campaignById } from '../data/campaigns';
+import { CampaignBattle } from '../data/campaigns';
+import { resolveCampaign } from './CustomCampaigns';
 
 const PROGRESS_KEY = 'tactics-campaign-progress';
 const MODE_KEY = 'tactics-battle-is-campaign';
@@ -56,14 +57,14 @@ export function endCampaign(): void {
 export function currentCampaignBattle(): CampaignBattle | null {
   const p = activeCampaign();
   if (!p) return null;
-  return campaignById(p.campaignId)?.battles[p.battleIndex] ?? null;
+  return resolveCampaign(p.campaignId)?.battles[p.battleIndex] ?? null;
 }
 
 /** True once the active campaign's index has passed its final battle. */
 export function campaignFinished(): boolean {
   const p = activeCampaign();
   if (!p) return false;
-  const c = campaignById(p.campaignId);
+  const c = resolveCampaign(p.campaignId);
   return !!c && p.battleIndex >= c.battles.length;
 }
 

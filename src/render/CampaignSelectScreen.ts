@@ -4,7 +4,7 @@
  * (or current) battle in campaign mode.
  */
 
-import { CAMPAIGNS, campaignById } from '../data/campaigns';
+import { allCampaigns, resolveCampaign } from '../core/CustomCampaigns';
 import {
   activeCampaign, campaignFinished, startCampaign, setBattleIsCampaign,
 } from '../core/CampaignProgress';
@@ -31,7 +31,7 @@ export function showCampaignSelectScreen(): void {
   // Resume the campaign in progress, if any.
   const progress = activeCampaign();
   if (progress && !campaignFinished()) {
-    const c = campaignById(progress.campaignId);
+    const c = resolveCampaign(progress.campaignId);
     if (c) {
       overlay.appendChild(menuButton(
         `Resume — ${c.name} (Battle ${progress.battleIndex + 1})`,
@@ -41,7 +41,7 @@ export function showCampaignSelectScreen(): void {
     }
   }
 
-  for (const c of CAMPAIGNS) {
+  for (const c of allCampaigns()) {
     overlay.appendChild(menuButton(
       `${c.name}  —  ${c.battles.length} battles`,
       '#243c66', '#5b8def',
