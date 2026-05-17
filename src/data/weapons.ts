@@ -36,6 +36,8 @@ export interface WeaponDef {
   /** If set, the wearer's basic Attack deals this element — interacting
    *  with the target's elemental affinity. */
   element?: Element;
+  /** Basic-attack reach in Manhattan tiles. Absent means melee (1). */
+  range?: number;
 }
 
 export const WEAPONS: Record<string, WeaponDef> = {
@@ -44,9 +46,9 @@ export const WEAPONS: Record<string, WeaponDef> = {
   cloth:       { id: 'cloth',       name: 'Cloth',        weaponPower: 3 },
   staff:       { id: 'staff',       name: 'Staff',        weaponPower: 4 },
   dagger:      { id: 'dagger',      name: 'Dagger',       weaponPower: 5 },
-  gun:         { id: 'gun',         name: 'Gun',          weaponPower: 5 },
+  gun:         { id: 'gun',         name: 'Gun',          weaponPower: 5, range: 5 },
   pole:        { id: 'pole',        name: 'Pole',         weaponPower: 6 },
-  bow:         { id: 'bow',         name: 'Bow',          weaponPower: 6 },
+  bow:         { id: 'bow',         name: 'Bow',          weaponPower: 6, range: 4 },
   ninja_blade: { id: 'ninja_blade', name: 'Ninja Blade',  weaponPower: 6 },
   knuckle:     { id: 'knuckle',     name: 'Knuckle',      weaponPower: 8 },
   spear:       { id: 'spear',       name: 'Spear',        weaponPower: 8 },
@@ -60,7 +62,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   // weapon-power line with a flat stat bonus.
   mythril_sword: { id: 'mythril_sword', name: 'Mythril Sword', weaponPower: 11, bonuses: { pa: 1 },    price: 600 },
   flame_rod:     { id: 'flame_rod',     name: 'Flame Rod',     weaponPower: 4,  bonuses: { ma: 2 },    price: 480 },
-  hunting_bow:   { id: 'hunting_bow',   name: 'Hunting Bow',   weaponPower: 7,  bonuses: { speed: 1 }, price: 480 },
+  hunting_bow:   { id: 'hunting_bow',   name: 'Hunting Bow',   weaponPower: 7,  bonuses: { speed: 1 }, price: 480, range: 4 },
 
   // Elemental weapons — a basic Attack that carries an element.
   flame_sword:   { id: 'flame_sword',   name: 'Flame Sword',   weaponPower: 10, bonuses: { pa: 1 },    price: 620, element: 'fire' },

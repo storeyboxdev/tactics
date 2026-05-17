@@ -1,6 +1,7 @@
 import { Unit } from './Unit';
 import { BattleMap } from './Map';
 import { Ability } from '../data/abilities';
+import { effectiveWeapon } from './ActionResolver';
 
 const ADJACENT: [number, number][] = [
   [ 1, 0],
@@ -9,14 +10,18 @@ const ADJACENT: [number, number][] = [
   [ 0,-1],
 ];
 
-export function meleeAttackTargets(actor: Unit, map: BattleMap, units: readonly Unit[]): { x: number; z: number }[] {
+/**
+ * Tiles a basic Attack can reach — opposing units within the actor's
+ * effective-weapon range (Manhattan). Melee weapons reach 1; a Bow or
+ * Gun reaches further.
+ */
+export function attackTargets(actor: Unit, units: readonly Unit[]): { x: number; z: number }[] {
+  const range = effectiveWeapon(actor)?.range ?? 1;
   const out: { x: number; z: number }[] = [];
-  for (const [dx, dz] of ADJACENT) {
-    const x = actor.x + dx;
-    const z = actor.z + dz;
-    if (!map.inBounds(x, z)) continue;
-    const t = unitAt(units, x, z);
-    if (t && t.team !== actor.team) out.push({ x, z });
+  for (const u of units) {
+    if (u.team === actor.team || !u.isAlive) continue;
+    const d = Math.abs(u.x - actor.x) + Math.abs(u.z - actor.z);
+    if (d >= 1 && d <= range) out.push({ x: u.x, z: u.z });
   }
   return out;
 }

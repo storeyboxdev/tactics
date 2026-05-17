@@ -423,8 +423,10 @@ export function resolveAttack(
   // Damage breaks Sleep — same as FFT.
   if (damage > 0 && target.hasStatus('sleep')) target.removeStatus('sleep');
 
-  // A caught attack provokes no Counter — the target wasn't hit.
-  if (allowCounter && !bladeGrasp && target.isAlive && target.reaction) {
+  // A caught attack provokes no Counter — the target wasn't hit. Nor does
+  // a ranged-weapon Fight: FFT canon, only a melee strike is countered.
+  const meleeWeapon = (effectiveWeapon(attacker)?.range ?? 1) <= 1;
+  if (allowCounter && meleeWeapon && !bladeGrasp && target.isAlive && target.reaction) {
     triggerReaction(target, attacker, target.reaction, out, map, rng);
   }
 

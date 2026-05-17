@@ -4,7 +4,7 @@ import { Unit, UnitDef, UnitStats, FACING_E, FACING_W } from './battle/Unit';
 import { TurnSystem, PendingSpell } from './battle/TurnSystem';
 import { MovePlan } from './battle/Movement';
 import {
-  meleeAttackTargets, potionTargets, abilityTargets, unitAt, unitAtAny,
+  attackTargets, potionTargets, abilityTargets, unitAt, unitAtAny,
   affectedUnits, aoeTiles,
 } from './battle/Targeting';
 import {
@@ -13,7 +13,7 @@ import {
   resolvePhysicalDamageAndStatus, predictPhysicalDamageAndStatus,
   resolveDeathTrigger, effectiveMpCost, applyStatShift, applyBreak, facingTowards,
   predictAttackDamage, predictSpellDamage, predictRangedAttack, predictHeal,
-  physicalHitChance, magicStatusHitChance, rollHit, relativeFacing,
+  physicalHitChance, magicStatusHitChance, rollHit, relativeFacing, effectiveWeapon,
 } from './battle/ActionResolver';
 import { HeuristicAi, EnemyController } from './battle/Ai';
 import {
@@ -478,8 +478,8 @@ function beginMove() {
 function beginAttack() {
   if (!currentActor || hasActed) return;
   const unit = currentActor;
-  const tiles = meleeAttackTargets(unit, map, units);
-  if (tiles.length === 0) { hud.log(`${unit.name}: no melee targets`); return; }
+  const tiles = attackTargets(unit, units);
+  if (tiles.length === 0) { hud.log(`${unit.name}: no attack targets in range`); return; }
   const basePrompt = `${unit.name}: pick an attack target — right-click to cancel`;
   hud.setStatus(basePrompt);
   input.beginPick({
@@ -1255,12 +1255,19 @@ function applyMovementEndHook(unit: Unit) {
  * Game state is already mutated by `resolveAttack` — this is purely cosmetic.
  */
 function playAttackVisual(out: AttackOutcome) {
-  unitRenderer.playAttack(out.attacker, () => {
+  const onImpact = () => {
     // miss or Blade Grasp catch: attacker swings, target unaffected
     if (!out.hit || out.bladeGrasp) return;
     if (out.target.hp <= 0) unitRenderer.playKO(out.target);
     else unitRenderer.playHurt(out.target);
-  });
+  };
+  // A ranged weapon looses a projectile; impact lands when it arrives.
+  if ((effectiveWeapon(out.attacker)?.range ?? 1) > 1) {
+    unitRenderer.playRangedAttack(out.attacker);
+    projectiles.fire(out.attacker, out.target, onImpact);
+  } else {
+    unitRenderer.playAttack(out.attacker, onImpact);
+  }
   if (out.counter) {
     const c = out.counter;
     setTimeout(() => {
