@@ -5,7 +5,7 @@ import { unitAt, abilityTargets, affectedUnits } from './Targeting';
 import {
   predictAttackDamage, predictSpellDamage, predictHeal, predictRangedAttack,
   physicalHitChance, magicStatusHitChance, relativeFacing,
-  effectiveWeaponPower, effectiveMpCost,
+  effectiveWeaponPower, effectiveWeapon, effectiveMpCost,
 } from './ActionResolver';
 import { ABILITIES, Ability } from '../data/abilities';
 import { JOB_DEFS } from '../data/jobs';
@@ -23,13 +23,6 @@ export interface EnemyDecision {
 export interface EnemyController {
   decide(actor: Unit, map: BattleMap, units: readonly Unit[]): EnemyDecision;
 }
-
-const ADJACENT: [number, number][] = [
-  [ 1, 0],
-  [-1, 0],
-  [ 0, 1],
-  [ 0,-1],
-];
 
 /** Flat status-application bonuses, regardless of target HP / CT. Context-
  *  sensitive ones (silence, regen) override this in scoreSingleTarget. */
@@ -96,6 +89,7 @@ export class HeuristicAi implements EnemyController {
       ? [{ x: actor.x, z: actor.z, cost: 0 }]
       : plan.endTiles();
     const learnable = JOB_DEFS[actor.jobId]?.learnableActives ?? [];
+    const weaponRange = effectiveWeapon(actor)?.range ?? 1;
 
     let bestScore = -Infinity;
     let best: EnemyDecision = { movePath: [], action: null };
@@ -115,14 +109,13 @@ export class HeuristicAi implements EnemyController {
       consider(tile, null);
       if (cantAct) continue;
 
-      // Basic-attack candidates (adjacent enemies).
-      const adjacentEnemies: Unit[] = [];
-      for (const [dx, dz] of ADJACENT) {
-        const t = unitAt(units, tile.x + dx, tile.z + dz);
-        if (t && t.team !== actor.team) adjacentEnemies.push(t);
-      }
-      for (const target of adjacentEnemies) {
-        consider(tile, { kind: 'attack', targetId: target.id });
+      // Basic-attack candidates — opposing units within weapon range.
+      for (const u of units) {
+        if (u.team === actor.team || !u.isAlive) continue;
+        const d = Math.abs(u.x - tile.x) + Math.abs(u.z - tile.z);
+        if (d >= 1 && d <= weaponRange) {
+          consider(tile, { kind: 'attack', targetId: u.id });
+        }
       }
 
       // Ability candidates — gated by MP and "doesn't already have status".

@@ -194,6 +194,26 @@ describe('HeuristicAi — bodyguard screening', () => {
   });
 });
 
+describe('HeuristicAi — weapon range', () => {
+  it('a ranged-weapon enemy attacks a non-adjacent target', () => {
+    const map = new BattleMap(flatMap(9, 5));
+    const e = makeUnit('e', 'enemy', 3, 2, FACING_E, { move: 0 }); // 'x' job — no abilities
+    e.weaponId = 'bow'; // range 4
+    const p = makeUnit('p', 'player', 5, 2, FACING_W); // 2 tiles away
+    const d = new HeuristicAi().decide(e, map, [e, p]);
+    expect(d.action?.kind).toBe('attack');
+    if (d.action?.kind === 'attack') expect(d.action.targetId).toBe('p');
+  });
+
+  it('a melee-weapon enemy cannot reach the same non-adjacent target', () => {
+    const map = new BattleMap(flatMap(9, 5));
+    const e = makeUnit('e', 'enemy', 3, 2, FACING_E, { move: 0 }); // melee, range 1
+    const p = makeUnit('p', 'player', 5, 2, FACING_W);
+    const d = new HeuristicAi().decide(e, map, [e, p]);
+    expect(d.action).toBeNull();
+  });
+});
+
 describe('HeuristicAi — elemental resistance', () => {
   it('a caster avoids an element its target resists', () => {
     // The lone target wears Flame Mail. Fire spells are halved on it, so
