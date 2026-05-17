@@ -22,6 +22,7 @@ import { computeDisplayStats } from '../battle/Stats';
 import { loadSave, saveRoster, wipeSave, gilFromBattle } from '../core/Save';
 import { showShopScreen } from './ShopScreen';
 import { goToScreen } from '../core/Screen';
+import { peekEditorTestMap, clearEditorTestMap } from '../core/CustomMaps';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -84,6 +85,7 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
   footer.appendChild(footerButton('Start Next Battle', '#243c66', '#5b8def', () => {
     // Gil and loot were committed at victory by recordBattleRewards; this
     // just persists the roster edits and advances the battle counter.
+    clearEditorTestMap(); // continuing the gauntlet ends any editor-test trip
     saveRoster(units);
     location.reload();
   }));
@@ -98,6 +100,11 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     location.reload();
   }));
   footer.appendChild(footerButton('Main Menu', '#2a2a36', '#9a9aa0', () => goToScreen('menu')));
+  // After testing a map from the editor, offer a route straight back to it.
+  if (peekEditorTestMap()) {
+    footer.appendChild(footerButton('Back to Map Editor', '#1f4a2e', '#4fe07a',
+      () => goToScreen('map-editor')));
+  }
   overlay.appendChild(footer);
 
   root.appendChild(overlay);

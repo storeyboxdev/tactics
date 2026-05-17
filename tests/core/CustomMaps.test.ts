@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   validateMapData, loadCustomMaps, saveCustomMap, deleteCustomMap,
   selectMapForBattle, resolveBattleMap,
+  setEditorTestMap, peekEditorTestMap, clearEditorTestMap, takeEditorTestMap,
 } from '../../src/core/CustomMaps';
 import { MapData } from '../../src/battle/Map';
 
@@ -89,5 +90,23 @@ describe('resolveBattleMap', () => {
     const names = new Set<string>();
     for (let i = 0; i < 40; i++) names.add(resolveBattleMap([sampleMap('BuiltIn')]).name);
     expect([...names].sort()).toEqual(['BuiltIn', 'Custom']);
+  });
+});
+
+describe('editor test-map round-trip', () => {
+  beforeEach(() => sessionStorage.clear());
+
+  it('set / peek / clear', () => {
+    expect(peekEditorTestMap()).toBeNull();
+    setEditorTestMap('Arena');
+    expect(peekEditorTestMap()).toBe('Arena');
+    clearEditorTestMap();
+    expect(peekEditorTestMap()).toBeNull();
+  });
+
+  it('take reads the name and clears it in one call', () => {
+    setEditorTestMap('Arena');
+    expect(takeEditorTestMap()).toBe('Arena');
+    expect(takeEditorTestMap()).toBeNull();
   });
 });

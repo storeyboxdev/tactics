@@ -13,6 +13,7 @@ import { MapData } from '../battle/Map';
 
 const STORE_KEY = 'tactics-custom-maps';
 const SELECTED_KEY = 'tactics-selected-map';
+const EDITOR_TEST_KEY = 'tactics-editor-test-map';
 
 /** Validate an unknown value as `MapData`. Returns a clean copy or null. */
 export function validateMapData(raw: unknown): MapData | null {
@@ -127,6 +128,32 @@ export function resolveBattleMap(builtIn: MapData[]): MapData {
   }
   const pool = [...builtIn, ...loadCustomMaps()];
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Editor "Test" round-trip ────────────────────────────────────────────────
+// When the map editor's Test launches a battle it records the map name here,
+// so the post-battle roster screen can offer a route back to the editor and
+// the editor can reopen on that map.
+
+/** Record that the next battle is an editor test of `mapName`. */
+export function setEditorTestMap(mapName: string): void {
+  try { sessionStorage.setItem(EDITOR_TEST_KEY, mapName); } catch { /* ignore */ }
+}
+
+/** The name of the map being editor-tested, or null. Does not clear it. */
+export function peekEditorTestMap(): string | null {
+  try { return sessionStorage.getItem(EDITOR_TEST_KEY); } catch { return null; }
+}
+
+export function clearEditorTestMap(): void {
+  try { sessionStorage.removeItem(EDITOR_TEST_KEY); } catch { /* ignore */ }
+}
+
+/** Read the editor-test map name and clear it (the editor consumes it). */
+export function takeEditorTestMap(): string | null {
+  const name = peekEditorTestMap();
+  clearEditorTestMap();
+  return name;
 }
 
 /** Download a map as a JSON file. */
