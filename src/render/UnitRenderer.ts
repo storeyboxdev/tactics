@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Unit, Facing, FACING_E, FACING_W, FACING_N, FACING_S } from '../battle/Unit';
 import { BattleMap } from '../battle/Map';
 import { AssetLoader } from '../core/AssetLoader';
+import { loadCustomSprite } from '../core/CustomSprites';
 import { AnimationState } from './AnimationState';
 import {
   SHEET_LAYOUT, ATTACK_IMPACT_FRAME, RANGED_IMPACT_FRAME, JOB_APPEARANCE, DEFAULT_APPEARANCE,
@@ -65,7 +66,9 @@ export class UnitRenderer {
   /** Try to swap each unit's placeholder for a loaded sheet PNG. */
   async applyTextures(loader: AssetLoader): Promise<void> {
     await Promise.all(this.entries.map(async e => {
-      const url = `/sprites/units/${e.unit.jobId}_${e.unit.team}.png`;
+      // A custom sheet from the sprite editor wins over the built-in PNG.
+      const url = loadCustomSprite(e.unit.jobId, e.unit.team)
+        ?? `/sprites/units/${e.unit.jobId}_${e.unit.team}.png`;
       const tex = await loader.load(url);
       if (!tex) return; // keep placeholder
       tex.wrapS = THREE.ClampToEdgeWrapping;
