@@ -38,6 +38,7 @@ import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
 import { loadSave, recordBattleRewards, SavedUnit } from './core/Save';
+import { resolveBattleMap } from './core/CustomMaps';
 import { defaultRoster, pickEnemyJobs, enemyLevelFor, scaleEnemyStats } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
@@ -72,11 +73,10 @@ const sun = new THREE.DirectionalLight(0xffffff, 0.95);
 sun.position.set(8, 14, 6);
 scene.add(sun);
 
-// Pick a random map each load. Refreshing the page or hitting Continue in
-// the roster screen rolls a new battlefield, breaking up the visual
-// repetition while testing.
-const pickedMap = ALL_MAPS[Math.floor(Math.random() * ALL_MAPS.length)];
-const map = new BattleMap(pickedMap as unknown as MapData);
+// The battle map: a one-shot "Test" selection from the map editor when
+// pending, otherwise a random pick from the built-in maps plus any
+// custom maps in the browser store.
+const map = new BattleMap(resolveBattleMap(ALL_MAPS as unknown as MapData[]));
 const mapRenderer = new MapRenderer(map);
 scene.add(mapRenderer.group);
 

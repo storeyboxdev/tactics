@@ -14,7 +14,9 @@ export interface MapData {
   spawns: { player: [number, number][]; enemy: [number, number][] };
 }
 
-function deriveTerrain(h: number): Terrain {
+/** Default terrain for a tile height — water (h≤0), stone (h≥3), else grass.
+ *  A map's optional `terrains` grid overrides this per tile. */
+export function deriveTerrain(h: number): Terrain {
   if (h <= 0) return 'water';
   if (h >= 3) return 'stone';
   return 'grass';
