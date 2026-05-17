@@ -22,6 +22,9 @@ async function boot(): Promise<void> {
     case 'sprite-editor':
       (await import('./render/SpriteEditorScreen')).showSpriteEditorScreen();
       break;
+    case 'campaign':
+      (await import('./render/CampaignSelectScreen')).showCampaignSelectScreen();
+      break;
     default:
       (await import('./render/TitleScreen')).showTitleScreen();
   }

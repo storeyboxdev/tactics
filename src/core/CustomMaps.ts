@@ -156,6 +156,11 @@ export function takeEditorTestMap(): string | null {
   return name;
 }
 
+/** Find a map by `MapData.name` across the built-in and custom maps. */
+export function mapByName(name: string, builtIn: MapData[]): MapData | undefined {
+  return [...builtIn, ...loadCustomMaps()].find(m => m.name === name);
+}
+
 /** Download a map as a JSON file. */
 export function exportMap(map: MapData): void {
   const blob = new Blob([JSON.stringify(map, null, 2)], { type: 'application/json' });

@@ -5,6 +5,7 @@
  */
 
 import { goToScreen } from '../core/Screen';
+import { setBattleIsCampaign } from '../core/CampaignProgress';
 
 export function showTitleScreen(): void {
   const root = document.getElementById('hud');
@@ -30,7 +31,11 @@ export function showTitleScreen(): void {
   sub.style.cssText = 'font-size:12px;letter-spacing:3px;opacity:0.6;margin-bottom:14px;';
   overlay.appendChild(sub);
 
-  overlay.appendChild(menuButton('New Battle', () => goToScreen('battle')));
+  overlay.appendChild(menuButton('New Battle', () => {
+    setBattleIsCampaign(false); // a gauntlet battle, not a campaign one
+    goToScreen('battle');
+  }));
+  overlay.appendChild(menuButton('Campaign', () => goToScreen('campaign')));
   overlay.appendChild(menuButton('Map Editor', () => goToScreen('map-editor')));
   overlay.appendChild(menuButton('Sprite Editor', () => goToScreen('sprite-editor')));
 
