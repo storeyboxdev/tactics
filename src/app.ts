@@ -17,8 +17,7 @@ async function boot(): Promise<void> {
       await import('./main');
       break;
     case 'map-editor':
-      // Wired up in Phase 1 Step 3; until then, fall through to the menu.
-      (await import('./render/TitleScreen')).showTitleScreen();
+      (await import('./render/MapEditorScreen')).showMapEditorScreen();
       break;
     default:
       (await import('./render/TitleScreen')).showTitleScreen();
