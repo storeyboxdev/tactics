@@ -68,6 +68,9 @@ export const WEAPONS: Record<string, WeaponDef> = {
   flame_sword:   { id: 'flame_sword',   name: 'Flame Sword',   weaponPower: 10, bonuses: { pa: 1 },    price: 620, element: 'fire' },
   frost_dagger:  { id: 'frost_dagger',  name: 'Frost Dagger',  weaponPower: 6,  bonuses: { speed: 1 }, price: 520, element: 'ice' },
   thunder_spear: { id: 'thunder_spear', name: 'Thunder Spear', weaponPower: 9,  bonuses: { pa: 1 },    price: 600, element: 'bolt' },
+  stone_hammer:  { id: 'stone_hammer',  name: 'Stone Hammer',  weaponPower: 10, bonuses: { pa: 1 },    price: 620, element: 'earth' },
+  holy_lance:    { id: 'holy_lance',    name: 'Holy Lance',    weaponPower: 9,  bonuses: { pa: 1 },    price: 620, element: 'holy' },
+  wave_blade:    { id: 'wave_blade',    name: 'Wave Blade',    weaponPower: 9,  bonuses: { speed: 1 }, price: 600, element: 'water' },
 };
 
 /** Weapon ids that carry a stat bonus — the loot-tier set. Derived so a

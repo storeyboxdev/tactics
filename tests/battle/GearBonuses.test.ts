@@ -80,9 +80,18 @@ describe('Loot-tier gear catalog', () => {
 
   it('BONUS_WEAPON_IDS / BONUS_ARMOR_IDS list exactly the bonus-bearing gear', () => {
     expect([...BONUS_WEAPON_IDS].sort()).toEqual(
-      ['flame_rod', 'flame_sword', 'frost_dagger', 'hunting_bow', 'mythril_sword', 'thunder_spear']);
+      ['flame_rod', 'flame_sword', 'frost_dagger', 'holy_lance', 'hunting_bow',
+       'mythril_sword', 'stone_hammer', 'thunder_spear', 'wave_blade']);
     expect([...BONUS_ARMOR_IDS].sort()).toEqual(
       ['chain_mail', 'flame_mail', 'frost_mail', 'silk_robe', 'storm_mail']);
+  });
+
+  it('elemental weapons cover all six elements', () => {
+    const elements = Object.values(WEAPONS)
+      .map(w => w.element)
+      .filter((e): e is NonNullable<typeof e> => !!e);
+    expect([...new Set(elements)].sort())
+      .toEqual(['bolt', 'earth', 'fire', 'holy', 'ice', 'water']);
   });
 
   it('signature gear stays bonus-free', () => {
