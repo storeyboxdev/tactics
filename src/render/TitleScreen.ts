@@ -38,6 +38,7 @@ export function showTitleScreen(): void {
   overlay.appendChild(menuButton('Campaign', () => goToScreen('campaign')));
   overlay.appendChild(menuButton('Map Editor', () => goToScreen('map-editor')));
   overlay.appendChild(menuButton('Sprite Editor', () => goToScreen('sprite-editor')));
+  overlay.appendChild(menuButton('Campaign Editor', () => goToScreen('campaign-editor')));
 
   root.appendChild(overlay);
 }

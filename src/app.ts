@@ -25,6 +25,9 @@ async function boot(): Promise<void> {
     case 'campaign':
       (await import('./render/CampaignSelectScreen')).showCampaignSelectScreen();
       break;
+    case 'campaign-editor':
+      (await import('./render/CampaignEditorScreen')).showCampaignEditorScreen();
+      break;
     default:
       (await import('./render/TitleScreen')).showTitleScreen();
   }
