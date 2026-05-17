@@ -19,6 +19,9 @@ async function boot(): Promise<void> {
     case 'map-editor':
       (await import('./render/MapEditorScreen')).showMapEditorScreen();
       break;
+    case 'sprite-editor':
+      (await import('./render/SpriteEditorScreen')).showSpriteEditorScreen();
+      break;
     default:
       (await import('./render/TitleScreen')).showTitleScreen();
   }

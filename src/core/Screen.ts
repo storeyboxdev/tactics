@@ -8,11 +8,11 @@
 
 const SCREEN_KEY = 'tactics-screen';
 
-export type Screen = 'menu' | 'battle' | 'map-editor';
+export type Screen = 'menu' | 'battle' | 'map-editor' | 'sprite-editor';
 
 export function currentScreen(): Screen {
   const s = sessionStorage.getItem(SCREEN_KEY);
-  return s === 'battle' || s === 'map-editor' ? s : 'menu';
+  return s === 'battle' || s === 'map-editor' || s === 'sprite-editor' ? s : 'menu';
 }
 
 export function goToScreen(screen: Screen): void {
