@@ -21,6 +21,7 @@ import {
 import { computeDisplayStats } from '../battle/Stats';
 import { loadSave, saveRoster, wipeSave, gilFromBattle } from '../core/Save';
 import { showShopScreen } from './ShopScreen';
+import { goToScreen } from '../core/Screen';
 
 export function showRosterScreen(units: Unit[], won: boolean): void {
   const root = document.getElementById('hud');
@@ -96,6 +97,7 @@ export function showRosterScreen(units: Unit[], won: boolean): void {
     wipeSave();
     location.reload();
   }));
+  footer.appendChild(footerButton('Main Menu', '#2a2a36', '#9a9aa0', () => goToScreen('menu')));
   overlay.appendChild(footer);
 
   root.appendChild(overlay);
