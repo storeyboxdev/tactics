@@ -251,6 +251,24 @@ describe('Save round-trip', () => {
     expect(loaded.roster[0].id).toBe('p1');
   });
 
+  it('a partial-deployment battle keeps undeployed party members', () => {
+    const p1 = unitFromSaved(bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'knight' }));
+    const p2 = unitFromSaved(bootstrapUnit({ id: 'p2', name: 'P2', jobId: 'archer' }));
+    const p3 = unitFromSaved(bootstrapUnit({ id: 'p3', name: 'P3', jobId: 'black_mage' }));
+    saveRoster([p1, p2, p3]);
+    expect(loadSave()!.roster).toHaveLength(3);
+
+    // A later battle deploys only p1 and p2 — e.g. a custom map with two
+    // player spawns. The save must still hold all three members.
+    p1.reaction = 'counter'; // an edit made this battle
+    saveRoster([p1, p2]);
+
+    const roster = loadSave()!.roster;
+    expect(roster.map(r => r.id).sort()).toEqual(['p1', 'p2', 'p3']);
+    expect(roster.find(r => r.id === 'p1')!.reaction).toBe('counter'); // deployed → updated
+    expect(roster.find(r => r.id === 'p3')!.jobId).toBe('black_mage'); // undeployed → kept
+  });
+
   it('battleCount increments on each saveRoster call', () => {
     const seed = bootstrapUnit({ id: 'p1', name: 'P1', jobId: 'squire' });
     const u = unitFromSaved(seed);

@@ -131,10 +131,10 @@ export function recordBattleRewards(units: readonly Unit[], rng: () => number = 
 }
 
 export function saveRoster(units: Unit[]): void {
-  const roster: SavedUnit[] = [];
+  const deployed = new Map<string, SavedUnit>();
   for (const u of units) {
     if (u.team !== 'player' || !u.progression) continue;
-    roster.push({
+    deployed.set(u.id, {
       id: u.id,
       name: u.name,
       jobId: u.jobId,
@@ -147,11 +147,20 @@ export function saveRoster(units: Unit[]): void {
       progression: u.progression,
     });
   }
+  const prev = loadSave();
+  // The saved roster is party *membership* — a battle only updates the
+  // members who deployed. A map with fewer player spawns than the party
+  // fields a subset; the rest must carry over untouched, not be dropped
+  // from the save. (Any deployed unit absent from the prior roster — the
+  // first-ever save — joins it.)
+  const roster: SavedUnit[] = (prev?.roster ?? []).map(su => deployed.get(su.id) ?? su);
+  for (const [id, su] of deployed) {
+    if (!roster.some(m => m.id === id)) roster.push(su);
+  }
   // Bump the battle counter — every saveRoster call follows a battle finish,
   // so this naturally tracks "how many battles has this party survived".
   // Gil and loot were already committed by recordBattleRewards at victory;
   // here they just carry forward untouched.
-  const prev = loadSave();
   writeSave({
     version: 1,
     roster,
