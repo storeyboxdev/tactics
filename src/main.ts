@@ -38,7 +38,7 @@ import { Hud, SkillEntry, SkillGroup } from './render/Hud';
 import { InputController } from './input/InputController';
 import { AssetLoader } from './core/AssetLoader';
 import { loadSave, recordBattleRewards, SavedUnit } from './core/Save';
-import { defaultRoster, pickEnemyJobs } from './core/Bootstrap';
+import { defaultRoster, pickEnemyJobs, enemyLevelFor, scaleEnemyStats } from './core/Bootstrap';
 import { showRosterScreen } from './render/RosterScreen';
 import grasslandJson from './data/maps/grassland.json';
 import stoneCorridorJson from './data/maps/stone_corridor.json';
@@ -102,7 +102,7 @@ const JOB_DEFAULT_LOADOUT: Record<string, { reaction: string | null; support: st
   oracle:     { reaction: 'auto_potion', support: 'mp_recovery', movement: null },
 };
 
-function buildEnemy(seed: EnemySeed): Unit {
+function buildEnemy(seed: EnemySeed, level: number): Unit {
   const job = JOB_DEFS[seed.jobId];
   if (!job) throw new Error(`unknown jobId: ${seed.jobId}`);
   const loadout = JOB_DEFAULT_LOADOUT[seed.jobId] ?? { reaction: null, support: null, movement: null };
@@ -110,7 +110,8 @@ function buildEnemy(seed: EnemySeed): Unit {
   const name = job.isMonster ? job.name : seed.name;
   const def: UnitDef = {
     id: seed.id, name, team: 'enemy',
-    jobId: seed.jobId, level: 1, stats: { ...job.baseStats } as UnitStats,
+    jobId: seed.jobId, level,
+    stats: scaleEnemyStats(job.baseStats, job.growth, level) as UnitStats,
     reaction: loadout.reaction, support: loadout.support, movement: loadout.movement,
   };
   return new Unit(def, seed.x, seed.z, FACING_W);
@@ -150,6 +151,8 @@ const roster: SavedUnit[] = save?.roster?.length ? save.roster : defaultRoster()
 // is Squires-only (the very first fight the player ever sees); Tier-1 jobs
 // come in by battle 2, casters by 4, the full pool by 6.
 const enemyJobs = pickEnemyJobs(save?.battleCount ?? 0, enemySpawns.length);
+// Enemies scale with battle count so a leveled party still gets a fight.
+const enemyLevel = enemyLevelFor(save?.battleCount ?? 0);
 
 const units: Unit[] = [];
 playerSpawns.forEach(([x, z], i) => {
@@ -159,7 +162,7 @@ playerSpawns.forEach(([x, z], i) => {
 });
 enemySpawns.forEach(([x, z], i) => units.push(buildEnemy({
   id: `e${i + 1}`, name: `E${i + 1}`, jobId: enemyJobs[i], x, z,
-})));
+}, enemyLevel)));
 
 // Battle objective — the win condition for this fight. Battle 0 is always
 // a Rout; later battles may roll Regicide / Survive / Protect.
